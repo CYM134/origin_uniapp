@@ -1,0 +1,182 @@
+/* pages/teacher-work/teacher-work.wxss */
+page {
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    background: linear-gradient(to bottom, rgb(116, 238, 152), #d3c5c5);
+}
+
+.container {
+    padding: 20rpx;
+    background: transparent;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+}
+
+.welcome-section {
+    width: 600rpx;
+    background: white;
+    border-radius: 20rpx;
+    padding: 25rpx;
+    margin-bottom: 20rpx;
+    box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.1);
+}
+
+.user-info {
+    display: flex;
+    align-items: center;
+}
+
+.avatar {
+    width: 120rpx;
+    height: 120rpx;
+    border-radius: 60rpx;
+    background-color: rgba(255, 255, 255, 0.2);
+    margin-right: 30rpx;
+}
+
+.user-details {
+    flex: 1;
+}
+
+.username {
+    font-size: 40rpx;
+    font-weight: bold;
+    display: block;
+    margin-bottom: 10rpx;
+}
+
+.user-id {
+    font-size: 32rpx;
+    opacity: 0.9;
+    display: block;
+    margin-bottom: 5rpx;
+}
+
+.user-college {
+    font-size: 32rpx;
+    opacity: 0.8;
+    display: block;
+}
+
+.function-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20rpx;
+    margin-bottom: 20rpx;
+    flex: 1;
+}
+
+.function-item {
+    background: white;
+    border-radius: 15rpx;
+    padding: 30rpx 20rpx;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    box-shadow: 0 4rpx 15rpx rgba(0, 0, 0, 0.1);
+    position: relative;
+}
+
+.function-icon {
+    width: 80rpx;
+    height: 80rpx;
+    margin: 0 auto 20rpx;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.function-icon image {
+    width: 80rpx;
+    height: 80rpx;
+}
+
+.function-title {
+    font-size: 34rpx;
+    font-weight: bold;
+    color: #333;
+    display: block;
+    margin-bottom: 10rpx;
+}
+
+.function-desc {
+    font-size: 28rpx;
+    color: rgb(5, 5, 5);
+    display: block;
+}
+
+.badge {
+    position: absolute;
+    top: 20rpx;
+    right: 20rpx;
+    background: #ff4757;
+    color: white;
+    border-radius: 20rpx;
+    padding: 4rpx 12rpx;
+    font-size: 20rpx;
+    min-width: 32rpx;
+    text-align: center;
+}
+
+.quick-actions {
+    width: 550rpx;
+    background: white;
+    border-radius: 20rpx;
+    padding: 30rpx;
+    margin-bottom: 30rpx;
+    box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.1);
+}
+
+.section-title {
+    font-size: 32rpx;
+    font-weight: bold;
+    color: #333;
+    margin-bottom: 20rpx;
+}
+
+.action-list {
+    display: flex;
+    justify-content: space-around;
+}
+
+.action-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    position: relative;
+}
+
+.action-item image {
+    width: 60rpx;
+    height: 60rpx;
+    margin-bottom: 10rpx;
+}
+
+.action-item text {
+    font-size: 24rpx;
+    color: #666;
+}
+
+.notification-badge {
+    position: absolute;
+    top: -5rpx;
+    right: -5rpx;
+    background: #ff4757;
+    color: white;
+    border-radius: 20rpx;
+    padding: 2rpx 8rpx;
+    font-size: 18rpx;
+    min-width: 24rpx;
+    text-align: center;
+}
+
+.footer {
+    text-align: center;
+    padding: 40rpx 0;
+    color: rgb(87, 82, 82);
+    font-size: 24rpx;
+}

@@ -1,0 +1,238 @@
+/* pages/student-work/student-work.less */
+page {
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    background: linear-gradient(to bottom, #98e7f1, #d3c5c5);
+}
+
+.container {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    padding: 20rpx;
+    box-sizing: border-box;
+    overflow-y: auto;
+}
+
+/* 退出登录按钮 */
+.logout-btn {
+    padding: 10rpx 20rpx;
+    background: rgba(49, 43, 43, 0.2);
+    border-radius: 20rpx;
+    border: 1rpx solid rgba(255, 255, 255, 0.3);
+}
+
+.logout-btn text {
+    color: white;
+    font-size: 28rpx;
+}
+
+/* 欢迎信息区域 */
+.welcome-section {
+    background: white;
+    border-radius: 20rpx;
+    padding: 30rpx;
+    margin-bottom: 30rpx;
+    box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.1);
+}
+
+.user-info {
+    display: flex;
+    align-items: center;
+}
+
+.avatar {
+    width: 120rpx;
+    height: 120rpx;
+    border-radius: 60rpx;
+    margin-right: 30rpx;
+    background: #f5f5f5;
+}
+
+.user-details {
+    flex: 1;
+}
+
+.username {
+    display: block;
+    font-size: 36rpx;
+    font-weight: bold;
+    color: #333;
+    margin-bottom: 10rpx;
+}
+
+.user-id {
+    display: block;
+    font-size: 28rpx;
+    color: #666;
+    margin-bottom: 8rpx;
+}
+
+.user-college {
+    display: block;
+    font-size: 26rpx;
+    color: #999;
+}
+
+/* 功能模块网格 */
+.function-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20rpx;
+    margin-bottom: 30rpx;
+}
+
+.function-item {
+    background: white;
+    border-radius: 20rpx;
+    padding: 30rpx 20rpx;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    box-shadow: 0 4rpx 15rpx rgba(0, 0, 0, 0.08);
+    position: relative;
+    transition: all 0.3s ease;
+}
+
+.function-item:active {
+    transform: scale(0.95);
+    box-shadow: 0 2rpx 10rpx rgba(0, 0, 0, 0.15);
+}
+
+.function-icon {
+    width: 80rpx;
+    height: 80rpx;
+    margin-bottom: 20rpx;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 20rpx;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.function-icon image {
+    width: 50rpx;
+    height: 50rpx;
+}
+
+.function-title {
+    font-size: 34rpx;
+    font-weight: bold;
+    color: #333;
+    margin-bottom: 8rpx;
+}
+
+.function-desc {
+    font-size: 28rpx;
+    color: #666;
+    line-height: 1.4;
+}
+
+/* 徽章样式 */
+.badge {
+    position: absolute;
+    top: 20rpx;
+    right: 20rpx;
+    background: #ff4757;
+    color: white;
+    font-size: 20rpx;
+    padding: 4rpx 8rpx;
+    border-radius: 10rpx;
+    min-width: 20rpx;
+    text-align: center;
+}
+
+/* 快捷操作区域 */
+.quick-actions {
+    background: white;
+    border-radius: 20rpx;
+    padding: 30rpx;
+    margin-bottom: 30rpx;
+    width: 540rpx;
+    box-shadow: 0 4rpx 15rpx rgba(0, 0, 0, 0.08);
+}
+
+.section-title {
+    font-size: 32rpx;
+    font-weight: bold;
+    color: #333;
+    margin-bottom: 20rpx;
+}
+
+.action-list {
+    display: flex;
+    justify-content: space-around;
+}
+
+.action-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 20rpx;
+    border-radius: 15rpx;
+    position: relative;
+    transition: all 0.3s ease;
+}
+
+.action-item:active {
+    background: #f8f9fa;
+    transform: scale(0.95);
+}
+
+.action-item image {
+    width: 60rpx;
+    height: 60rpx;
+    margin-bottom: 10rpx;
+}
+
+.action-item text {
+    font-size: 24rpx;
+    color: #666;
+}
+
+.notification-badge {
+    position: absolute;
+    top: 10rpx;
+    right: 15rpx;
+    background: #ff4757;
+    color: white;
+    font-size: 18rpx;
+    padding: 2rpx 6rpx;
+    border-radius: 8rpx;
+    min-width: 16rpx;
+    text-align: center;
+}
+
+/* 页脚 */
+.footer {
+    margin-top: auto;
+    text-align: center;
+    color: rgb(121, 115, 115);
+    padding: 20rpx 0;
+    font-size: 24rpx;
+}
+
+/* 响应式设计 */
+@media (max-width: 750rpx) {
+    .function-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .function-item {
+        flex-direction: row;
+        text-align: left;
+        padding: 25rpx;
+    }
+
+    .function-icon {
+        margin-right: 20rpx;
+        margin-bottom: 0;
+    }
+
+    .function-title,
+    .function-desc {
+        text-align: left;
+    }
+}

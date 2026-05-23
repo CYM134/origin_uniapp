@@ -1,0 +1,103 @@
+/* admin-work.less */
+page {
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    background: linear-gradient(to bottom, #f1e998, #ffffff);
+}
+
+.container {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 20rpx;
+    box-sizing: border-box;
+    overflow-y: auto;
+}
+
+.welcome {
+    background-color: white;
+    padding: 20rpx 30rpx;
+    border-radius: 15rpx;
+    margin: 20rpx 0;
+    box-shadow: 0 4rpx 10rpx rgba(0, 0, 0, 0.1);
+    width: 90%;
+    max-width: 700rpx;
+}
+
+.welcome text {
+    font-size: 32rpx;
+    font-weight: bold;
+    color: #333;
+}
+
+.function-container {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: center;
+    width: 100%;
+    margin: 20rpx 0;
+    padding: 0 10rpx;
+}
+
+.function-card {
+    background-color: white;
+    width: 320rpx;
+    height: 200rpx;
+    margin: 15rpx;
+    border-radius: 15rpx;
+    box-shadow: 0 4rpx 10rpx rgba(0, 0, 0, 0.1);
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    padding: 20rpx;
+    box-sizing: border-box;
+    transition: all 0.3s ease;
+}
+
+.function-card:active {
+    transform: scale(0.95);
+    background-color: #f8f8f8;
+}
+
+.card-icon {
+    width: 80rpx;
+    height: 80rpx;
+    margin-right: 20rpx;
+}
+
+.card-icon image {
+    width: 100%;
+    height: 100%;
+}
+
+.card-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.card-title {
+    font-size: 32rpx;
+    font-weight: bold;
+    color: #333;
+    margin-bottom: 10rpx;
+}
+
+.card-desc {
+    font-size: 26rpx;
+    color: #666;
+    line-height: 1.2;
+}
+
+.footer {
+    margin-top: 30rpx;
+    margin-bottom: 20rpx;
+    text-align: center;
+    width: 100%;
+    color: #999;
+    padding: 20rpx 0;
+    font-size: 24rpx;
+}

@@ -1,0 +1,443 @@
+/* pages/teacher-completed-process/teacher-completed-process.wxss */
+page {
+    height: 100vh;
+    background: #98f1db;
+}
+
+.container {
+    padding: 20rpx;
+    background: transparent;
+    min-height: 100vh;
+    padding-top: 25rpx;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+/* 筛选器 */
+.filter-section {
+    width: 600rpx;
+    background: rgba(255, 255, 255, 0.9);
+    border-radius: 20rpx;
+    margin-bottom: 20rpx;
+    padding: 20rpx;
+    box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.1);
+}
+
+.filter-tabs {
+    display: flex;
+    gap: 10rpx;
+}
+
+.filter-tab {
+    flex: 1;
+    padding: 20rpx;
+    text-align: center;
+    border-radius: 15rpx;
+    font-size: 26rpx;
+    color: #666;
+    background: #f8f9fa;
+    position: relative;
+}
+
+.filter-tab.active {
+    background: #98f1db;
+    color: white;
+}
+
+.tab-badge {
+    position: absolute;
+    top: -5rpx;
+    right: -5rpx;
+    background: #ff4757;
+    color: white;
+    border-radius: 20rpx;
+    padding: 2rpx 8rpx;
+    font-size: 18rpx;
+    min-width: 24rpx;
+    text-align: center;
+}
+
+.filter-tab.active .tab-badge {
+    background: #ff6b7a;
+}
+
+/* 统计信息 */
+.statistics {
+    flex: 1;
+    width: 650rpx;
+    position: relative;
+    display: flex;
+    background: rgba(255, 255, 255, 0.9);
+    border-radius: 20rpx;
+    margin-top: 10rpx;
+    margin-bottom: 20rpx;
+    overflow: hidden;
+    box-shadow: 0 4rpx 10rpx rgba(0, 0, 0, 0.1);
+}
+
+.stat-item {
+    flex: 1;
+    padding: 30rpx;
+    text-align: center;
+    border-right: 1rpx solid #f0f0f0;
+}
+
+.stat-item:last-child {
+    border-right: none;
+}
+
+.stat-number {
+    font-size: 48rpx;
+    font-weight: bold;
+    color: #98f1db;
+    margin-bottom: 10rpx;
+}
+
+.stat-number.approved {
+    color: #28a745;
+}
+
+.stat-number.rejected {
+    color: #dc3545;
+}
+
+.stat-label {
+    font-size: 24rpx;
+    color: #666;
+}
+
+/* 申请列表 */
+.application-list {
+    flex: 7;
+    margin-bottom: 30rpx;
+}
+
+.empty-state {
+    width: 620rpx;
+    background: white;
+    border-radius: 20rpx;
+    padding: 80rpx 40rpx;
+    text-align: center;
+    box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.1);
+}
+
+.empty-state image {
+    width: 120rpx;
+    height: 120rpx;
+    margin-bottom: 30rpx;
+    opacity: 0.5;
+}
+
+.empty-text {
+    font-size: 32rpx;
+    color: #666;
+    font-weight: bold;
+    display: block;
+    margin-bottom: 15rpx;
+}
+
+.empty-desc {
+    font-size: 26rpx;
+    color: #999;
+    display: block;
+}
+
+.application-item {
+    width: 620rpx;
+    background: white;
+    border-radius: 20rpx;
+    margin-bottom: 20rpx;
+    padding: 30rpx;
+    box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.1);
+}
+
+.item-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20rpx;
+}
+
+.status-badge {
+    padding: 8rpx 20rpx;
+    border-radius: 20rpx;
+    font-size: 22rpx;
+    font-weight: bold;
+}
+
+.status-badge.approved {
+    background: #d4edda;
+    color: #155724;
+}
+
+.status-badge.rejected {
+    background: #f8d7da;
+    color: #721c24;
+}
+
+.review-time {
+    font-size: 24rpx;
+    color: #999;
+}
+
+.item-content {
+    margin-bottom: 25rpx;
+}
+
+.content-row {
+    display: flex;
+    margin-bottom: 12rpx;
+    align-items: flex-start;
+}
+
+.content-row:last-child {
+    margin-bottom: 0;
+}
+
+.content-row .label {
+    width: 120rpx;
+    font-size: 26rpx;
+    color: #666;
+    font-weight: 500;
+    flex-shrink: 0;
+}
+
+.content-row .value {
+    flex: 1;
+    font-size: 26rpx;
+    color: #333;
+}
+
+.content-row .value.review-reason {
+    color: #666;
+    font-style: italic;
+}
+
+.item-actions {
+    display: flex;
+    gap: 15rpx;
+    justify-content: flex-end;
+}
+
+.action-btn {
+    padding: 12rpx 24rpx;
+    border-radius: 20rpx;
+    font-size: 24rpx;
+    font-weight: bold;
+    border: none;
+}
+
+.action-btn.detail {
+    background: #6c757d;
+    color: white;
+}
+
+.action-btn.reprocess {
+    background: #28a745;
+    color: white;
+}
+
+.footer {
+    text-align: center;
+    padding: 40rpx 0;
+    color: rgb(70, 63, 63);
+    font-size: 24rpx;
+}
+
+/* 弹窗样式 */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+.modal-content {
+    background: white;
+    border-radius: 20rpx;
+    width: 650rpx;
+    max-width: 90vw;
+    max-height: 80vh;
+    overflow: hidden;
+}
+
+.modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 30rpx;
+    border-bottom: 1rpx solid #f0f0f0;
+}
+
+.modal-title {
+    font-size: 32rpx;
+    font-weight: bold;
+    color: #333;
+}
+
+.close-btn {
+    width: 60rpx;
+    height: 60rpx;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 40rpx;
+    color: #999;
+}
+
+.modal-body {
+    padding: 30rpx;
+    max-height: 500rpx;
+    overflow-y: auto;
+}
+
+/* 详情弹窗 */
+.detail-section {
+    margin-bottom: 30rpx;
+}
+
+.detail-section:last-child {
+    margin-bottom: 0;
+}
+
+.section-title {
+    font-size: 28rpx;
+    font-weight: bold;
+    color: #333;
+    margin-bottom: 20rpx;
+    padding-bottom: 10rpx;
+    border-bottom: 2rpx solid #f0f0f0;
+}
+
+.detail-item {
+    display: flex;
+    margin-bottom: 15rpx;
+    align-items: flex-start;
+}
+
+.detail-item:last-child {
+    margin-bottom: 0;
+}
+
+.detail-label {
+    width: 140rpx;
+    font-size: 26rpx;
+    color: #666;
+    font-weight: 500;
+    flex-shrink: 0;
+}
+
+.detail-value {
+    flex: 1;
+    font-size: 26rpx;
+    color: #333;
+}
+
+.detail-value.status {
+    font-weight: bold;
+}
+
+.detail-value.status.approved {
+    color: #155724;
+}
+
+.detail-value.status.rejected {
+    color: #721c24;
+}
+
+/* 重新审核弹窗 */
+.reprocess-info {
+    background: #f8f9fa;
+    border-radius: 15rpx;
+    padding: 25rpx;
+    margin-bottom: 25rpx;
+}
+
+.info-item {
+    display: flex;
+    margin-bottom: 15rpx;
+}
+
+.info-item:last-child {
+    margin-bottom: 0;
+}
+
+.info-label {
+    width: 120rpx;
+    font-size: 26rpx;
+    color: #666;
+    font-weight: 500;
+}
+
+.info-value {
+    flex: 1;
+    font-size: 26rpx;
+    color: #333;
+}
+
+.reprocess-reason {
+    margin-bottom: 20rpx;
+}
+
+.reason-label {
+    font-size: 28rpx;
+    color: #333;
+    font-weight: 500;
+    display: block;
+    margin-bottom: 15rpx;
+}
+
+.reason-input {
+    width: 100%;
+    min-height: 120rpx;
+    border: 2rpx solid #e0e0e0;
+    border-radius: 10rpx;
+    padding: 20rpx;
+    font-size: 26rpx;
+    box-sizing: border-box;
+}
+
+.char-count {
+    text-align: right;
+    font-size: 22rpx;
+    color: #999;
+    margin-top: 10rpx;
+}
+
+.modal-footer {
+    display: flex;
+    border-top: 1rpx solid #f0f0f0;
+}
+
+.cancel-btn,
+.confirm-btn {
+    flex: 1;
+    height: 88rpx;
+    border: none;
+    font-size: 28rpx;
+    font-weight: bold;
+}
+
+.cancel-btn {
+    background: #f5f5f5;
+    color: #666;
+}
+
+.confirm-btn {
+    color: white;
+}
+
+.confirm-btn.approve {
+    background: #28a745;
+}
+
+.modal-footer .confirm-btn {
+    background: #3a7bd5;
+}

@@ -1,0 +1,254 @@
+{
+	"pages": [
+		{
+			"path": "pages/login-select/login-select",
+			"style": {
+				"usingComponents": {
+					"navigation-bar": "/components/navigation-bar/navigation-bar"
+				}
+			}
+		},
+		{
+			"path": "pages/admin-login/admin-login",
+			"style": {
+				"usingComponents": {
+					"navigation-bar": "/components/navigation-bar/navigation-bar"
+				}
+			}
+		},
+		{
+			"path": "pages/admin-work/admin-work",
+			"style": {
+				"usingComponents": {
+					"navigation-bar": "/components/navigation-bar/navigation-bar"
+				}
+			}
+		},
+		{
+			"path": "pages/admin-lab-management/admin-lab-management",
+			"style": {
+				"usingComponents": {
+					"navigation-bar": "/components/navigation-bar/navigation-bar"
+				}
+			}
+		},
+		{
+			"path": "pages/admin-schedule-management/admin-schedule-management",
+			"style": {
+				"component": true,
+				"usingComponents": {
+					"navigation-bar": "/components/navigation-bar/navigation-bar"
+				}
+			}
+		},
+		{
+			"path": "pages/admin-reservation-approval/admin-reservation-approval",
+			"style": {
+				"component": true,
+				"usingComponents": {
+					"navigation-bar": "/components/navigation-bar/navigation-bar"
+				}
+			}
+		},
+		{
+			"path": "pages/admin-approval-records/admin-approval-records",
+			"style": {
+				"component": true,
+				"usingComponents": {
+					"navigation-bar": "/components/navigation-bar/navigation-bar"
+				}
+			}
+		},
+		{
+			"path": "pages/admin-teacher-registration/admin-teacher-registration",
+			"style": {
+				"component": true,
+				"usingComponents": {
+					"navigation-bar": "/components/navigation-bar/navigation-bar"
+				}
+			}
+		},
+		{
+			"path": "pages/admin-system-management/admin-system-management",
+			"style": {
+				"usingComponents": {
+					"navigation-bar": "/components/navigation-bar/navigation-bar"
+				}
+			}
+		},
+		{
+			"path": "pages/logs/logs",
+			"style": {
+				"usingComponents": {
+					"navigation-bar": "/components/navigation-bar/navigation-bar"
+				}
+			}
+		},
+		{
+			"path": "pages/student-login/student-login",
+			"style": {
+				"usingComponents": {
+					"navigation-bar": "/components/navigation-bar/navigation-bar"
+				}
+			}
+		},
+		{
+			"path": "pages/student-register/student-register",
+			"style": {
+				"usingComponents": {
+					"navigation-bar": "/components/navigation-bar/navigation-bar"
+				},
+				"navigationStyle": "custom"
+			}
+		},
+		{
+			"path": "pages/student-work/student-work",
+			"style": {
+				"usingComponents": {
+					"navigation-bar": "/components/navigation-bar/navigation-bar"
+				}
+			}
+		},
+		{
+			"path": "pages/student-personal-info/student-personal-info",
+			"style": {
+				"usingComponents": {
+					"navigation-bar": "/components/navigation-bar/navigation-bar"
+				},
+				"navigationStyle": "custom",
+				"enablePullDownRefresh": true
+			}
+		},
+		{
+			"path": "pages/student-schedule-preview/student-schedule-preview",
+			"style": {
+				"usingComponents": {
+					"navigation-bar": "/components/navigation-bar/navigation-bar"
+				},
+				"navigationStyle": "custom",
+				"enablePullDownRefresh": true
+			}
+		},
+		{
+			"path": "pages/student-reservation-apply/student-reservation-apply",
+			"style": {
+				"usingComponents": {
+					"navigation-bar": "/components/navigation-bar/navigation-bar"
+				},
+				"navigationStyle": "custom",
+				"enablePullDownRefresh": true
+			}
+		},
+		{
+			"path": "pages/student-pending-process/student-pending-process",
+			"style": {
+				"usingComponents": {
+					"navigation-bar": "/components/navigation-bar/navigation-bar"
+				},
+				"navigationStyle": "custom",
+				"enablePullDownRefresh": true
+			}
+		},
+		{
+			"path": "pages/student-completed-process/student-completed-process",
+			"style": {
+				"usingComponents": {
+					"navigation-bar": "/components/navigation-bar/navigation-bar"
+				},
+				"navigationStyle": "custom",
+				"enablePullDownRefresh": true
+			}
+		},
+		{
+			"path": "pages/teacher-login/teacher-login",
+			"style": {
+				"usingComponents": {
+					"navigation-bar": "/components/navigation-bar/navigation-bar"
+				}
+			}
+		},
+		{
+			"path": "pages/teacher-register/teacher-register",
+			"style": {
+				"usingComponents": {
+					"navigation-bar": "/components/navigation-bar/navigation-bar"
+				}
+			}
+		},
+		{
+			"path": "pages/teacher-work/teacher-work",
+			"style": {
+				"usingComponents": {
+					"navigation-bar": "/components/navigation-bar/navigation-bar"
+				},
+				"enablePullDownRefresh": true,
+				"backgroundTextStyle": "dark"
+			}
+		},
+		{
+			"path": "pages/teacher-personal-info/teacher-personal-info",
+			"style": {
+				"usingComponents": {
+					"navigation-bar": "/components/navigation-bar/navigation-bar"
+				},
+				"navigationStyle": "custom",
+				"enablePullDownRefresh": true
+			}
+		},
+		{
+			"path": "pages/teacher-schedule-preview/teacher-schedule-preview",
+			"style": {
+				"usingComponents": {
+					"navigation-bar": "/components/navigation-bar/navigation-bar"
+				},
+				"enablePullDownRefresh": true,
+				"backgroundTextStyle": "dark"
+			}
+		},
+		{
+			"path": "pages/teacher-reservation-apply/teacher-reservation-apply",
+			"style": {
+				"usingComponents": {
+					"navigation-bar": "/components/navigation-bar/navigation-bar"
+				}
+			}
+		},
+		{
+			"path": "pages/teacher-pending-process/teacher-pending-process",
+			"style": {
+				"usingComponents": {
+					"navigation-bar": "/components/navigation-bar/navigation-bar"
+				},
+				"enablePullDownRefresh": true,
+				"backgroundTextStyle": "dark"
+			}
+		},
+		{
+			"path": "pages/teacher-completed-process/teacher-completed-process",
+			"style": {
+				"usingComponents": {
+					"navigation-bar": "/components/navigation-bar/navigation-bar"
+				},
+				"enablePullDownRefresh": true,
+				"backgroundTextStyle": "dark"
+			}
+		}
+	],
+	"style": "v2",
+	"rendererOptions": {
+		"skyline": {
+			"defaultDisplayBlock": true,
+			"disableABTest": true,
+			"sdkVersionBegin": "3.0.0",
+			"sdkVersionEnd": "15.255.255"
+		}
+	},
+	"componentFramework": "glass-easel",
+	"sitemapLocation": "sitemap.json",
+	"lazyCodeLoading": "requiredComponents",
+	"globalStyle": {
+		"navigationBarTextStyle": "black",
+		"navigationStyle": "custom"
+	},
+	"subPackages": []
+}

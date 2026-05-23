@@ -1,0 +1,289 @@
+/* pages/student-register/student-register.less */
+page {
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    background-color: #4f7eff;
+}
+
+.container {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-between;
+    padding: 40rpx 0;
+    box-sizing: border-box;
+}
+
+.logo-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-top: 20rpx;
+}
+
+.logo {
+    width: 120rpx;
+    height: 120rpx;
+    border-radius: 50%;
+    box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.1);
+    background-color: white;
+    padding: 10rpx;
+}
+
+.title {
+    font-size: 32rpx;
+    font-weight: bold;
+    color: white;
+    margin-top: 15rpx;
+    text-shadow: 0 2rpx 4rpx rgba(0, 0, 0, 0.2);
+}
+
+.subtitle {
+    font-size: 32rpx;
+    color: rgba(59, 56, 56, 0.9);
+    margin-top: 8rpx;
+}
+
+.register-form {
+    width: 85%;
+    max-width: 600rpx;
+    background-color: white;
+    border-radius: 20rpx;
+    padding: 40rpx 30rpx;
+    box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.1);
+    margin: 20rpx 0;
+}
+
+.input-group {
+    margin-bottom: 25rpx;
+    position: relative;
+}
+
+.input-label {
+    font-size: 26rpx;
+    color: #333;
+    margin-bottom: 8rpx;
+    font-weight: 500;
+}
+
+.input {
+    width: 100%;
+    height: 70rpx;
+    border: 1px solid #e0e0e0;
+    border-radius: 8rpx;
+    padding: 0 20rpx;
+    font-size: 26rpx;
+    box-sizing: border-box;
+    padding-right: 60rpx;
+}
+
+.password-icon {
+    position: absolute;
+    right: 20rpx;
+    top: 65%;
+    transform: translateY(-50%);
+    width: 35rpx;
+    height: 35rpx;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.password-icon image {
+    width: 100%;
+    height: 100%;
+}
+
+.gender-group {
+    display: flex;
+    gap: 20rpx;
+}
+
+.gender-option {
+    flex: 1;
+    height: 70rpx;
+    border: 1px solid #e0e0e0;
+    border-radius: 8rpx;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #f9f9f9;
+    transition: all 0.3s;
+}
+
+.gender-option.active {
+    background-color: #4f7eff;
+    border-color: #4f7eff;
+    color: white;
+}
+
+.picker-input {
+    width: 100%;
+    height: 70rpx;
+    border: 1px solid #e0e0e0;
+    border-radius: 8rpx;
+    padding: 0 20rpx;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background-color: white;
+    box-sizing: border-box;
+}
+
+.picker-input .placeholder {
+    color: #999;
+}
+
+.arrow-icon {
+    width: 24rpx;
+    height: 24rpx;
+}
+
+.agreement-section {
+    display: flex;
+    align-items: center;
+    margin-bottom: 25rpx;
+    flex-wrap: wrap;
+}
+
+.agreement-text {
+    font-size: 24rpx;
+    color: #666;
+    margin-left: 10rpx;
+}
+
+.agreement-link {
+    font-size: 24rpx;
+    color: #4f7eff;
+    text-decoration: underline;
+    margin-left: 5rpx;
+}
+
+.register-btn {
+    width: 100%;
+    height: 80rpx;
+    background: linear-gradient(to right, #4f7eff, #3a7bd5);
+    color: white;
+    border-radius: 40rpx;
+    font-size: 30rpx;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4rpx 10rpx rgba(0, 0, 0, 0.1);
+    border: none;
+    margin-bottom: 25rpx;
+}
+
+.register-btn:active {
+    opacity: 0.9;
+    transform: scale(0.98);
+}
+
+.login-section {
+    text-align: center;
+    margin-top: 15rpx;
+}
+
+.login-text {
+    font-size: 24rpx;
+    color: #666;
+}
+
+.login-link {
+    font-size: 24rpx;
+    color: #4f7eff;
+    font-weight: bold;
+    margin-left: 8rpx;
+    text-decoration: underline;
+}
+
+.footer {
+    margin-top: 30rpx;
+    color: rgba(255, 255, 255, 0.9);
+    text-align: center;
+    font-size: 24rpx;
+}
+
+/* picker-view弹窗样式 */
+.modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.modal-mask {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+}
+
+.modal-content {
+    position: relative;
+    background-color: white;
+    border-radius: 15rpx;
+    width: 80%;
+    max-width: 600rpx;
+    z-index: 1001;
+    overflow: hidden;
+}
+
+.picker-modal-content {
+    width: 90%;
+    max-width: 650rpx;
+}
+
+.modal-header {
+    padding: 30rpx;
+    text-align: center;
+    font-size: 32rpx;
+    font-weight: bold;
+    border-bottom: 1rpx solid #eee;
+}
+
+.modal-body {
+    padding: 30rpx;
+}
+
+.picker-view-item {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100rpx;
+    font-size: 32rpx;
+    color: #333;
+}
+
+.modal-footer {
+    display: flex;
+    flex-direction: row;
+    border-top: 1rpx solid #eee;
+}
+
+.modal-footer .cancel-btn {
+    flex: 1;
+    background-color: #f5f5f5;
+    color: #666;
+    border-radius: 0;
+    margin: 0;
+}
+
+.modal-footer .confirm-btn {
+    flex: 1;
+    background-color: #3a7bd5;
+    color: white;
+    border-radius: 0;
+    margin: 0;
+}
