@@ -10,42 +10,25 @@
     </view>
 </template>
 
-<script lang="ts">
-import zpMixins from '@/uni_modules/zp-mixins/index';
-import navigationBar from '@/components/navigation-bar/navigation-bar';
+<script setup lang="ts">
+import { ref } from 'vue';
+import { onMounted } from 'vue';
+import navigationBar from '@/components/navigation-bar/navigation-bar.vue';
 // logs.ts
 // const util = require('../../utils/util.js')
 import { formatTime } from '../../utils/util';
-export default zpMixins.extend({
-    components: {
-        navigationBar
-    },
-    data() {
-        return {
-            logs: [],
 
-            log: {
-                date: ''
-            }
+const logs = ref<any[]>([]);
+const log = ref<any>({ date: '' });
+
+onMounted(() => {
+    // 处理小程序 attached 生命周期
+    logs.value = (uni.getStorageSync('logs') || []).map((logItem: string) => {
+        return {
+            date: formatTime(new Date(logItem)),
+            timeStamp: logItem
         };
-    },
-    mounted() {
-        // 处理小程序 attached 生命周期
-        this.attached();
-    },
-    methods: {
-        attached() {
-            this.setData({
-                logs: (uni.getStorageSync('logs') || []).map((log: string) => {
-                    return {
-                        date: formatTime(new Date(log)),
-                        timeStamp: log
-                    };
-                })
-            });
-        }
-    },
-    created: function () {}
+    });
 });
 </script>
 <style lang="less">

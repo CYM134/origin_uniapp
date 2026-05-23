@@ -353,876 +353,773 @@
     </view>
 </template>
 
-<script lang="ts">
-import zpMixins from '@/uni_modules/zp-mixins/index';
-import navigationBar from '@/components/navigation-bar/navigation-bar';
+<script setup lang="ts">
+import { ref } from 'vue';
+import { onLoad, onShow } from '@dcloudio/uni-app';
+import navigationBar from '@/components/navigation-bar/navigation-bar.vue';
 // pages/student-reservation-apply/student-reservation-apply.ts
-export default zpMixins.extend({
-    components: {
-        navigationBar
+
+// 表单数据
+const selectedLab = ref<any>(null);
+const labIndex = ref<number>(-1);
+const selectedDate = ref<string>('');
+const studentCount = ref<number>(1);
+const selectedType = ref<any>(null);
+const typeIndex = ref<number>(-1);
+const title = ref<string>('');
+const purpose = ref<string>('');
+const teacher = ref<string>('');
+const contact = ref<string>('');
+const requirements = ref<string>('');
+const emergencyContact = ref<string>('');
+const emergencyPhone = ref<string>('');
+// 选项数据
+const labs = ref<any[]>([
+    {
+        id: 'lab1',
+        name: '国际课程实验室',
+        maxStudents: 30
     },
-    data() {
-        return {
-            // 表单数据
-            selectedLab: null as any,
-            labIndex: -1,
-            selectedDate: '',
-            studentCount: 1,
-            selectedType: null as any,
-            typeIndex: -1,
-            title: '',
-            purpose: '',
-            teacher: '',
-            contact: '',
-            requirements: '',
-            emergencyContact: '',
-            emergencyPhone: '',
-            // 选项数据
-            labs: [
-                {
-                    id: 'lab1',
-                    name: '国际课程实验室',
-                    maxStudents: 30
-                },
-                {
-                    id: 'lab2',
-                    name: '新商科实验室',
-                    maxStudents: 25
-                },
-                {
-                    id: 'lab3',
-                    name: 'VR实验室',
-                    maxStudents: 20
-                },
-                {
-                    id: 'lab4',
-                    name: '法语实验室',
-                    maxStudents: 35
-                },
-                {
-                    id: 'lab5',
-                    name: '402实验室',
-                    maxStudents: 28
-                }
-            ],
-            applicationTypes: [
-                {
-                    id: 'course',
-                    name: '课程实验'
-                },
-                {
-                    id: 'research',
-                    name: '科研项目'
-                },
-                {
-                    id: 'competition',
-                    name: '竞赛培训'
-                },
-                {
-                    id: 'activity',
-                    name: '学术活动'
-                },
-                {
-                    id: 'other',
-                    name: '其他'
-                }
-            ],
-            // 日期限制,人数限制
-            minDate: '',
-            maxDate: '',
-            maxStudents: 80,
-            // 协议相关
-            agreed: false,
-            showAgreement: false,
-            // 表单验证
-            canSubmit: false,
-            showLabPickerModal: false,
-            labPickerOptions: [] as any[],
-            tempLabIndex: 0,
-            showDateModal: false,
-            years: [] as number[],
-            months: [] as number[],
-            days: [] as number[],
-            tempYearIndex: 0,
-            tempMonthIndex: 0,
-            tempDayIndex: 0,
-            showStartTimePicker: false,
-            showEndTimePicker: false,
-            hours: Array.from(
-                {
-                    length: 24
-                },
-                (_, i) => i
-            ),
-            minutes: Array.from(
-                {
-                    length: 60
-                },
-                (_, i) => i
-            ),
-            startHourIndex: 8,
-            startMinuteIndex: 0,
-            endHourIndex: 10,
-            endMinuteIndex: 0,
-            startTime: '',
-            endTime: '',
-            showTypePickerModal: false,
-            typePickerOptions: [] as any[],
-            tempTypeIndex: 0,
-            // 错误提示
-            errorLab: '',
-            errorDate: '',
-            errorTime: '',
-            errorType: '',
-            errorTitle: '',
-            errorPurpose: '',
-            errorContact: '',
-            errorAgreement: ''
-        };
+    {
+        id: 'lab2',
+        name: '新商科实验室',
+        maxStudents: 25
     },
-    onLoad() {
-        this.initializeDates();
-        this.loadUserInfo();
-        // 默认时间，避免未选时间导致无法提交
-        this.setData({
-            startTime: '08:00',
-            endTime: '09:50'
-        });
+    {
+        id: 'lab3',
+        name: 'VR实验室',
+        maxStudents: 20
     },
-    onShow() {
-        this.validateForm();
-        // 尝试加载草稿
-        this.loadDraft();
+    {
+        id: 'lab4',
+        name: '法语实验室',
+        maxStudents: 35
     },
-    methods: {
-        /**
-         * 加载草稿
-         */
-        loadDraft() {
-            try {
-                const draft = uni.getStorageSync('studentApplicationDraft');
-                if (draft) {
-                    // 询问是否加载草稿
-                    uni.showModal({
-                        title: '发现草稿',
-                        content: '是否加载之前保存的草稿？',
-                        success: (res) => {
-                            if (res.confirm) {
-                                this.applyDraft(draft);
-                            }
-                        }
-                    });
-                }
-            } catch (error) {
-                console.log('CatchClause', error);
-                console.log('CatchClause', error);
-                console.error('加载草稿失败:', error);
-            }
-        },
+    {
+        id: 'lab5',
+        name: '402实验室',
+        maxStudents: 28
+    }
+]);
+const applicationTypes = ref<any[]>([
+    {
+        id: 'course',
+        name: '课程实验'
+    },
+    {
+        id: 'research',
+        name: '科研项目'
+    },
+    {
+        id: 'competition',
+        name: '竞赛培训'
+    },
+    {
+        id: 'activity',
+        name: '学术活动'
+    },
+    {
+        id: 'other',
+        name: '其他'
+    }
+]);
+// 日期限制,人数限制
+const minDate = ref<string>('');
+const maxDate = ref<string>('');
+const maxStudents = ref<number>(80);
+// 协议相关
+const agreed = ref<boolean>(false);
+const showAgreement = ref<boolean>(false);
+// 表单验证
+const canSubmit = ref<boolean>(false);
+const showLabPickerModal = ref<boolean>(false);
+const labPickerOptions = ref<any[]>([]);
+const tempLabIndex = ref<number>(0);
+const showDateModal = ref<boolean>(false);
+const years = ref<number[]>([]);
+const months = ref<number[]>([]);
+const days = ref<number[]>([]);
+const tempYearIndex = ref<number>(0);
+const tempMonthIndex = ref<number>(0);
+const tempDayIndex = ref<number>(0);
+const showStartTimePicker = ref<boolean>(false);
+const showEndTimePicker = ref<boolean>(false);
+const hours = ref<number[]>(Array.from(
+    {
+        length: 24
+    },
+    (_, i) => i
+));
+const minutes = ref<number[]>(Array.from(
+    {
+        length: 60
+    },
+    (_, i) => i
+));
+const startHourIndex = ref<number>(8);
+const startMinuteIndex = ref<number>(0);
+const endHourIndex = ref<number>(10);
+const endMinuteIndex = ref<number>(0);
+const startTime = ref<string>('');
+const endTime = ref<string>('');
+const showTypePickerModal = ref<boolean>(false);
+const typePickerOptions = ref<any[]>([]);
+const tempTypeIndex = ref<number>(0);
+// 错误提示
+const errorLab = ref<string>('');
+const errorDate = ref<string>('');
+const errorTime = ref<string>('');
+const errorType = ref<string>('');
+const errorTitle = ref<string>('');
+const errorPurpose = ref<string>('');
+const errorContact = ref<string>('');
+const errorAgreement = ref<string>('');
 
-        /**
-         * 应用草稿数据
-         */
-        applyDraft(draft: any) {
-            // 设置实验室
-            const labIndex = this.labs.findIndex((lab) => lab.id === draft.labId);
-            if (labIndex !== -1) {
-                this.setData({
-                    labIndex: labIndex,
-                    selectedLab: this.labs[labIndex],
-                    maxStudents: this.labs[labIndex].maxStudents
-                });
-            }
+onLoad(() => {
+    initializeDates();
+    loadUserInfo();
+    // 默认时间，避免未选时间导致无法提交
+    startTime.value = '08:00';
+    endTime.value = '09:50';
+});
 
-            // 设置申请类型
-            const typeIndex = this.applicationTypes.findIndex((type) => type.id === draft.typeId);
-            if (typeIndex !== -1) {
-                this.setData({
-                    typeIndex: typeIndex,
-                    selectedType: this.applicationTypes[typeIndex]
-                });
-            }
+onShow(() => {
+    validateForm();
+    // 尝试加载草稿
+    loadDraft();
+});
 
-            // 设置其他数据
-            this.setData({
-                selectedDate: draft.date || '',
-                startTime: draft.startTime || '',
-                endTime: draft.endTime || '',
-                studentCount: draft.studentCount || 1,
-                title: draft.title || '',
-                purpose: draft.purpose || '',
-                teacher: draft.teacher || '',
-                contact: draft.contact || '',
-                requirements: draft.requirements || '',
-                emergencyContact: draft.emergencyContact || '',
-                emergencyPhone: draft.emergencyPhone || ''
-            });
-            this.validateForm();
-            uni.showToast({
-                title: '草稿加载成功',
-                icon: 'success'
-            });
-        },
-
-        /**
-         * 保存草稿
-         */
-        saveDraft() {
-            try {
-                // 检查是否有必要的数据可以保存
-                if (!this.selectedLab && !this.selectedDate && !this.title && !this.purpose) {
-                    uni.showToast({
-                        title: '表单为空，无需保存',
-                        icon: 'none'
-                    });
-                    return;
-                }
-                const draft = {
-                    labId: (this.selectedLab && this.selectedLab.id) || '',
-                    date: this.selectedDate,
-                    startTime: this.startTime,
-                    endTime: this.endTime,
-                    studentCount: this.studentCount,
-                    typeId: (this.selectedType && this.selectedType.id) || '',
-                    title: this.title,
-                    purpose: this.purpose,
-                    teacher: this.teacher,
-                    contact: this.contact,
-                    requirements: this.requirements,
-                    emergencyContact: this.emergencyContact,
-                    emergencyPhone: this.emergencyPhone,
-                    saveTime: new Date().toISOString()
-                };
-                uni.setStorageSync('studentApplicationDraft', draft);
-                uni.showToast({
-                    title: '草稿保存成功',
-                    icon: 'success'
-                });
-            } catch (error) {
-                console.log('CatchClause', error);
-                console.log('CatchClause', error);
-                console.error('保存草稿失败:', error);
-                uni.showToast({
-                    title: '保存失败',
-                    icon: 'error'
-                });
-            }
-        },
-
-        // 初始化日期范围
-        initializeDates() {
-            const today = new Date();
-            const tomorrow = new Date(today);
-            tomorrow.setDate(today.getDate() + 1);
-            const maxDate = new Date(today);
-            maxDate.setDate(today.getDate() + 30); // 最多提前30天预约
-
-            this.setData({
-                minDate: this.formatDate(tomorrow),
-                maxDate: this.formatDate(maxDate)
-            });
-        },
-
-        // 格式化日期
-        formatDate(date: Date): string {
-            const year = date.getFullYear();
-            const month = String(date.getMonth() + 1).padStart(2, '0');
-            const day = String(date.getDate()).padStart(2, '0');
-            return `${year}-${month}-${day}`;
-        },
-
-        // 加载用户信息
-        loadUserInfo() {
-            try {
-                const userInfo = uni.getStorageSync('studentInfo');
-                if (userInfo && userInfo.phone) {
-                    this.setData({
-                        contact: userInfo.phone
-                    });
-                }
-            } catch (error) {
-                console.log('CatchClause', error);
-                console.log('CatchClause', error);
-                console.error('加载用户信息失败:', error);
-            }
-        },
-
-        // 实验室选择
-        onLabChange(e: any) {
-            const index = e.detail.value;
-            const selectedLab = this.labs[index];
-            this.setData({
-                labIndex: index,
-                selectedLab,
-                maxStudents: selectedLab.maxStudents,
-                studentCount: Math.min(this.studentCount, selectedLab.maxStudents)
-            });
-            this.validateForm();
-        },
-
-        // 日期选择
-        onDateChange(e: any) {
-            this.setData({
-                selectedDate: e.detail.value
-            });
-            this.validateForm();
-        },
-
-        // 人数调整
-        decreaseCount() {
-            const count = Math.max(1, this.studentCount - 1);
-            this.setData({
-                studentCount: count
-            });
-            this.validateForm();
-        },
-
-        increaseCount() {
-            const count = Math.min(this.maxStudents, this.studentCount + 1);
-            this.setData({
-                studentCount: count
-            });
-            this.validateForm();
-        },
-
-        onCountInput(e: any) {
-            const value = parseInt(e.detail.value) || 1;
-            const count = Math.max(1, Math.min(this.maxStudents, value));
-            this.setData({
-                studentCount: count
-            });
-            this.validateForm();
-        },
-
-        // 申请类型选择
-        onTypeChange(e: any) {
-            const index = e.detail.value;
-            this.setData({
-                typeIndex: index,
-                selectedType: this.applicationTypes[index]
-            });
-            this.validateForm();
-        },
-
-        // 输入处理
-        onTitleInput(e: any) {
-            this.setData({
-                title: e.detail.value
-            });
-            this.validateForm();
-        },
-
-        onPurposeInput(e: any) {
-            this.setData({
-                purpose: e.detail.value
-            });
-            this.validateForm();
-        },
-
-        onTeacherInput(e: any) {
-            this.setData({
-                teacher: e.detail.value
-            });
-        },
-
-        onContactInput(e: any) {
-            this.setData({
-                contact: e.detail.value
-            });
-            this.validateForm();
-        },
-
-        onRequirementsInput(e: any) {
-            this.setData({
-                requirements: e.detail.value
-            });
-        },
-
-        onEmergencyContactInput(e: any) {
-            this.setData({
-                emergencyContact: e.detail.value
-            });
-        },
-
-        onEmergencyPhoneInput(e: any) {
-            this.setData({
-                emergencyPhone: e.detail.value
-            });
-        },
-
-        // 协议相关
-        onAgreementChange(e: any) {
-            this.setData({
-                agreed: e.detail.value.includes('agree')
-            });
-            this.validateForm();
-        },
-
-        viewAgreement() {
-            this.setData({
-                showAgreement: true
-            });
-        },
-
-        closeAgreement() {
-            this.setData({
-                showAgreement: false
-            });
-        },
-
-        // 表单验证
-        validateForm() {
-            const { selectedLab, selectedDate, startTime, endTime, selectedType, title, purpose, contact, agreed } = this;
-            let errorLab = '';
-            let errorDate = '';
-            let errorTime = '';
-            let errorType = '';
-            let errorTitle = '';
-            let errorPurpose = '';
-            let errorContact = '';
-            let errorAgreement = '';
-            const isPhoneValid = /^1[3-9]\d{9}$/.test(contact);
-            if (!selectedLab) {
-                errorLab = '请选择实验室';
-            }
-            if (!selectedDate) {
-                errorDate = '请选择预约日期';
-            }
-            if (!startTime || !endTime) {
-                errorTime = '请选择时间段';
-            } else {
-                const [sh, sm] = startTime.split(':').map(Number);
-                const [eh, em] = endTime.split(':').map(Number);
-                if (eh * 60 + em <= sh * 60 + sm) {
-                    errorTime = '结束时间必须大于开始时间';
-                }
-            }
-            if (!selectedType) {
-                errorType = '请选择申请类型';
-            }
-            if (!title.trim()) {
-                errorTitle = '请输入申请主题';
-            }
-            if (!purpose.trim()) {
-                errorPurpose = '请输入使用目的';
-            }
-            if (!contact) errorContact = '请输入手机号';
-            else if (!isPhoneValid) {
-                errorContact = '请输入有效的手机号';
-            }
-            if (!agreed) {
-                errorAgreement = '请阅读并同意实验室使用协议';
-            }
-            const canSubmit = !errorLab && !errorDate && !errorTime && !errorType && !errorTitle && !errorPurpose && !errorContact && !errorAgreement;
-            this.setData({
-                canSubmit,
-                errorLab,
-                errorDate,
-                errorTime,
-                errorType,
-                errorTitle,
-                errorPurpose,
-                errorContact,
-                errorAgreement
-            });
-        },
-
-        // 提交申请
-        submitApplication() {
-            if (!this.canSubmit) {
-                uni.showToast({
-                    title: '请完善申请信息',
-                    icon: 'none'
-                });
-                // 自动滚动到第一个未填写项
-                const { selectedLab, selectedDate, startTime, endTime, selectedType, title, purpose, contact, agreed } = this;
-                let targetId = '';
-                if (!selectedLab) targetId = 'labItem';
-                else if (!selectedDate) targetId = 'dateItem';
-                else if (!startTime || !endTime) targetId = 'timeItem';
-                else if (!selectedType) targetId = 'typeItem';
-                else if (!title.trim()) targetId = 'titleItem';
-                else if (!purpose.trim()) targetId = 'purposeItem';
-                else if (!/^1[3-9]\d{9}$/.test(contact)) targetId = 'contactItem';
-                else if (!agreed) {
-                    targetId = 'formScroll';
-                }
-                if (targetId) {
-                    uni.pageScrollTo({
-                        selector: `#${targetId}`,
-                        duration: 300
-                    });
-                }
-                return;
-            }
-
-            // 获取当前登录学生信息
-            const currentStudent = uni.getStorageSync('studentInfo');
-            const applicationData = {
-                id: 'app_' + Date.now(),
-                lab: this.selectedLab,
-                date: this.selectedDate,
-                startTime: this.startTime,
-                endTime: this.endTime,
-                studentCount: this.studentCount,
-                type: this.selectedType,
-                title: this.title,
-                purpose: this.purpose,
-                teacher: this.teacher,
-                contact: this.contact,
-                requirements: this.requirements,
-                emergencyContact: this.emergencyContact,
-                emergencyPhone: this.emergencyPhone,
-                status: 'pending',
-                statusText: '待审核',
-                submitTime: new Date().toISOString(),
-                applicant: (currentStudent && currentStudent.name) || '未知',
-                studentId: (currentStudent && currentStudent.studentId) || '',
-                // 添加学生ID
-                studentName: (currentStudent && currentStudent.name) || '未知' // 添加学生姓名
-            };
-            uni.showLoading({
-                title: '提交中...'
-            });
-
-            // 模拟提交请求
-            setTimeout(() => {
-                uni.hideLoading();
-
-                // 保存到本地存储
-                try {
-                    const applications = uni.getStorageSync('studentApplications') || [];
-                    applications.unshift(applicationData);
-                    uni.setStorageSync('studentApplications', applications);
-
-                    // 清除保存的草稿
-                    try {
-                        uni.removeStorageSync('studentApplicationDraft');
-                        console.log('草稿已清除');
-                    } catch (e) {
-                        console.log('CatchClause', e);
-                        console.log('CatchClause', e);
-                        console.error('清除草稿失败:', e);
+/**
+ * 加载草稿
+ */
+const loadDraft = () => {
+    try {
+        const draft = uni.getStorageSync('studentApplicationDraft');
+        if (draft) {
+            // 询问是否加载草稿
+            uni.showModal({
+                title: '发现草稿',
+                content: '是否加载之前保存的草稿？',
+                success: (res) => {
+                    if (res.confirm) {
+                        applyDraft(draft);
                     }
-                    uni.showModal({
-                        title: '申请提交成功',
-                        content: '您的预约申请已提交，请等待审核结果。您可以在"待办流程"中查看申请状态。',
-                        showCancel: false,
-                        success: () => {
-                            uni.navigateBack();
-                        }
-                    });
-                } catch (error) {
-                    console.log('CatchClause', error);
-                    console.log('CatchClause', error);
-                    uni.showToast({
-                        title: '提交失败，请重试',
-                        icon: 'none'
-                    });
                 }
-            }, 2000);
-        },
-
-        // 阻止事件冒泡
-        stopPropagation() {
-            // 阻止事件冒泡
-        },
-
-        showLabPicker() {
-            this.setData({
-                labPickerOptions: this.labs,
-                tempLabIndex: this.labIndex === -1 ? 0 : this.labIndex,
-                showLabPickerModal: true
             });
-        },
+        }
+    } catch (error) {
+        console.log('CatchClause', error);
+        console.log('CatchClause', error);
+        console.error('加载草稿失败:', error);
+    }
+};
 
-        hideLabPicker() {
-            this.setData({
-                showLabPickerModal: false
+/**
+ * 应用草稿数据
+ */
+const applyDraft = (draft: any) => {
+    // 设置实验室
+    const _labIndex = labs.value.findIndex((lab) => lab.id === draft.labId);
+    if (_labIndex !== -1) {
+        labIndex.value = _labIndex;
+        selectedLab.value = labs.value[_labIndex];
+        maxStudents.value = labs.value[_labIndex].maxStudents;
+    }
+
+    // 设置申请类型
+    const _typeIndex = applicationTypes.value.findIndex((type) => type.id === draft.typeId);
+    if (_typeIndex !== -1) {
+        typeIndex.value = _typeIndex;
+        selectedType.value = applicationTypes.value[_typeIndex];
+    }
+
+    // 设置其他数据
+    selectedDate.value = draft.date || '';
+    startTime.value = draft.startTime || '';
+    endTime.value = draft.endTime || '';
+    studentCount.value = draft.studentCount || 1;
+    title.value = draft.title || '';
+    purpose.value = draft.purpose || '';
+    teacher.value = draft.teacher || '';
+    contact.value = draft.contact || '';
+    requirements.value = draft.requirements || '';
+    emergencyContact.value = draft.emergencyContact || '';
+    emergencyPhone.value = draft.emergencyPhone || '';
+    validateForm();
+    uni.showToast({
+        title: '草稿加载成功',
+        icon: 'success'
+    });
+};
+
+/**
+ * 保存草稿
+ */
+const saveDraft = () => {
+    try {
+        // 检查是否有必要的数据可以保存
+        if (!selectedLab.value && !selectedDate.value && !title.value && !purpose.value) {
+            uni.showToast({
+                title: '表单为空，无需保存',
+                icon: 'none'
             });
-        },
+            return;
+        }
+        const draft = {
+            labId: (selectedLab.value && selectedLab.value.id) || '',
+            date: selectedDate.value,
+            startTime: startTime.value,
+            endTime: endTime.value,
+            studentCount: studentCount.value,
+            typeId: (selectedType.value && selectedType.value.id) || '',
+            title: title.value,
+            purpose: purpose.value,
+            teacher: teacher.value,
+            contact: contact.value,
+            requirements: requirements.value,
+            emergencyContact: emergencyContact.value,
+            emergencyPhone: emergencyPhone.value,
+            saveTime: new Date().toISOString()
+        };
+        uni.setStorageSync('studentApplicationDraft', draft);
+        uni.showToast({
+            title: '草稿保存成功',
+            icon: 'success'
+        });
+    } catch (error) {
+        console.log('CatchClause', error);
+        console.log('CatchClause', error);
+        console.error('保存草稿失败:', error);
+        uni.showToast({
+            title: '保存失败',
+            icon: 'error'
+        });
+    }
+};
 
-        onLabPickerChange(e: any) {
-            const index = e.detail.value[0];
-            this.setData({
-                tempLabIndex: index
-            });
-        },
+// 初始化日期范围
+const initializeDates = () => {
+    const today = new Date();
+    const tomorrow = new Date(today);
+    tomorrow.setDate(today.getDate() + 1);
+    const _maxDate = new Date(today);
+    _maxDate.setDate(today.getDate() + 30); // 最多提前30天预约
 
-        confirmLabSelection() {
-            const lab = this.labPickerOptions[this.tempLabIndex];
-            const maxStudents = Math.min(lab.maxStudents || 80, 80);
-            this.setData(
-                {
-                    labIndex: this.tempLabIndex,
-                    selectedLab: lab,
-                    maxStudents,
-                    studentCount: Math.min(this.studentCount, maxStudents),
-                    showLabPickerModal: false
-                },
-                () => {
-                    this.validateForm();
-                }
-            );
-        },
+    minDate.value = formatDate(tomorrow);
+    maxDate.value = formatDate(_maxDate);
+};
 
-        showDatePicker() {
-            this.initDatePickerData(this.selectedDate);
-            this.setData({
-                showDateModal: true
-            });
-        },
+// 格式化日期
+const formatDate = (date: Date): string => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+};
 
-        hideDatePicker() {
-            this.setData({
-                showDateModal: false
-            });
-        },
+// 加载用户信息
+const loadUserInfo = () => {
+    try {
+        const userInfo = uni.getStorageSync('studentInfo');
+        if (userInfo && userInfo.phone) {
+            contact.value = userInfo.phone;
+        }
+    } catch (error) {
+        console.log('CatchClause', error);
+        console.log('CatchClause', error);
+        console.error('加载用户信息失败:', error);
+    }
+};
 
-        initDatePickerData(selectedDate: any = '') {
-            const today = new Date();
-            const startYear = today.getFullYear() - 2;
-            const years = [];
-            for (let i = 0; i <= 2026 - startYear; i++) {
-                years.push(startYear + i);
-            }
-            let year;
-            let month;
-            let day;
-            if (selectedDate) {
-                [year, month, day] = selectedDate.split('-').map(Number);
-            } else {
-                year = today.getFullYear();
-                month = today.getMonth() + 1;
-                day = today.getDate();
-            }
-            let months;
-            if (year === 2026) {
-                months = Array.from(
-                    {
-                        length: 9
-                    },
-                    (_, i) => i + 1
-                );
-                if (month > 9) {
-                    month = 9;
-                }
-            } else {
-                months = Array.from(
-                    {
-                        length: 12
-                    },
-                    (_, i) => i + 1
-                );
-            }
-            const days = Array.from(
-                {
-                    length: new Date(year, month, 0).getDate()
-                },
-                (_, i) => i + 1
-            );
-            const tempYearIndex = years.indexOf(year);
-            const tempMonthIndex = months.indexOf(month);
-            const tempDayIndex = days.indexOf(day);
-            this.setData({
-                years,
-                months,
-                days,
-                tempYearIndex,
-                tempMonthIndex,
-                tempDayIndex
-            });
-        },
+// 实验室选择
+const onLabChange = (e: any) => {
+    const index = e.detail.value;
+    const _selectedLab = labs.value[index];
+    labIndex.value = index;
+    selectedLab.value = _selectedLab;
+    maxStudents.value = _selectedLab.maxStudents;
+    studentCount.value = Math.min(studentCount.value, _selectedLab.maxStudents);
+    validateForm();
+};
 
-        onDatePickerChange(e: any) {
-            const [yearIdx, monthIdx, dayIdx] = e.detail.value;
-            const year = this.years[yearIdx];
-            let months;
-            if (year === 2026) {
-                months = Array.from(
-                    {
-                        length: 9
-                    },
-                    (_, i) => i + 1
-                );
-            } else {
-                months = Array.from(
-                    {
-                        length: 12
-                    },
-                    (_, i) => i + 1
-                );
-            }
-            let month = months[monthIdx];
-            const days = Array.from(
-                {
-                    length: new Date(year, month, 0).getDate()
-                },
-                (_, i) => i + 1
-            );
-            let tempDayIndex = dayIdx;
-            if (tempDayIndex >= days.length) {
-                tempDayIndex = days.length - 1;
-            }
-            this.setData({
-                tempYearIndex: yearIdx,
-                months,
-                tempMonthIndex: monthIdx,
-                days,
-                tempDayIndex
-            });
-        },
+// 日期选择
+const onDateChange = (e: any) => {
+    selectedDate.value = e.detail.value;
+    validateForm();
+};
 
-        confirmDatePicker() {
-            const year = this.years[this.tempYearIndex];
-            const month = this.months[this.tempMonthIndex];
-            const day = this.days[this.tempDayIndex];
-            const selectedDate = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-            this.setData(
-                {
-                    selectedDate,
-                    showDateModal: false
-                },
-                () => {
-                    this.validateForm();
-                }
-            );
-        },
+// 人数调整
+const decreaseCount = () => {
+    const count = Math.max(1, studentCount.value - 1);
+    studentCount.value = count;
+    validateForm();
+};
 
-        showStartTimePickerFun() {
-            this.setData({
-                showStartTimePicker: true
-            });
-        },
+const increaseCount = () => {
+    const count = Math.min(maxStudents.value, studentCount.value + 1);
+    studentCount.value = count;
+    validateForm();
+};
 
-        hideStartTimePicker() {
-            this.setData({
-                showStartTimePicker: false
-            });
-        },
+const onCountInput = (e: any) => {
+    const value = parseInt(e.detail.value) || 1;
+    const count = Math.max(1, Math.min(maxStudents.value, value));
+    studentCount.value = count;
+    validateForm();
+};
 
-        onStartTimeChange(e: any) {
-            const [hourIdx, minIdx] = e.detail.value;
-            this.setData({
-                startHourIndex: hourIdx,
-                startMinuteIndex: minIdx
-            });
-        },
+// 申请类型选择
+const onTypeChange = (e: any) => {
+    const index = e.detail.value;
+    typeIndex.value = index;
+    selectedType.value = applicationTypes.value[index];
+    validateForm();
+};
 
-        confirmStartTime() {
-            const hour = this.hours[this.startHourIndex];
-            const min = this.minutes[this.startMinuteIndex];
-            const startTime = `${String(hour).padStart(2, '0')}:${String(min).padStart(2, '0')}`;
-            this.setData(
-                {
-                    startTime,
-                    showStartTimePicker: false
-                },
-                () => {
-                    this.validateTimeRange();
-                }
-            );
-        },
+// 输入处理
+const onTitleInput = (e: any) => {
+    title.value = e.detail.value;
+    validateForm();
+};
 
-        showEndTimePickerFun() {
-            this.setData({
-                showEndTimePicker: true
-            });
-        },
+const onPurposeInput = (e: any) => {
+    purpose.value = e.detail.value;
+    validateForm();
+};
 
-        hideEndTimePicker() {
-            this.setData({
-                showEndTimePicker: false
-            });
-        },
+const onTeacherInput = (e: any) => {
+    teacher.value = e.detail.value;
+};
 
-        onEndTimeChange(e: any) {
-            const [hourIdx, minIdx] = e.detail.value;
-            this.setData({
-                endHourIndex: hourIdx,
-                endMinuteIndex: minIdx
-            });
-        },
+const onContactInput = (e: any) => {
+    contact.value = e.detail.value;
+    validateForm();
+};
 
-        confirmEndTime() {
-            const hour = this.hours[this.endHourIndex];
-            const min = this.minutes[this.endMinuteIndex];
-            const endTime = `${String(hour).padStart(2, '0')}:${String(min).padStart(2, '0')}`;
-            this.setData(
-                {
-                    endTime,
-                    showEndTimePicker: false
-                },
-                () => {
-                    this.validateTimeRange();
-                }
-            );
-        },
+const onRequirementsInput = (e: any) => {
+    requirements.value = e.detail.value;
+};
 
-        validateTimeRange() {
-            const { startTime, endTime } = this;
-            if (startTime && endTime) {
-                const [sh, sm] = startTime.split(':').map(Number);
-                const [eh, em] = endTime.split(':').map(Number);
-                const start = sh * 60 + sm;
-                const end = eh * 60 + em;
-                if (end <= start) {
-                    uni.showToast({
-                        title: '结束时间必须大于开始时间',
-                        icon: 'none'
-                    });
-                    this.setData(
-                        {
-                            endTime: ''
-                        },
-                        () => {
-                            this.validateForm();
-                        }
-                    );
-                } else {
-                    this.validateForm();
-                }
-            } else {
-                this.validateForm();
-            }
-        },
+const onEmergencyContactInput = (e: any) => {
+    emergencyContact.value = e.detail.value;
+};
 
-        showTypePicker() {
-            this.setData({
-                typePickerOptions: this.applicationTypes,
-                tempTypeIndex: this.typeIndex === -1 ? 0 : this.typeIndex,
-                showTypePickerModal: true
-            });
-        },
+const onEmergencyPhoneInput = (e: any) => {
+    emergencyPhone.value = e.detail.value;
+};
 
-        hideTypePicker() {
-            this.setData({
-                showTypePickerModal: false
-            });
-        },
+// 协议相关
+const onAgreementChange = (e: any) => {
+    agreed.value = e.detail.value.includes('agree');
+    validateForm();
+};
 
-        onTypePickerChange(e: any) {
-            const index = e.detail.value[0];
-            this.setData({
-                tempTypeIndex: index
-            });
-        },
+const viewAgreement = () => {
+    showAgreement.value = true;
+};
 
-        confirmTypePicker() {
-            const type = this.typePickerOptions[this.tempTypeIndex];
-            this.setData(
-                {
-                    typeIndex: this.tempTypeIndex,
-                    selectedType: type,
-                    showTypePickerModal: false
-                },
-                () => {
-                    this.validateForm();
-                }
-            );
+const closeAgreement = () => {
+    showAgreement.value = false;
+};
+
+// 表单验证
+const validateForm = () => {
+    const _selectedLab = selectedLab.value;
+    const _selectedDate = selectedDate.value;
+    const _startTime = startTime.value;
+    const _endTime = endTime.value;
+    const _selectedType = selectedType.value;
+    const _title = title.value;
+    const _purpose = purpose.value;
+    const _contact = contact.value;
+    const _agreed = agreed.value;
+    let _errorLab = '';
+    let _errorDate = '';
+    let _errorTime = '';
+    let _errorType = '';
+    let _errorTitle = '';
+    let _errorPurpose = '';
+    let _errorContact = '';
+    let _errorAgreement = '';
+    const isPhoneValid = /^1[3-9]\d{9}$/.test(_contact);
+    if (!_selectedLab) {
+        _errorLab = '请选择实验室';
+    }
+    if (!_selectedDate) {
+        _errorDate = '请选择预约日期';
+    }
+    if (!_startTime || !_endTime) {
+        _errorTime = '请选择时间段';
+    } else {
+        const [sh, sm] = _startTime.split(':').map(Number);
+        const [eh, em] = _endTime.split(':').map(Number);
+        if (eh * 60 + em <= sh * 60 + sm) {
+            _errorTime = '结束时间必须大于开始时间';
         }
     }
-});
+    if (!_selectedType) {
+        _errorType = '请选择申请类型';
+    }
+    if (!_title.trim()) {
+        _errorTitle = '请输入申请主题';
+    }
+    if (!_purpose.trim()) {
+        _errorPurpose = '请输入使用目的';
+    }
+    if (!_contact) _errorContact = '请输入手机号';
+    else if (!isPhoneValid) {
+        _errorContact = '请输入有效的手机号';
+    }
+    if (!_agreed) {
+        _errorAgreement = '请阅读并同意实验室使用协议';
+    }
+    const _canSubmit = !_errorLab && !_errorDate && !_errorTime && !_errorType && !_errorTitle && !_errorPurpose && !_errorContact && !_errorAgreement;
+    canSubmit.value = _canSubmit;
+    errorLab.value = _errorLab;
+    errorDate.value = _errorDate;
+    errorTime.value = _errorTime;
+    errorType.value = _errorType;
+    errorTitle.value = _errorTitle;
+    errorPurpose.value = _errorPurpose;
+    errorContact.value = _errorContact;
+    errorAgreement.value = _errorAgreement;
+};
+
+// 提交申请
+const submitApplication = () => {
+    if (!canSubmit.value) {
+        uni.showToast({
+            title: '请完善申请信息',
+            icon: 'none'
+        });
+        // 自动滚动到第一个未填写项
+        const _selectedLab = selectedLab.value;
+        const _selectedDate = selectedDate.value;
+        const _startTime = startTime.value;
+        const _endTime = endTime.value;
+        const _selectedType = selectedType.value;
+        const _title = title.value;
+        const _purpose = purpose.value;
+        const _contact = contact.value;
+        const _agreed = agreed.value;
+        let targetId = '';
+        if (!_selectedLab) targetId = 'labItem';
+        else if (!_selectedDate) targetId = 'dateItem';
+        else if (!_startTime || !_endTime) targetId = 'timeItem';
+        else if (!_selectedType) targetId = 'typeItem';
+        else if (!_title.trim()) targetId = 'titleItem';
+        else if (!_purpose.trim()) targetId = 'purposeItem';
+        else if (!/^1[3-9]\d{9}$/.test(_contact)) targetId = 'contactItem';
+        else if (!_agreed) {
+            targetId = 'formScroll';
+        }
+        if (targetId) {
+            uni.pageScrollTo({
+                selector: `#${targetId}`,
+                duration: 300
+            });
+        }
+        return;
+    }
+
+    // 获取当前登录学生信息
+    const currentStudent = uni.getStorageSync('studentInfo');
+    const applicationData = {
+        id: 'app_' + Date.now(),
+        lab: selectedLab.value,
+        date: selectedDate.value,
+        startTime: startTime.value,
+        endTime: endTime.value,
+        studentCount: studentCount.value,
+        type: selectedType.value,
+        title: title.value,
+        purpose: purpose.value,
+        teacher: teacher.value,
+        contact: contact.value,
+        requirements: requirements.value,
+        emergencyContact: emergencyContact.value,
+        emergencyPhone: emergencyPhone.value,
+        status: 'pending',
+        statusText: '待审核',
+        submitTime: new Date().toISOString(),
+        applicant: (currentStudent && currentStudent.name) || '未知',
+        studentId: (currentStudent && currentStudent.studentId) || '',
+        // 添加学生ID
+        studentName: (currentStudent && currentStudent.name) || '未知' // 添加学生姓名
+    };
+    uni.showLoading({
+        title: '提交中...'
+    });
+
+    // 模拟提交请求
+    setTimeout(() => {
+        uni.hideLoading();
+
+        // 保存到本地存储
+        try {
+            const applications = uni.getStorageSync('studentApplications') || [];
+            applications.unshift(applicationData);
+            uni.setStorageSync('studentApplications', applications);
+
+            // 清除保存的草稿
+            try {
+                uni.removeStorageSync('studentApplicationDraft');
+                console.log('草稿已清除');
+            } catch (e) {
+                console.log('CatchClause', e);
+                console.log('CatchClause', e);
+                console.error('清除草稿失败:', e);
+            }
+            uni.showModal({
+                title: '申请提交成功',
+                content: '您的预约申请已提交，请等待审核结果。您可以在"待办流程"中查看申请状态。',
+                showCancel: false,
+                success: () => {
+                    uni.navigateBack();
+                }
+            });
+        } catch (error) {
+            console.log('CatchClause', error);
+            console.log('CatchClause', error);
+            uni.showToast({
+                title: '提交失败，请重试',
+                icon: 'none'
+            });
+        }
+    }, 2000);
+};
+
+// 阻止事件冒泡
+const stopPropagation = () => {
+    // 阻止事件冒泡
+};
+
+const showLabPicker = () => {
+    labPickerOptions.value = labs.value;
+    tempLabIndex.value = labIndex.value === -1 ? 0 : labIndex.value;
+    showLabPickerModal.value = true;
+};
+
+const hideLabPicker = () => {
+    showLabPickerModal.value = false;
+};
+
+const onLabPickerChange = (e: any) => {
+    const index = e.detail.value[0];
+    tempLabIndex.value = index;
+};
+
+const confirmLabSelection = () => {
+    const lab = labPickerOptions.value[tempLabIndex.value];
+    const _maxStudents = Math.min(lab.maxStudents || 80, 80);
+    labIndex.value = tempLabIndex.value;
+    selectedLab.value = lab;
+    maxStudents.value = _maxStudents;
+    studentCount.value = Math.min(studentCount.value, _maxStudents);
+    showLabPickerModal.value = false;
+    validateForm();
+};
+
+const showDatePicker = () => {
+    initDatePickerData(selectedDate.value);
+    showDateModal.value = true;
+};
+
+const hideDatePicker = () => {
+    showDateModal.value = false;
+};
+
+const initDatePickerData = (selDate: any = '') => {
+    const today = new Date();
+    const startYear = today.getFullYear() - 2;
+    const _years = [];
+    for (let i = 0; i <= 2026 - startYear; i++) {
+        _years.push(startYear + i);
+    }
+    let year;
+    let month;
+    let day;
+    if (selDate) {
+        [year, month, day] = selDate.split('-').map(Number);
+    } else {
+        year = today.getFullYear();
+        month = today.getMonth() + 1;
+        day = today.getDate();
+    }
+    let _months;
+    if (year === 2026) {
+        _months = Array.from(
+            {
+                length: 9
+            },
+            (_, i) => i + 1
+        );
+        if (month > 9) {
+            month = 9;
+        }
+    } else {
+        _months = Array.from(
+            {
+                length: 12
+            },
+            (_, i) => i + 1
+        );
+    }
+    const _days = Array.from(
+        {
+            length: new Date(year, month, 0).getDate()
+        },
+        (_, i) => i + 1
+    );
+    const _tempYearIndex = _years.indexOf(year);
+    const _tempMonthIndex = _months.indexOf(month);
+    const _tempDayIndex = _days.indexOf(day);
+    years.value = _years;
+    months.value = _months;
+    days.value = _days;
+    tempYearIndex.value = _tempYearIndex;
+    tempMonthIndex.value = _tempMonthIndex;
+    tempDayIndex.value = _tempDayIndex;
+};
+
+const onDatePickerChange = (e: any) => {
+    const [yearIdx, monthIdx, dayIdx] = e.detail.value;
+    const year = years.value[yearIdx];
+    let _months;
+    if (year === 2026) {
+        _months = Array.from(
+            {
+                length: 9
+            },
+            (_, i) => i + 1
+        );
+    } else {
+        _months = Array.from(
+            {
+                length: 12
+            },
+            (_, i) => i + 1
+        );
+    }
+    let month = _months[monthIdx];
+    const _days = Array.from(
+        {
+            length: new Date(year, month, 0).getDate()
+        },
+        (_, i) => i + 1
+    );
+    let _tempDayIndex = dayIdx;
+    if (_tempDayIndex >= _days.length) {
+        _tempDayIndex = _days.length - 1;
+    }
+    tempYearIndex.value = yearIdx;
+    months.value = _months;
+    tempMonthIndex.value = monthIdx;
+    days.value = _days;
+    tempDayIndex.value = _tempDayIndex;
+};
+
+const confirmDatePicker = () => {
+    const year = years.value[tempYearIndex.value];
+    const month = months.value[tempMonthIndex.value];
+    const day = days.value[tempDayIndex.value];
+    const _selectedDate = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+    selectedDate.value = _selectedDate;
+    showDateModal.value = false;
+    validateForm();
+};
+
+const showStartTimePickerFun = () => {
+    showStartTimePicker.value = true;
+};
+
+const hideStartTimePicker = () => {
+    showStartTimePicker.value = false;
+};
+
+const onStartTimeChange = (e: any) => {
+    const [hourIdx, minIdx] = e.detail.value;
+    startHourIndex.value = hourIdx;
+    startMinuteIndex.value = minIdx;
+};
+
+const confirmStartTime = () => {
+    const hour = hours.value[startHourIndex.value];
+    const min = minutes.value[startMinuteIndex.value];
+    const _startTime = `${String(hour).padStart(2, '0')}:${String(min).padStart(2, '0')}`;
+    startTime.value = _startTime;
+    showStartTimePicker.value = false;
+    validateTimeRange();
+};
+
+const showEndTimePickerFun = () => {
+    showEndTimePicker.value = true;
+};
+
+const hideEndTimePicker = () => {
+    showEndTimePicker.value = false;
+};
+
+const onEndTimeChange = (e: any) => {
+    const [hourIdx, minIdx] = e.detail.value;
+    endHourIndex.value = hourIdx;
+    endMinuteIndex.value = minIdx;
+};
+
+const confirmEndTime = () => {
+    const hour = hours.value[endHourIndex.value];
+    const min = minutes.value[endMinuteIndex.value];
+    const _endTime = `${String(hour).padStart(2, '0')}:${String(min).padStart(2, '0')}`;
+    endTime.value = _endTime;
+    showEndTimePicker.value = false;
+    validateTimeRange();
+};
+
+const validateTimeRange = () => {
+    const _startTime = startTime.value;
+    const _endTime = endTime.value;
+    if (_startTime && _endTime) {
+        const [sh, sm] = _startTime.split(':').map(Number);
+        const [eh, em] = _endTime.split(':').map(Number);
+        const start = sh * 60 + sm;
+        const end = eh * 60 + em;
+        if (end <= start) {
+            uni.showToast({
+                title: '结束时间必须大于开始时间',
+                icon: 'none'
+            });
+            endTime.value = '';
+            validateForm();
+        } else {
+            validateForm();
+        }
+    } else {
+        validateForm();
+    }
+};
+
+const showTypePicker = () => {
+    typePickerOptions.value = applicationTypes.value;
+    tempTypeIndex.value = typeIndex.value === -1 ? 0 : typeIndex.value;
+    showTypePickerModal.value = true;
+};
+
+const hideTypePicker = () => {
+    showTypePickerModal.value = false;
+};
+
+const onTypePickerChange = (e: any) => {
+    const index = e.detail.value[0];
+    tempTypeIndex.value = index;
+};
+
+const confirmTypePicker = () => {
+    const type = typePickerOptions.value[tempTypeIndex.value];
+    typeIndex.value = tempTypeIndex.value;
+    selectedType.value = type;
+    showTypePickerModal.value = false;
+    validateForm();
+};
 </script>
 <style>
 @import './student-reservation-apply.css';

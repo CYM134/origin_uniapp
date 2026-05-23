@@ -323,608 +323,518 @@
     </view>
 </template>
 
-<script lang="ts">
-import zpMixins from '@/uni_modules/zp-mixins/index';
-import navigationBar from '@/components/navigation-bar/navigation-bar';
+<script setup lang="ts">
+import { ref } from 'vue';
+import { onMounted } from 'vue';
+import navigationBar from '@/components/navigation-bar/navigation-bar.vue';
 // admin-approval-records.ts
-export default zpMixins.extend({
-    components: {
-        navigationBar
+
+// 筛选选项
+const statusOptions = ref<any[]>(['全部状态', '已通过', '已拒绝']);
+
+const statusIndex = ref<number>(0);
+
+const labOptions = ref<any[]>([
+    {
+        id: '0',
+        name: '全部实验室'
     },
-    data() {
-        return {
-            // 筛选选项
-            statusOptions: ['全部状态', '已通过', '已拒绝'],
-
-            statusIndex: 0,
-
-            labOptions: [
-                {
-                    id: '0',
-                    name: '全部实验室'
-                },
-                {
-                    id: '1',
-                    name: '国际课程实验室'
-                },
-                {
-                    id: '2',
-                    name: 'IBC实验中心'
-                },
-                {
-                    id: '3',
-                    name: '互联网+新商科实验室'
-                }
-            ],
-
-            labIndex: 0,
-            startDate: '',
-            endDate: '',
-
-            // 自定义选择器控制
-            showStatusPickerModal: false,
-
-            showLabPickerModal: false,
-            showStartDatePickerModal: false,
-            showEndDatePickerModal: false,
-
-            // 临时存储选择的索引
-            tempStatusIndex: 0,
-
-            tempLabIndex: 0,
-
-            // 日期选择器数据
-            years: [] as number[],
-
-            months: [] as number[],
-            startDays: [] as number[],
-            endDays: [] as number[],
-            startYearIndex: 0,
-            startMonthIndex: 0,
-            startDayIndex: 0,
-            endYearIndex: 0,
-            endMonthIndex: 0,
-            endDayIndex: 0,
-
-            // 搜索
-            searchKeyword: '',
-
-            // 统计信息
-            stats: {
-                total: 0,
-                approved: 0,
-                rejected: 0
-            },
-
-            // 记录列表
-            records: [
-                {
-                    id: 'R20230001',
-                    applicant: '张三',
-                    applicantType: '教师',
-                    contact: '13800138000',
-                    labId: '1',
-                    labName: '互联网+新商科实验室',
-                    date: '2023-11-15',
-                    timeSlot: '08:00-10:00',
-                    purpose: '网络协议分析实验，需要使用实验室的路由器和交换机设备进行数据包捕获和分析。',
-                    status: '已通过',
-                    applyTime: '2023-11-10 14:30:25',
-                    approvalTime: '2023-11-11 09:15:36',
-                    attachments: [
-                        {
-                            name: '实验计划.docx',
-                            url: 'https://example.com/plan.docx'
-                        }
-                    ]
-                },
-                {
-                    id: 'R20230002',
-                    applicant: '李四',
-                    applicantType: '学生',
-                    contact: '13900139000',
-                    labId: '2',
-                    labName: '国际课程实验室',
-                    date: '2023-11-16',
-                    timeSlot: '14:00-16:00',
-                    purpose: '课程设计小组讨论，需要使用数据库进行项目开发讨论事宜。',
-                    status: '已通过',
-                    applyTime: '2023-11-09 10:15:36',
-                    approvalTime: '2023-11-10 09:20:15'
-                },
-                {
-                    id: 'R20230003',
-                    applicant: '王五',
-                    applicantType: '教师',
-                    contact: '13700137000',
-                    labId: '3',
-                    labName: '互联网+新商科实验室',
-                    date: '2023-11-17',
-                    timeSlot: '10:00-12:00',
-                    purpose: '深度学习模型训练，需要使用GPU工作站进行大规模数据处理。',
-                    status: '已拒绝',
-                    applyTime: '2023-11-11 16:45:12',
-                    approvalTime: '2023-11-12 11:30:45',
-                    rejectReason: '该时段实验室已被其他教师预约使用。而且该实验室没有算力。'
-                },
-                {
-                    id: 'R20230004',
-                    applicant: '赵六',
-                    applicantType: '学生',
-                    contact: '13600136000',
-                    labId: '1',
-                    labName: '国际课程实验室',
-                    date: '2023-11-18',
-                    timeSlot: '16:00-18:00',
-                    purpose: '毕业设计实验，需要搭建小型网络环境进行测试。',
-                    status: '已通过',
-                    applyTime: '2023-11-12 09:10:28',
-                    approvalTime: '2023-11-13 14:25:36'
-                },
-                {
-                    id: 'R20230005',
-                    applicant: '钱七',
-                    applicantType: '教师',
-                    contact: '13500135000',
-                    labId: '2',
-                    labName: '互联网+新商科实验室',
-                    date: '2023-11-19',
-                    timeSlot: '08:00-10:00',
-                    purpose: '数据库性能优化实验，需要使用实验室的服务器进行测试。',
-                    status: '已拒绝',
-                    applyTime: '2023-11-13 11:20:45',
-                    approvalTime: '2023-11-14 10:15:30',
-                    rejectReason: '申请信息不完整，请补充实验详细计划。'
-                },
-                {
-                    id: 'R20230006',
-                    applicant: '孙八',
-                    applicantType: '学生',
-                    contact: '13400134000',
-                    labId: '3',
-                    labName: '互联网+新商科实验室',
-                    date: '2023-11-20',
-                    timeSlot: '14:00-16:00',
-                    purpose: '机器学习算法实现，需要使用实验室的GPU工作站。',
-                    status: '已通过',
-                    applyTime: '2023-11-14 15:30:20',
-                    approvalTime: '2023-11-15 09:45:12'
-                }
-            ],
-
-            filteredRecords: [] as any[],
-
-            // 分页
-            pageSize: 10,
-
-            currentPage: 1,
-            hasMoreRecords: true,
-            isLoading: false,
-
-            // 详情弹窗
-            showDetailModal: false,
-
-            currentRecord: {} as any,
-            name: ''
-        };
+    {
+        id: '1',
+        name: '国际课程实验室'
     },
-    mounted() {
-        // 处理小程序 attached 生命周期
-        this.attached();
+    {
+        id: '2',
+        name: 'IBC实验中心'
     },
-    methods: {
-        attached() {
-            // 初始化过滤后的记录列表和统计信息
-            this.filterAndCountRecords();
-            // 初始化日期选择器数据
-            this.initDatePickerData();
-        },
+    {
+        id: '3',
+        name: '互联网+新商科实验室'
+    }
+]);
 
-        // 初始化日期选择器数据
-        initDatePickerData() {
-            const currentYear = new Date().getFullYear();
-            const years = [];
-            const months = [];
-            const days = [];
+const labIndex = ref<number>(0);
+const startDate = ref<string>('');
+const endDate = ref<string>('');
 
-            // 生成年份数据（从2023年到当前年份后2年）
-            for (let i = 2023; i <= currentYear + 2; i++) {
-                years.push(i);
-            }
+// 自定义选择器控制
+const showStatusPickerModal = ref<boolean>(false);
 
-            // 生成月份数据
-            for (let i = 1; i <= 12; i++) {
-                months.push(i);
-            }
+const showLabPickerModal = ref<boolean>(false);
+const showStartDatePickerModal = ref<boolean>(false);
+const showEndDatePickerModal = ref<boolean>(false);
 
-            // 生成天数数据（默认31天，后续会根据年月动态调整）
-            for (let i = 1; i <= 31; i++) {
-                days.push(i);
-            }
-            this.setData({
-                years,
-                months,
-                startDays: days,
-                endDays: days
-            });
+// 临时存储选择的索引
+const tempStatusIndex = ref<number>(0);
 
-            // 如果已有开始日期，设置对应的索引
-            if (this.startDate) {
-                this.setDateIndices(this.startDate, 'start');
-            }
+const tempLabIndex = ref<number>(0);
 
-            // 如果已有结束日期，设置对应的索引
-            if (this.endDate) {
-                this.setDateIndices(this.endDate, 'end');
-            }
-        },
+// 日期选择器数据
+const years = ref<number[]>([]);
 
-        // 设置日期索引
-        setDateIndices(dateStr: string, type: 'start' | 'end') {
-            const [year, month, day] = dateStr.split('-').map(Number);
-            const yearIndex = this.years.indexOf(year);
-            const monthIndex = this.months.indexOf(month);
+const months = ref<number[]>([]);
+const startDays = ref<number[]>([]);
+const endDays = ref<number[]>([]);
+const startYearIndex = ref<number>(0);
+const startMonthIndex = ref<number>(0);
+const startDayIndex = ref<number>(0);
+const endYearIndex = ref<number>(0);
+const endMonthIndex = ref<number>(0);
+const endDayIndex = ref<number>(0);
 
-            // 更新对应类型的天数
-            this.updateDays(year, month, type);
-            const dayIndex = (type === 'start' ? this.startDays : this.endDays).indexOf(day);
-            if (type === 'start') {
-                this.setData({
-                    startYearIndex: yearIndex >= 0 ? yearIndex : 0,
-                    startMonthIndex: monthIndex >= 0 ? monthIndex : 0,
-                    startDayIndex: dayIndex >= 0 ? dayIndex : 0
-                });
-            } else {
-                this.setData({
-                    endYearIndex: yearIndex >= 0 ? yearIndex : 0,
-                    endMonthIndex: monthIndex >= 0 ? monthIndex : 0,
-                    endDayIndex: dayIndex >= 0 ? dayIndex : 0
-                });
-            }
-        },
+// 搜索
+const searchKeyword = ref<string>('');
 
-        // 更新天数
-        updateDays(year: number, month: number, type: 'start' | 'end') {
-            let daysInMonth = 31;
-
-            // 根据月份确定天数
-            if (month === 4 || month === 6 || month === 9 || month === 11) {
-                daysInMonth = 30;
-            } else if (month === 2) {
-                // 判断是否闰年
-                daysInMonth = (year % 4 === 0 && year % 100 !== 0) || year % 400 === 0 ? 29 : 28;
-            }
-            const days = [];
-            for (let i = 1; i <= daysInMonth; i++) {
-                days.push(i);
-            }
-            if (type === 'start') {
-                this.setData({
-                    startDays: days
-                });
-            } else {
-                this.setData({
-                    endDays: days
-                });
-            }
-        },
-
-        // 显示状态选择器
-        showStatusPicker() {
-            this.setData({
-                showStatusPickerModal: true,
-                tempStatusIndex: this.statusIndex
-            });
-        },
-
-        // 隐藏状态选择器
-        hideStatusPicker() {
-            this.setData({
-                showStatusPickerModal: false
-            });
-        },
-
-        // 状态选择变化
-        onStatusPickerChange(e: any) {
-            this.setData({
-                tempStatusIndex: e.detail.value[0]
-            });
-        },
-
-        // 确认状态选择
-        confirmStatusPicker() {
-            this.setData(
-                {
-                    statusIndex: this.tempStatusIndex,
-                    showStatusPickerModal: false,
-                    currentPage: 1,
-                    hasMoreRecords: true
-                },
-                () => {
-                    this.filterAndCountRecords();
-                }
-            );
-        },
-
-        // 显示实验室选择器
-        showLabPicker() {
-            this.setData({
-                showLabPickerModal: true,
-                tempLabIndex: this.labIndex
-            });
-        },
-
-        // 隐藏实验室选择器
-        hideLabPicker() {
-            this.setData({
-                showLabPickerModal: false
-            });
-        },
-
-        // 实验室选择变化
-        onLabPickerChange(e: any) {
-            this.setData({
-                tempLabIndex: e.detail.value[0]
-            });
-        },
-
-        // 确认实验室选择
-        confirmLabPicker() {
-            this.setData(
-                {
-                    labIndex: this.tempLabIndex,
-                    showLabPickerModal: false,
-                    currentPage: 1,
-                    hasMoreRecords: true
-                },
-                () => {
-                    this.filterAndCountRecords();
-                }
-            );
-        },
-
-        // 显示开始日期选择器
-        showStartDatePicker() {
-            // 如果已有开始日期，设置对应的索引
-            if (this.startDate) {
-                this.setDateIndices(this.startDate, 'start');
-            }
-            this.setData({
-                showStartDatePickerModal: true
-            });
-        },
-
-        // 隐藏开始日期选择器
-        hideStartDatePicker() {
-            this.setData({
-                showStartDatePickerModal: false
-            });
-        },
-
-        // 开始日期选择变化
-        onStartDatePickerChange(e: any) {
-            const [yearIndex, monthIndex, dayIndex] = e.detail.value;
-            const year = this.years[yearIndex];
-            const month = this.months[monthIndex];
-
-            // 更新天数
-            this.updateDays(year, month, 'start');
-            this.setData({
-                startYearIndex: yearIndex,
-                startMonthIndex: monthIndex,
-                startDayIndex: dayIndex >= this.startDays.length ? 0 : dayIndex
-            });
-        },
-
-        // 确认开始日期选择
-        confirmStartDatePicker() {
-            const year = this.years[this.startYearIndex];
-            const month = this.months[this.startMonthIndex];
-            const day = this.startDays[this.startDayIndex];
-
-            // 格式化日期
-            const formattedMonth = month < 10 ? `0${month}` : `${month}`;
-            const formattedDay = day < 10 ? `0${day}` : `${day}`;
-            const dateStr = `${year}-${formattedMonth}-${formattedDay}`;
-            this.setData(
-                {
-                    startDate: dateStr,
-                    showStartDatePickerModal: false,
-                    currentPage: 1,
-                    hasMoreRecords: true
-                },
-                () => {
-                    this.filterAndCountRecords();
-                }
-            );
-        },
-
-        // 显示结束日期选择器
-        showEndDatePicker() {
-            // 如果已有结束日期，设置对应的索引
-            if (this.endDate) {
-                this.setDateIndices(this.endDate, 'end');
-            }
-            this.setData({
-                showEndDatePickerModal: true
-            });
-        },
-
-        // 隐藏结束日期选择器
-        hideEndDatePicker() {
-            this.setData({
-                showEndDatePickerModal: false
-            });
-        },
-
-        // 结束日期选择变化
-        onEndDatePickerChange(e: any) {
-            const [yearIndex, monthIndex, dayIndex] = e.detail.value;
-            const year = this.years[yearIndex];
-            const month = this.months[monthIndex];
-
-            // 更新天数
-            this.updateDays(year, month, 'end');
-            this.setData({
-                endYearIndex: yearIndex,
-                endMonthIndex: monthIndex,
-                endDayIndex: dayIndex >= this.endDays.length ? 0 : dayIndex
-            });
-        },
-
-        // 确认结束日期选择
-        confirmEndDatePicker() {
-            const year = this.years[this.endYearIndex];
-            const month = this.months[this.endMonthIndex];
-            const day = this.endDays[this.endDayIndex];
-
-            // 格式化日期
-            const formattedMonth = month < 10 ? `0${month}` : `${month}`;
-            const formattedDay = day < 10 ? `0${day}` : `${day}`;
-            const dateStr = `${year}-${formattedMonth}-${formattedDay}`;
-            this.setData(
-                {
-                    endDate: dateStr,
-                    showEndDatePickerModal: false,
-                    currentPage: 1,
-                    hasMoreRecords: true
-                },
-                () => {
-                    this.filterAndCountRecords();
-                }
-            );
-        },
-
-        // 搜索输入
-        onSearchInput(e: any) {
-            this.setData({
-                searchKeyword: e.detail.value
-            });
-        },
-
-        // 搜索记录
-        searchRecords() {
-            this.setData({
-                currentPage: 1,
-                hasMoreRecords: true
-            });
-            this.filterAndCountRecords();
-        },
-
-        // 过滤和统计记录
-        filterAndCountRecords() {
-            const { records, statusIndex, labIndex, startDate, endDate, searchKeyword, statusOptions, labOptions, pageSize, currentPage } = this;
-
-            // 应用所有筛选条件
-            let filtered = [...records];
-
-            // 按状态筛选
-            if (statusIndex > 0) {
-                const status = statusOptions[statusIndex];
-                filtered = filtered.filter((item) => item.status === status);
-            }
-
-            // 按实验室筛选
-            if (labIndex > 0) {
-                const labId = labOptions[labIndex].id;
-                filtered = filtered.filter((item) => item.labId === labId);
-            }
-
-            // 按日期范围筛选
-            if (startDate && endDate) {
-                filtered = filtered.filter((item) => {
-                    return item.date >= startDate && item.date <= endDate;
-                });
-            } else if (startDate) {
-                filtered = filtered.filter((item) => item.date >= startDate);
-            } else if (endDate) {
-                filtered = filtered.filter((item) => item.date <= endDate);
-            }
-
-            // 按关键词搜索
-            if (searchKeyword) {
-                const keyword = searchKeyword.toLowerCase();
-                filtered = filtered.filter((item) => {
-                    return item.applicant.toLowerCase().includes(keyword) || item.id.toLowerCase().includes(keyword);
-                });
-            }
-
-            // 计算统计信息
-            const total = filtered.length;
-            const approved = filtered.filter((item) => item.status === '已通过').length;
-            const rejected = filtered.filter((item) => item.status === '已拒绝').length;
-
-            // 应用分页
-            const paged = filtered.slice(0, currentPage * pageSize);
-            const hasMore = paged.length < filtered.length;
-
-            // 更新数据
-            this.setData({
-                filteredRecords: paged,
-                hasMoreRecords: hasMore,
-                stats: {
-                    total,
-                    approved,
-                    rejected
-                }
-            });
-        },
-
-        // 加载更多记录
-        loadMoreRecords() {
-            if (!this.hasMoreRecords || this.isLoading) {
-                return;
-            }
-            this.setData({
-                isLoading: true
-            });
-
-            // 模拟加载延迟
-            setTimeout(() => {
-                this.setData(
-                    {
-                        currentPage: this.currentPage + 1,
-                        isLoading: false
-                    },
-                    () => {
-                        this.filterAndCountRecords();
-                    }
-                );
-            }, 500);
-        },
-
-        // 显示记录详情
-        showRecordDetail(e: any) {
-            const id = e.currentTarget.dataset.id;
-            const record = this.records.find((item) => item.id === id);
-            if (record) {
-                this.setData({
-                    showDetailModal: true,
-                    currentRecord: record
-                });
-            }
-        },
-
-        // 隐藏详情弹窗
-        hideDetailModal() {
-            this.setData({
-                showDetailModal: false
-            });
-        },
-
-        // 预览附件
-        previewAttachment(e: any) {
-            const url = e.currentTarget.dataset.url;
-
-            // 实际开发中可能需要下载文件后预览
-            uni.showToast({
-                title: '附件预览功能开发中',
-                icon: 'none'
-            });
-        }
-    },
-    created: function () {}
+// 统计信息
+const stats = ref<any>({
+    total: 0,
+    approved: 0,
+    rejected: 0
 });
+
+// 记录列表
+const records = ref<any[]>([
+    {
+        id: 'R20230001',
+        applicant: '张三',
+        applicantType: '教师',
+        contact: '13800138000',
+        labId: '1',
+        labName: '互联网+新商科实验室',
+        date: '2023-11-15',
+        timeSlot: '08:00-10:00',
+        purpose: '网络协议分析实验，需要使用实验室的路由器和交换机设备进行数据包捕获和分析。',
+        status: '已通过',
+        applyTime: '2023-11-10 14:30:25',
+        approvalTime: '2023-11-11 09:15:36',
+        attachments: [
+            {
+                name: '实验计划.docx',
+                url: 'https://example.com/plan.docx'
+            }
+        ]
+    },
+    {
+        id: 'R20230002',
+        applicant: '李四',
+        applicantType: '学生',
+        contact: '13900139000',
+        labId: '2',
+        labName: '国际课程实验室',
+        date: '2023-11-16',
+        timeSlot: '14:00-16:00',
+        purpose: '课程设计小组讨论，需要使用数据库进行项目开发讨论事宜。',
+        status: '已通过',
+        applyTime: '2023-11-09 10:15:36',
+        approvalTime: '2023-11-10 09:20:15'
+    },
+    {
+        id: 'R20230003',
+        applicant: '王五',
+        applicantType: '教师',
+        contact: '13700137000',
+        labId: '3',
+        labName: '互联网+新商科实验室',
+        date: '2023-11-17',
+        timeSlot: '10:00-12:00',
+        purpose: '深度学习模型训练，需要使用GPU工作站进行大规模数据处理。',
+        status: '已拒绝',
+        applyTime: '2023-11-11 16:45:12',
+        approvalTime: '2023-11-12 11:30:45',
+        rejectReason: '该时段实验室已被其他教师预约使用。而且该实验室没有算力。'
+    },
+    {
+        id: 'R20230004',
+        applicant: '赵六',
+        applicantType: '学生',
+        contact: '13600136000',
+        labId: '1',
+        labName: '国际课程实验室',
+        date: '2023-11-18',
+        timeSlot: '16:00-18:00',
+        purpose: '毕业设计实验，需要搭建小型网络环境进行测试。',
+        status: '已通过',
+        applyTime: '2023-11-12 09:10:28',
+        approvalTime: '2023-11-13 14:25:36'
+    },
+    {
+        id: 'R20230005',
+        applicant: '钱七',
+        applicantType: '教师',
+        contact: '13500135000',
+        labId: '2',
+        labName: '互联网+新商科实验室',
+        date: '2023-11-19',
+        timeSlot: '08:00-10:00',
+        purpose: '数据库性能优化实验，需要使用实验室的服务器进行测试。',
+        status: '已拒绝',
+        applyTime: '2023-11-13 11:20:45',
+        approvalTime: '2023-11-14 10:15:30',
+        rejectReason: '申请信息不完整，请补充实验详细计划。'
+    },
+    {
+        id: 'R20230006',
+        applicant: '孙八',
+        applicantType: '学生',
+        contact: '13400134000',
+        labId: '3',
+        labName: '互联网+新商科实验室',
+        date: '2023-11-20',
+        timeSlot: '14:00-16:00',
+        purpose: '机器学习算法实现，需要使用实验室的GPU工作站。',
+        status: '已通过',
+        applyTime: '2023-11-14 15:30:20',
+        approvalTime: '2023-11-15 09:45:12'
+    }
+]);
+
+const filteredRecords = ref<any[]>([]);
+
+// 分页
+const pageSize = ref<number>(10);
+
+const currentPage = ref<number>(1);
+const hasMoreRecords = ref<boolean>(true);
+const isLoading = ref<boolean>(false);
+
+// 详情弹窗
+const showDetailModal = ref<boolean>(false);
+
+const currentRecord = ref<any>({});
+const name = ref<string>('');
+
+onMounted(() => {
+    // 处理小程序 attached 生命周期
+    // 初始化过滤后的记录列表和统计信息
+    filterAndCountRecords();
+    // 初始化日期选择器数据
+    initDatePickerData();
+});
+
+// 初始化日期选择器数据
+const initDatePickerData = () => {
+    const currentYear = new Date().getFullYear();
+    const yearsArr: number[] = [];
+    const monthsArr: number[] = [];
+    const daysArr: number[] = [];
+
+    // 生成年份数据（从2023年到当前年份后2年）
+    for (let i = 2023; i <= currentYear + 2; i++) {
+        yearsArr.push(i);
+    }
+
+    // 生成月份数据
+    for (let i = 1; i <= 12; i++) {
+        monthsArr.push(i);
+    }
+
+    // 生成天数数据（默认31天，后续会根据年月动态调整）
+    for (let i = 1; i <= 31; i++) {
+        daysArr.push(i);
+    }
+    years.value = yearsArr;
+    months.value = monthsArr;
+    startDays.value = daysArr;
+    endDays.value = daysArr;
+
+    // 如果已有开始日期，设置对应的索引
+    if (startDate.value) {
+        setDateIndices(startDate.value, 'start');
+    }
+
+    // 如果已有结束日期，设置对应的索引
+    if (endDate.value) {
+        setDateIndices(endDate.value, 'end');
+    }
+};
+
+// 设置日期索引
+const setDateIndices = (dateStr: string, type: 'start' | 'end') => {
+    const [year, month, day] = dateStr.split('-').map(Number);
+    const yearIndex = years.value.indexOf(year);
+    const monthIndex = months.value.indexOf(month);
+
+    // 更新对应类型的天数
+    updateDays(year, month, type);
+    const dayIndex = (type === 'start' ? startDays.value : endDays.value).indexOf(day);
+    if (type === 'start') {
+        startYearIndex.value = yearIndex >= 0 ? yearIndex : 0;
+        startMonthIndex.value = monthIndex >= 0 ? monthIndex : 0;
+        startDayIndex.value = dayIndex >= 0 ? dayIndex : 0;
+    } else {
+        endYearIndex.value = yearIndex >= 0 ? yearIndex : 0;
+        endMonthIndex.value = monthIndex >= 0 ? monthIndex : 0;
+        endDayIndex.value = dayIndex >= 0 ? dayIndex : 0;
+    }
+};
+
+// 更新天数
+const updateDays = (year: number, month: number, type: 'start' | 'end') => {
+    let daysInMonth = 31;
+
+    // 根据月份确定天数
+    if (month === 4 || month === 6 || month === 9 || month === 11) {
+        daysInMonth = 30;
+    } else if (month === 2) {
+        // 判断是否闰年
+        daysInMonth = (year % 4 === 0 && year % 100 !== 0) || year % 400 === 0 ? 29 : 28;
+    }
+    const daysArr: number[] = [];
+    for (let i = 1; i <= daysInMonth; i++) {
+        daysArr.push(i);
+    }
+    if (type === 'start') {
+        startDays.value = daysArr;
+    } else {
+        endDays.value = daysArr;
+    }
+};
+
+// 显示状态选择器
+const showStatusPicker = () => {
+    showStatusPickerModal.value = true;
+    tempStatusIndex.value = statusIndex.value;
+};
+
+// 隐藏状态选择器
+const hideStatusPicker = () => {
+    showStatusPickerModal.value = false;
+};
+
+// 状态选择变化
+const onStatusPickerChange = (e: any) => {
+    tempStatusIndex.value = e.detail.value[0];
+};
+
+// 确认状态选择
+const confirmStatusPicker = () => {
+    statusIndex.value = tempStatusIndex.value;
+    showStatusPickerModal.value = false;
+    currentPage.value = 1;
+    hasMoreRecords.value = true;
+    filterAndCountRecords();
+};
+
+// 显示实验室选择器
+const showLabPicker = () => {
+    showLabPickerModal.value = true;
+    tempLabIndex.value = labIndex.value;
+};
+
+// 隐藏实验室选择器
+const hideLabPicker = () => {
+    showLabPickerModal.value = false;
+};
+
+// 实验室选择变化
+const onLabPickerChange = (e: any) => {
+    tempLabIndex.value = e.detail.value[0];
+};
+
+// 确认实验室选择
+const confirmLabPicker = () => {
+    labIndex.value = tempLabIndex.value;
+    showLabPickerModal.value = false;
+    currentPage.value = 1;
+    hasMoreRecords.value = true;
+    filterAndCountRecords();
+};
+
+// 显示开始日期选择器
+const showStartDatePicker = () => {
+    // 如果已有开始日期，设置对应的索引
+    if (startDate.value) {
+        setDateIndices(startDate.value, 'start');
+    }
+    showStartDatePickerModal.value = true;
+};
+
+// 隐藏开始日期选择器
+const hideStartDatePicker = () => {
+    showStartDatePickerModal.value = false;
+};
+
+// 开始日期选择变化
+const onStartDatePickerChange = (e: any) => {
+    const [yearIndex, monthIndex, dayIndex] = e.detail.value;
+    const year = years.value[yearIndex];
+    const month = months.value[monthIndex];
+
+    // 更新天数
+    updateDays(year, month, 'start');
+    startYearIndex.value = yearIndex;
+    startMonthIndex.value = monthIndex;
+    startDayIndex.value = dayIndex >= startDays.value.length ? 0 : dayIndex;
+};
+
+// 确认开始日期选择
+const confirmStartDatePicker = () => {
+    const year = years.value[startYearIndex.value];
+    const month = months.value[startMonthIndex.value];
+    const day = startDays.value[startDayIndex.value];
+
+    // 格式化日期
+    const formattedMonth = month < 10 ? `0${month}` : `${month}`;
+    const formattedDay = day < 10 ? `0${day}` : `${day}`;
+    const dateStr = `${year}-${formattedMonth}-${formattedDay}`;
+    startDate.value = dateStr;
+    showStartDatePickerModal.value = false;
+    currentPage.value = 1;
+    hasMoreRecords.value = true;
+    filterAndCountRecords();
+};
+
+// 显示结束日期选择器
+const showEndDatePicker = () => {
+    // 如果已有结束日期，设置对应的索引
+    if (endDate.value) {
+        setDateIndices(endDate.value, 'end');
+    }
+    showEndDatePickerModal.value = true;
+};
+
+// 隐藏结束日期选择器
+const hideEndDatePicker = () => {
+    showEndDatePickerModal.value = false;
+};
+
+// 结束日期选择变化
+const onEndDatePickerChange = (e: any) => {
+    const [yearIndex, monthIndex, dayIndex] = e.detail.value;
+    const year = years.value[yearIndex];
+    const month = months.value[monthIndex];
+
+    // 更新天数
+    updateDays(year, month, 'end');
+    endYearIndex.value = yearIndex;
+    endMonthIndex.value = monthIndex;
+    endDayIndex.value = dayIndex >= endDays.value.length ? 0 : dayIndex;
+};
+
+// 确认结束日期选择
+const confirmEndDatePicker = () => {
+    const year = years.value[endYearIndex.value];
+    const month = months.value[endMonthIndex.value];
+    const day = endDays.value[endDayIndex.value];
+
+    // 格式化日期
+    const formattedMonth = month < 10 ? `0${month}` : `${month}`;
+    const formattedDay = day < 10 ? `0${day}` : `${day}`;
+    const dateStr = `${year}-${formattedMonth}-${formattedDay}`;
+    endDate.value = dateStr;
+    showEndDatePickerModal.value = false;
+    currentPage.value = 1;
+    hasMoreRecords.value = true;
+    filterAndCountRecords();
+};
+
+// 搜索输入
+const onSearchInput = (e: any) => {
+    searchKeyword.value = e.detail.value;
+};
+
+// 搜索记录
+const searchRecords = () => {
+    currentPage.value = 1;
+    hasMoreRecords.value = true;
+    filterAndCountRecords();
+};
+
+// 过滤和统计记录
+const filterAndCountRecords = () => {
+    // 应用所有筛选条件
+    let filtered = [...records.value];
+
+    // 按状态筛选
+    if (statusIndex.value > 0) {
+        const status = statusOptions.value[statusIndex.value];
+        filtered = filtered.filter((item) => item.status === status);
+    }
+
+    // 按实验室筛选
+    if (labIndex.value > 0) {
+        const labId = labOptions.value[labIndex.value].id;
+        filtered = filtered.filter((item) => item.labId === labId);
+    }
+
+    // 按日期范围筛选
+    if (startDate.value && endDate.value) {
+        filtered = filtered.filter((item) => {
+            return item.date >= startDate.value && item.date <= endDate.value;
+        });
+    } else if (startDate.value) {
+        filtered = filtered.filter((item) => item.date >= startDate.value);
+    } else if (endDate.value) {
+        filtered = filtered.filter((item) => item.date <= endDate.value);
+    }
+
+    // 按关键词搜索
+    if (searchKeyword.value) {
+        const keyword = searchKeyword.value.toLowerCase();
+        filtered = filtered.filter((item) => {
+            return item.applicant.toLowerCase().includes(keyword) || item.id.toLowerCase().includes(keyword);
+        });
+    }
+
+    // 计算统计信息
+    const total = filtered.length;
+    const approved = filtered.filter((item) => item.status === '已通过').length;
+    const rejected = filtered.filter((item) => item.status === '已拒绝').length;
+
+    // 应用分页
+    const paged = filtered.slice(0, currentPage.value * pageSize.value);
+    const hasMore = paged.length < filtered.length;
+
+    // 更新数据
+    filteredRecords.value = paged;
+    hasMoreRecords.value = hasMore;
+    stats.value = {
+        total,
+        approved,
+        rejected
+    };
+};
+
+// 加载更多记录
+const loadMoreRecords = () => {
+    if (!hasMoreRecords.value || isLoading.value) {
+        return;
+    }
+    isLoading.value = true;
+
+    // 模拟加载延迟
+    setTimeout(() => {
+        currentPage.value = currentPage.value + 1;
+        isLoading.value = false;
+        filterAndCountRecords();
+    }, 500);
+};
+
+// 显示记录详情
+const showRecordDetail = (e: any) => {
+    const id = e.currentTarget.dataset.id;
+    const record = records.value.find((item) => item.id === id);
+    if (record) {
+        showDetailModal.value = true;
+        currentRecord.value = record;
+    }
+};
+
+// 隐藏详情弹窗
+const hideDetailModal = () => {
+    showDetailModal.value = false;
+};
+
+// 预览附件
+const previewAttachment = (e: any) => {
+    const url = e.currentTarget.dataset.url;
+
+    // 实际开发中可能需要下载文件后预览
+    uni.showToast({
+        title: '附件预览功能开发中',
+        icon: 'none'
+    });
+};
 </script>
 <style lang="less">
 @import './admin-approval-records.less';

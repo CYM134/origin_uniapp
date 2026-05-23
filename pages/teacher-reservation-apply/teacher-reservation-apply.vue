@@ -263,9 +263,10 @@
     </view>
 </template>
 
-<script lang="ts">
-import zpMixins from '@/uni_modules/zp-mixins/index';
-import navigationBar from '@/components/navigation-bar/navigation-bar';
+<script setup lang="ts">
+import { ref } from 'vue';
+import { onLoad, onShow } from '@dcloudio/uni-app';
+import navigationBar from '@/components/navigation-bar/navigation-bar.vue';
 // pages/teacher-reservation-apply/teacher-reservation-apply.ts
 interface Lab {
     id: string;
@@ -285,839 +286,775 @@ interface CourseType {
     name: string;
     selected: boolean;
 }
-export default zpMixins.extend({
-    components: {
-        navigationBar
-    },
-    data() {
-        return {
-            teacherInfo: {} as TeacherInfo,
-            labOptions: [
-                {
-                    id: 'lab001',
-                    name: '国际课程实验室',
-                    capacity: 65,
-                    equipment: '高配置电脑、投影仪、白板',
-                    location: '综合楼东A301'
-                },
-                {
-                    id: 'lab002',
-                    name: '新商科实验室',
-                    capacity: 80,
-                    equipment: '标准配置电脑、投影仪',
-                    location: '综合楼西A303'
-                },
-                {
-                    id: 'lab003',
-                    name: '法语实验室',
-                    capacity: 60,
-                    equipment: '网络设备、服务器、交换机',
-                    location: '综合楼西A305'
-                },
-                {
-                    id: 'lab004',
-                    name: '402实验室',
-                    capacity: 80,
-                    equipment: '开发环境、测试工具',
-                    location: '综合楼西A402'
-                }
-            ] as Lab[],
-            selectedLabIndex: -1,
-            selectedLab: {} as Lab,
-            selectedDate: '',
-            minDate: '',
-            maxDate: '',
-            courseName: '',
-            studentCount: '',
-            courseTypes: [
-                {
-                    name: '理论课',
-                    selected: false
-                },
-                {
-                    name: '实验课',
-                    selected: true
-                },
-                {
-                    name: '考试',
-                    selected: false
-                },
-                {
-                    name: '其它活动',
-                    selected: false
-                }
-            ] as CourseType[],
-            remark: '',
-            canSubmit: false,
-            showConfirmModal: false,
-            selectedTimeText: '',
-            isQuickMode: false,
-            // 实验室选择器相关
-            showLabPickerModal: false,
-            labPickerOptions: [] as Lab[],
-            tempLabIndex: 0,
-            // 日期选择器相关
-            showDateModal: false,
-            years: [] as number[],
-            months: [] as number[],
-            days: [] as number[],
-            tempYearIndex: 0,
-            tempMonthIndex: 0,
-            tempDayIndex: 0,
-            // 时间选择器相关
-            showStartTimePicker: false,
-            showEndTimePicker: false,
-            hours: Array.from(
-                {
-                    length: 24
-                },
-                (_, i) => i
-            ),
-            minutes: Array.from(
-                {
-                    length: 60
-                },
-                (_, i) => i
-            ),
-            startHourIndex: 8,
-            startMinuteIndex: 0,
-            endHourIndex: 10,
-            endMinuteIndex: 0,
-            startTime: '',
-            endTime: '',
-            // 错误提示
-            errorLab: '',
-            errorDate: '',
-            errorTime: '',
-            errorCourseName: '',
-            errorStudentCount: ''
-        };
-    },
-    /**
-     * 生命周期函数--监听页面加载
-     */
-    onLoad(options: any) {
-        this.loadTeacherInfo();
-        this.initDates();
 
-        // 检查是否是快速预约模式
-        if (options.quick === 'true') {
-            this.setData({
-                isQuickMode: true
-            });
-        }
-
-        // 如果有传入日期，设置默认日期
-        if (options.date) {
-            this.setData({
-                selectedDate: options.date
-            });
-        }
-        this.validateForm();
+const teacherInfo = ref<TeacherInfo>({} as TeacherInfo);
+const labOptions = ref<Lab[]>([
+    {
+        id: 'lab001',
+        name: '国际课程实验室',
+        capacity: 65,
+        equipment: '高配置电脑、投影仪、白板',
+        location: '综合楼东A301'
     },
-    /**
-     * 生命周期函数--监听页面显示
-     */
-    onShow() {
-        // 尝试加载草稿
-        this.loadDraft();
+    {
+        id: 'lab002',
+        name: '新商科实验室',
+        capacity: 80,
+        equipment: '标准配置电脑、投影仪',
+        location: '综合楼西A303'
     },
-    methods: {
-        /**
-         * 加载教师信息
-         */
-        loadTeacherInfo() {
-            try {
-                const teacherInfo = uni.getStorageSync('teacherInfo');
-                if (teacherInfo) {
-                    // 确保教师信息包含必要的姓名和电话字段
-                    const completeTeacherInfo = {
-                        teacherId: teacherInfo.teacherId || '',
-                        name: teacherInfo.name || teacherInfo.teacherName || '',
-                        phone: teacherInfo.phone || teacherInfo.phoneNumber || '',
-                        email: teacherInfo.email || '',
-                        department: teacherInfo.department || ''
-                    };
-                    this.setData({
-                        teacherInfo: completeTeacherInfo
-                    });
+    {
+        id: 'lab003',
+        name: '法语实验室',
+        capacity: 60,
+        equipment: '网络设备、服务器、交换机',
+        location: '综合楼西A305'
+    },
+    {
+        id: 'lab004',
+        name: '402实验室',
+        capacity: 80,
+        equipment: '开发环境、测试工具',
+        location: '综合楼西A402'
+    }
+]);
+const selectedLabIndex = ref<number>(-1);
+const selectedLab = ref<Lab>({} as Lab);
+const selectedDate = ref<string>('');
+const minDate = ref<string>('');
+const maxDate = ref<string>('');
+const courseName = ref<string>('');
+const studentCount = ref<string>('');
+const courseTypes = ref<CourseType[]>([
+    {
+        name: '理论课',
+        selected: false
+    },
+    {
+        name: '实验课',
+        selected: true
+    },
+    {
+        name: '考试',
+        selected: false
+    },
+    {
+        name: '其它活动',
+        selected: false
+    }
+]);
+const remark = ref<string>('');
+const canSubmit = ref<boolean>(false);
+const showConfirmModal = ref<boolean>(false);
+const selectedTimeText = ref<string>('');
+const isQuickMode = ref<boolean>(false);
+// 实验室选择器相关
+const showLabPickerModal = ref<boolean>(false);
+const labPickerOptions = ref<Lab[]>([]);
+const tempLabIndex = ref<number>(0);
+// 日期选择器相关
+const showDateModal = ref<boolean>(false);
+const years = ref<number[]>([]);
+const months = ref<number[]>([]);
+const days = ref<number[]>([]);
+const tempYearIndex = ref<number>(0);
+const tempMonthIndex = ref<number>(0);
+const tempDayIndex = ref<number>(0);
+// 时间选择器相关
+const showStartTimePicker = ref<boolean>(false);
+const showEndTimePicker = ref<boolean>(false);
+const hours = ref<number[]>(Array.from(
+    {
+        length: 24
+    },
+    (_, i) => i
+));
+const minutes = ref<number[]>(Array.from(
+    {
+        length: 60
+    },
+    (_, i) => i
+));
+const startHourIndex = ref<number>(8);
+const startMinuteIndex = ref<number>(0);
+const endHourIndex = ref<number>(10);
+const endMinuteIndex = ref<number>(0);
+const startTime = ref<string>('');
+const endTime = ref<string>('');
+// 错误提示
+const errorLab = ref<string>('');
+const errorDate = ref<string>('');
+const errorTime = ref<string>('');
+const errorCourseName = ref<string>('');
+const errorStudentCount = ref<string>('');
 
-                    // 验证必要信息是否完整
-                    if (!completeTeacherInfo.name || !completeTeacherInfo.phone) {
-                        uni.showModal({
-                            title: '信息不完整',
-                            content: '申请人姓名或电话号码信息缺失，请先完善个人信息',
-                            showCancel: false,
-                            success: () => {
-                                uni.navigateTo({
-                                    url: '/pages/teacher-personal-info/teacher-personal-info'
-                                });
-                            }
+/**
+ * 生命周期函数--监听页面加载
+ */
+onLoad((options: any) => {
+    loadTeacherInfo();
+    initDates();
+
+    // 检查是否是快速预约模式
+    if (options.quick === 'true') {
+        isQuickMode.value = true;
+    }
+
+    // 如果有传入日期，设置默认日期
+    if (options.date) {
+        selectedDate.value = options.date;
+    }
+    validateForm();
+});
+
+/**
+ * 生命周期函数--监听页面显示
+ */
+onShow(() => {
+    // 尝试加载草稿
+    loadDraft();
+});
+
+/**
+ * 加载教师信息
+ */
+const loadTeacherInfo = () => {
+    try {
+        const _teacherInfo = uni.getStorageSync('teacherInfo');
+        if (_teacherInfo) {
+            // 确保教师信息包含必要的姓名和电话字段
+            const completeTeacherInfo = {
+                teacherId: _teacherInfo.teacherId || '',
+                name: _teacherInfo.name || _teacherInfo.teacherName || '',
+                phone: _teacherInfo.phone || _teacherInfo.phoneNumber || '',
+                email: _teacherInfo.email || '',
+                department: _teacherInfo.department || ''
+            };
+            teacherInfo.value = completeTeacherInfo;
+
+            // 验证必要信息是否完整
+            if (!completeTeacherInfo.name || !completeTeacherInfo.phone) {
+                uni.showModal({
+                    title: '信息不完整',
+                    content: '申请人姓名或电话号码信息缺失，请先完善个人信息',
+                    showCancel: false,
+                    success: () => {
+                        uni.navigateTo({
+                            url: '/pages/teacher-personal-info/teacher-personal-info'
                         });
                     }
-                } else {
-                    // 如果没有教师信息，跳转到登录页面
-                    uni.showModal({
-                        title: '未登录',
-                        content: '请先登录后再进行预约申请',
-                        showCancel: false,
-                        success: () => {
-                            uni.redirectTo({
-                                url: '/pages/teacher-login/teacher-login'
-                            });
-                        }
+                });
+            }
+        } else {
+            // 如果没有教师信息，跳转到登录页面
+            uni.showModal({
+                title: '未登录',
+                content: '请先登录后再进行预约申请',
+                showCancel: false,
+                success: () => {
+                    uni.redirectTo({
+                        url: '/pages/teacher-login/teacher-login'
                     });
                 }
-            } catch (error) {
-                console.log('CatchClause', error);
-                console.log('CatchClause', error);
-                console.error('加载教师信息失败:', error);
-                uni.showToast({
-                    title: '获取用户信息失败',
-                    icon: 'error'
-                });
-            }
-        },
-
-        /**
-         * 初始化日期范围
-         */
-        initDates() {
-            const today = new Date();
-            const tomorrow = new Date(today);
-            tomorrow.setDate(today.getDate() + 1);
-            const maxDate = new Date(today);
-            maxDate.setDate(today.getDate() + 30); // 最多提前30天预约
-
-            this.setData({
-                minDate: this.formatDate(tomorrow),
-                maxDate: this.formatDate(maxDate)
-            });
-
-            // 初始化日期选择器数据
-            this.initDatePickerData();
-        },
-
-        /**
-         * 格式化日期
-         */
-        formatDate(date: Date): string {
-            const year = date.getFullYear();
-            const month = String(date.getMonth() + 1).padStart(2, '0');
-            const day = String(date.getDate()).padStart(2, '0');
-            return `${year}-${month}-${day}`;
-        },
-
-        /**
-         * 初始化日期选择器数据
-         */
-        initDatePickerData(selectedDate: any = '') {
-            const today = new Date();
-            const startYear = today.getFullYear();
-            const years = [];
-            for (let i = 0; i <= 2; i++) {
-                years.push(startYear + i);
-            }
-            let year;
-            let month;
-            let day;
-            if (selectedDate) {
-                [year, month, day] = selectedDate.split('-').map(Number);
-            } else {
-                year = today.getFullYear();
-                month = today.getMonth() + 1;
-                day = today.getDate() + 1; // 默认明天
-            }
-            const months = Array.from(
-                {
-                    length: 12
-                },
-                (_, i) => i + 1
-            );
-            const days = Array.from(
-                {
-                    length: new Date(year, month, 0).getDate()
-                },
-                (_, i) => i + 1
-            );
-            const tempYearIndex = years.indexOf(year);
-            const tempMonthIndex = months.indexOf(month) !== -1 ? months.indexOf(month) : 0;
-            const tempDayIndex = days.indexOf(day) !== -1 ? days.indexOf(day) : 0;
-            this.setData({
-                years,
-                months,
-                days,
-                tempYearIndex,
-                tempMonthIndex,
-                tempDayIndex
-            });
-        },
-
-        /**
-         * 显示实验室选择器
-         */
-        showLabPicker() {
-            this.setData({
-                labPickerOptions: this.labOptions,
-                tempLabIndex: this.selectedLabIndex === -1 ? 0 : this.selectedLabIndex,
-                showLabPickerModal: true
-            });
-        },
-
-        /**
-         * 隐藏实验室选择器
-         */
-        hideLabPicker() {
-            this.setData({
-                showLabPickerModal: false
-            });
-        },
-
-        /**
-         * 实验室选择器变化
-         */
-        onLabPickerChange(e: any) {
-            const index = e.detail.value[0];
-            this.setData({
-                tempLabIndex: index
-            });
-        },
-
-        /**
-         * 确认实验室选择
-         */
-        confirmLabSelection() {
-            const lab = this.labPickerOptions[this.tempLabIndex];
-            this.setData({
-                selectedLabIndex: this.tempLabIndex,
-                selectedLab: lab,
-                showLabPickerModal: false,
-                errorLab: ''
-            });
-            this.validateForm();
-        },
-
-        /**
-         * 显示日期选择器
-         */
-        showDatePicker() {
-            this.initDatePickerData(this.selectedDate);
-            this.setData({
-                showDateModal: true
-            });
-        },
-
-        /**
-         * 隐藏日期选择器
-         */
-        hideDatePicker() {
-            this.setData({
-                showDateModal: false
-            });
-        },
-
-        /**
-         * 日期选择器变化
-         */
-        onDatePickerChange(e: any) {
-            const [yearIdx, monthIdx, dayIdx] = e.detail.value;
-            const year = this.years[yearIdx];
-            const month = this.months[monthIdx];
-
-            // 根据年月重新计算天数
-            const days = Array.from(
-                {
-                    length: new Date(year, month, 0).getDate()
-                },
-                (_, i) => i + 1
-            );
-
-            // 确保选中的日不超过当月最大天数
-            let tempDayIndex = dayIdx;
-            if (tempDayIndex >= days.length) {
-                tempDayIndex = days.length - 1;
-            }
-            this.setData({
-                tempYearIndex: yearIdx,
-                tempMonthIndex: monthIdx,
-                days,
-                tempDayIndex
-            });
-        },
-
-        /**
-         * 确认日期选择
-         */
-        confirmDatePicker() {
-            const year = this.years[this.tempYearIndex];
-            const month = this.months[this.tempMonthIndex];
-            const day = this.days[this.tempDayIndex];
-            const selectedDate = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-            this.setData({
-                selectedDate,
-                showDateModal: false,
-                errorDate: ''
-            });
-            this.validateForm();
-        },
-
-        /**
-         * 显示开始时间选择器
-         */
-        showStartTimePickerFun() {
-            this.setData({
-                showStartTimePicker: true
-            });
-        },
-
-        /**
-         * 隐藏开始时间选择器
-         */
-        hideStartTimePicker() {
-            this.setData({
-                showStartTimePicker: false
-            });
-        },
-
-        /**
-         * 开始时间选择器变化
-         */
-        onStartTimeChange(e: any) {
-            const [hourIdx, minIdx] = e.detail.value;
-            this.setData({
-                startHourIndex: hourIdx,
-                startMinuteIndex: minIdx
-            });
-        },
-
-        /**
-         * 确认开始时间选择
-         */
-        confirmStartTime() {
-            const hour = this.hours[this.startHourIndex];
-            const min = this.minutes[this.startMinuteIndex];
-            const startTime = `${String(hour).padStart(2, '0')}:${String(min).padStart(2, '0')}`;
-            this.setData({
-                startTime,
-                showStartTimePicker: false
-            });
-            this.validateTimeRange();
-        },
-
-        /**
-         * 显示结束时间选择器
-         */
-        showEndTimePickerFun() {
-            this.setData({
-                showEndTimePicker: true
-            });
-        },
-
-        /**
-         * 隐藏结束时间选择器
-         */
-        hideEndTimePicker() {
-            this.setData({
-                showEndTimePicker: false
-            });
-        },
-
-        /**
-         * 结束时间选择器变化
-         */
-        onEndTimeChange(e: any) {
-            const [hourIdx, minIdx] = e.detail.value;
-            this.setData({
-                endHourIndex: hourIdx,
-                endMinuteIndex: minIdx
-            });
-        },
-
-        /**
-         * 确认结束时间选择
-         */
-        confirmEndTime() {
-            const hour = this.hours[this.endHourIndex];
-            const min = this.minutes[this.endMinuteIndex];
-            const endTime = `${String(hour).padStart(2, '0')}:${String(min).padStart(2, '0')}`;
-            this.setData({
-                endTime,
-                showEndTimePicker: false
-            });
-            this.validateTimeRange();
-        },
-
-        /**
-         * 验证时间范围
-         */
-        validateTimeRange() {
-            const { startTime, endTime } = this;
-            if (startTime && endTime) {
-                const [sh, sm] = startTime.split(':').map(Number);
-                const [eh, em] = endTime.split(':').map(Number);
-                const start = sh * 60 + sm;
-                const end = eh * 60 + em;
-                if (end <= start) {
-                    this.setData({
-                        errorTime: '结束时间必须大于开始时间',
-                        endTime: ''
-                    });
-
-                    // 显示提示信息
-                    uni.showToast({
-                        title: '结束时间不能早于开始时间',
-                        icon: 'none',
-                        duration: 2000
-                    });
-                } else {
-                    this.setData({
-                        errorTime: '',
-                        selectedTimeText: `${startTime}-${endTime}`
-                    });
-                }
-            }
-            this.validateForm();
-        },
-
-        /**
-         * 课程名称输入
-         */
-        onCourseNameInput(e: any) {
-            this.setData({
-                courseName: e.detail.value,
-                errorCourseName: e.detail.value.trim() ? '' : '请输入课程名称'
-            });
-            this.validateForm();
-        },
-
-        /**
-         * 学生人数输入
-         */
-        onStudentCountInput(e: any) {
-            const count = e.detail.value;
-            let errorMsg = '';
-            if (!count.trim()) {
-                errorMsg = '请输入学生人数';
-            } else if (parseInt(count) <= 0) {
-                errorMsg = '学生人数必须大于0';
-            } else if (this.selectedLab.capacity && parseInt(count) > this.selectedLab.capacity) {
-                errorMsg = `学生人数不能超过实验室容量(${this.selectedLab.capacity}人)`;
-            }
-            this.setData({
-                studentCount: count,
-                errorStudentCount: errorMsg
-            });
-            this.validateForm();
-        },
-
-        /**
-         * 选择课程类型
-         */
-        selectCourseType(e: any) {
-            const index = e.currentTarget.dataset.index;
-            const courseTypes = this.courseTypes;
-
-            // 单选模式
-            courseTypes.forEach((type, i) => {
-                type.selected = i === index;
-            });
-            this.setData({
-                courseTypes: courseTypes
-            });
-        },
-
-        /**
-         * 备注输入
-         */
-        onRemarkInput(e: any) {
-            this.setData({
-                remark: e.detail.value
-            });
-        },
-
-        /**
-         * 验证表单
-         */
-        validateForm() {
-            const { selectedLab, selectedDate, startTime, endTime, courseName, studentCount } = this;
-            let errorLab = '';
-            let errorDate = '';
-            let errorTime = '';
-            let errorCourseName = '';
-            let errorStudentCount = ''; // 验证实验室
-            if (!selectedLab.id) {
-                errorLab = '请选择实验室';
-            }
-
-            // 验证日期
-            if (!selectedDate) {
-                errorDate = '请选择预约日期';
-            }
-
-            // 验证时间
-            if (!startTime || !endTime) {
-                errorTime = '请选择时间段';
-            } else {
-                const [sh, sm] = startTime.split(':').map(Number);
-                const [eh, em] = endTime.split(':').map(Number);
-                if (eh * 60 + em <= sh * 60 + sm) {
-                    errorTime = '结束时间必须大于开始时间';
-                }
-            }
-
-            // 验证课程名称
-            if (!courseName.trim()) {
-                errorCourseName = '请输入课程名称';
-            }
-
-            // 验证学生人数
-            if (!studentCount.trim()) {
-                errorStudentCount = '请输入学生人数';
-            } else if (parseInt(studentCount) <= 0) {
-                errorStudentCount = '学生人数必须大于0';
-            } else if (selectedLab.capacity && parseInt(studentCount) > selectedLab.capacity) {
-                errorStudentCount = `学生人数不能超过实验室容量(${selectedLab.capacity}人)`;
-            }
-            const canSubmit = !errorLab && !errorDate && !errorTime && !errorCourseName && !errorStudentCount;
-            this.setData({
-                errorLab,
-                errorDate,
-                errorTime,
-                errorCourseName,
-                errorStudentCount,
-                canSubmit
-            });
-        },
-
-        /**
-         * 提交申请
-         */
-        submitApplication() {
-            if (!this.canSubmit) {
-                uni.showToast({
-                    title: '请完善申请信息',
-                    icon: 'none'
-                });
-
-                // 自动滚动到第一个未填写项
-                const { selectedLab, selectedDate, startTime, endTime, courseName, studentCount } = this;
-                let targetId = '';
-                if (!selectedLab.id) targetId = 'labItem';
-                else if (!selectedDate) targetId = 'dateItem';
-                else if (!startTime || !endTime) targetId = 'timeItem';
-                else if (!courseName.trim()) targetId = 'courseItem';
-                else if (!studentCount.trim() || parseInt(studentCount) <= 0) {
-                    targetId = 'countItem';
-                }
-                if (targetId) {
-                    uni.pageScrollTo({
-                        selector: `#${targetId}`,
-                        duration: 300
-                    });
-                }
-                return;
-            }
-
-            // 获取选中的时间段文本
-            const selectedTimeText = `${this.startTime}-${this.endTime}`;
-            this.setData({
-                selectedTimeText: selectedTimeText,
-                showConfirmModal: true
-            });
-        },
-
-        /**
-         * 关闭确认弹窗
-         */
-        closeConfirmModal() {
-            this.setData({
-                showConfirmModal: false
-            });
-        },
-
-        /**
-         * 阻止事件冒泡
-         */
-        stopPropagation() {
-            // 阻止点击弹窗内容时关闭弹窗
-        },
-
-        /**
-         * 确认提交
-         */
-        confirmSubmit() {
-            try {
-                // 再次验证申请人信息是否完整
-                if (!this.teacherInfo.name || !this.teacherInfo.phone) {
-                    uni.showModal({
-                        title: '信息不完整',
-                        content: '申请人姓名或电话号码信息缺失，无法提交申请',
-                        showCancel: false
-                    });
-                    return;
-                }
-                const selectedCourseType = this.courseTypes.find((type) => type.selected);
-                const application = {
-                    id: 'app_' + Date.now(),
-                    teacherId: this.teacherInfo.teacherId || '',
-                    teacherName: this.teacherInfo.name || '未知教师',
-                    teacherPhone: this.teacherInfo.phone || '',
-                    // 确保包含申请人电话号码
-                    applicantName: this.teacherInfo.name || '',
-                    // 申请人姓名
-                    applicantPhone: this.teacherInfo.phone || '',
-                    // 申请人电话号码
-                    labId: this.selectedLab.id,
-                    labName: this.selectedLab.name,
-                    date: this.selectedDate,
-                    startTime: this.startTime,
-                    endTime: this.endTime,
-                    timeSlot: `${this.startTime}-${this.endTime}`,
-                    courseName: this.courseName,
-                    courseType: selectedCourseType ? selectedCourseType.name : '实验课',
-                    studentCount: parseInt(this.studentCount),
-                    remark: this.remark,
-                    status: 'pending',
-                    submitTime: new Date().toISOString(),
-                    type: 'teacher'
-                };
-
-                // 保存到本地存储
-                const applications = uni.getStorageSync('teacherApplications') || [];
-                applications.unshift(application);
-                uni.setStorageSync('teacherApplications', applications);
-
-                // 同时保存到学生申请列表（供管理员查看）
-                const allApplications = uni.getStorageSync('studentApplications') || [];
-                allApplications.unshift(application);
-                uni.setStorageSync('studentApplications', allApplications);
-
-                // 清除保存的草稿
-                uni.removeStorageSync('teacherApplicationDraft');
-                this.setData({
-                    showConfirmModal: false
-                });
-                uni.showToast({
-                    title: '申请提交成功',
-                    icon: 'success'
-                });
-
-                // 延迟返回上一页
-                setTimeout(() => {
-                    uni.navigateBack();
-                }, 1500);
-            } catch (error) {
-                console.log('CatchClause', error);
-                console.log('CatchClause', error);
-                console.error('提交申请失败:', error);
-                uni.showToast({
-                    title: '提交失败',
-                    icon: 'error'
-                });
-            }
-        },
-
-        /**
-         * 保存草稿
-         */
-        saveDraft() {
-            try {
-                const selectedCourseType = this.courseTypes.find((type) => type.selected);
-                const draft = {
-                    teacherId: this.teacherInfo.teacherId || '',
-                    labId: this.selectedLab.id || '',
-                    labName: this.selectedLab.name || '',
-                    date: this.selectedDate,
-                    startTime: this.startTime,
-                    endTime: this.endTime,
-                    courseName: this.courseName,
-                    courseType: selectedCourseType ? selectedCourseType.name : '',
-                    studentCount: this.studentCount,
-                    remark: this.remark,
-                    saveTime: new Date().toISOString()
-                };
-                uni.setStorageSync('teacherApplicationDraft', draft);
-                uni.showToast({
-                    title: '草稿保存成功',
-                    icon: 'success'
-                });
-            } catch (error) {
-                console.log('CatchClause', error);
-                console.log('CatchClause', error);
-                console.error('保存草稿失败:', error);
-                uni.showToast({
-                    title: '保存失败',
-                    icon: 'error'
-                });
-            }
-        },
-
-        /**
-         * 加载草稿
-         */
-        loadDraft() {
-            try {
-                const draft = uni.getStorageSync('teacherApplicationDraft');
-                if (draft && draft.teacherId === this.teacherInfo.teacherId) {
-                    // 询问是否加载草稿
-                    uni.showModal({
-                        title: '发现草稿',
-                        content: '是否加载之前保存的草稿？',
-                        success: (res) => {
-                            if (res.confirm) {
-                                this.applyDraft(draft);
-                            }
-                        }
-                    });
-                }
-            } catch (error) {
-                console.log('CatchClause', error);
-                console.log('CatchClause', error);
-                console.error('加载草稿失败:', error);
-            }
-        },
-
-        /**
-         * 应用草稿数据
-         */
-        applyDraft(draft: any) {
-            // 设置实验室
-            const labIndex = this.labOptions.findIndex((lab) => lab.id === draft.labId);
-            if (labIndex !== -1) {
-                this.setData({
-                    selectedLabIndex: labIndex,
-                    selectedLab: this.labOptions[labIndex]
-                });
-            }
-
-            // 设置其他数据
-            this.setData({
-                selectedDate: draft.date,
-                startTime: draft.startTime || '',
-                endTime: draft.endTime || '',
-                courseName: draft.courseName,
-                studentCount: draft.studentCount,
-                remark: draft.remark
-            });
-
-            // 设置课程类型
-            if (draft.courseType) {
-                const courseTypes = this.courseTypes.map((type) => ({
-                    ...type,
-                    selected: type.name === draft.courseType
-                }));
-                this.setData({
-                    courseTypes: courseTypes
-                });
-            }
-            this.validateForm();
-            uni.showToast({
-                title: '草稿加载成功',
-                icon: 'success'
             });
         }
+    } catch (error) {
+        console.log('CatchClause', error);
+        console.log('CatchClause', error);
+        console.error('加载教师信息失败:', error);
+        uni.showToast({
+            title: '获取用户信息失败',
+            icon: 'error'
+        });
     }
-});
+};
+
+/**
+ * 初始化日期范围
+ */
+const initDates = () => {
+    const today = new Date();
+    const tomorrow = new Date(today);
+    tomorrow.setDate(today.getDate() + 1);
+    const _maxDate = new Date(today);
+    _maxDate.setDate(today.getDate() + 30); // 最多提前30天预约
+
+    minDate.value = formatDate(tomorrow);
+    maxDate.value = formatDate(_maxDate);
+
+    // 初始化日期选择器数据
+    initDatePickerData();
+};
+
+/**
+ * 格式化日期
+ */
+const formatDate = (date: Date): string => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+};
+
+/**
+ * 初始化日期选择器数据
+ */
+const initDatePickerData = (selDate: any = '') => {
+    const today = new Date();
+    const startYear = today.getFullYear();
+    const _years = [];
+    for (let i = 0; i <= 2; i++) {
+        _years.push(startYear + i);
+    }
+    let year;
+    let month;
+    let day;
+    if (selDate) {
+        [year, month, day] = selDate.split('-').map(Number);
+    } else {
+        year = today.getFullYear();
+        month = today.getMonth() + 1;
+        day = today.getDate() + 1; // 默认明天
+    }
+    const _months = Array.from(
+        {
+            length: 12
+        },
+        (_, i) => i + 1
+    );
+    const _days = Array.from(
+        {
+            length: new Date(year, month, 0).getDate()
+        },
+        (_, i) => i + 1
+    );
+    const _tempYearIndex = _years.indexOf(year);
+    const _tempMonthIndex = _months.indexOf(month) !== -1 ? _months.indexOf(month) : 0;
+    const _tempDayIndex = _days.indexOf(day) !== -1 ? _days.indexOf(day) : 0;
+    years.value = _years;
+    months.value = _months;
+    days.value = _days;
+    tempYearIndex.value = _tempYearIndex;
+    tempMonthIndex.value = _tempMonthIndex;
+    tempDayIndex.value = _tempDayIndex;
+};
+
+/**
+ * 显示实验室选择器
+ */
+const showLabPicker = () => {
+    labPickerOptions.value = labOptions.value;
+    tempLabIndex.value = selectedLabIndex.value === -1 ? 0 : selectedLabIndex.value;
+    showLabPickerModal.value = true;
+};
+
+/**
+ * 隐藏实验室选择器
+ */
+const hideLabPicker = () => {
+    showLabPickerModal.value = false;
+};
+
+/**
+ * 实验室选择器变化
+ */
+const onLabPickerChange = (e: any) => {
+    const index = e.detail.value[0];
+    tempLabIndex.value = index;
+};
+
+/**
+ * 确认实验室选择
+ */
+const confirmLabSelection = () => {
+    const lab = labPickerOptions.value[tempLabIndex.value];
+    selectedLabIndex.value = tempLabIndex.value;
+    selectedLab.value = lab;
+    showLabPickerModal.value = false;
+    errorLab.value = '';
+    validateForm();
+};
+
+/**
+ * 显示日期选择器
+ */
+const showDatePicker = () => {
+    initDatePickerData(selectedDate.value);
+    showDateModal.value = true;
+};
+
+/**
+ * 隐藏日期选择器
+ */
+const hideDatePicker = () => {
+    showDateModal.value = false;
+};
+
+/**
+ * 日期选择器变化
+ */
+const onDatePickerChange = (e: any) => {
+    const [yearIdx, monthIdx, dayIdx] = e.detail.value;
+    const year = years.value[yearIdx];
+    const month = months.value[monthIdx];
+
+    // 根据年月重新计算天数
+    const _days = Array.from(
+        {
+            length: new Date(year, month, 0).getDate()
+        },
+        (_, i) => i + 1
+    );
+
+    // 确保选中的日不超过当月最大天数
+    let _tempDayIndex = dayIdx;
+    if (_tempDayIndex >= _days.length) {
+        _tempDayIndex = _days.length - 1;
+    }
+    tempYearIndex.value = yearIdx;
+    tempMonthIndex.value = monthIdx;
+    days.value = _days;
+    tempDayIndex.value = _tempDayIndex;
+};
+
+/**
+ * 确认日期选择
+ */
+const confirmDatePicker = () => {
+    const year = years.value[tempYearIndex.value];
+    const month = months.value[tempMonthIndex.value];
+    const day = days.value[tempDayIndex.value];
+    const _selectedDate = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+    selectedDate.value = _selectedDate;
+    showDateModal.value = false;
+    errorDate.value = '';
+    validateForm();
+};
+
+/**
+ * 显示开始时间选择器
+ */
+const showStartTimePickerFun = () => {
+    showStartTimePicker.value = true;
+};
+
+/**
+ * 隐藏开始时间选择器
+ */
+const hideStartTimePicker = () => {
+    showStartTimePicker.value = false;
+};
+
+/**
+ * 开始时间选择器变化
+ */
+const onStartTimeChange = (e: any) => {
+    const [hourIdx, minIdx] = e.detail.value;
+    startHourIndex.value = hourIdx;
+    startMinuteIndex.value = minIdx;
+};
+
+/**
+ * 确认开始时间选择
+ */
+const confirmStartTime = () => {
+    const hour = hours.value[startHourIndex.value];
+    const min = minutes.value[startMinuteIndex.value];
+    const _startTime = `${String(hour).padStart(2, '0')}:${String(min).padStart(2, '0')}`;
+    startTime.value = _startTime;
+    showStartTimePicker.value = false;
+    validateTimeRange();
+};
+
+/**
+ * 显示结束时间选择器
+ */
+const showEndTimePickerFun = () => {
+    showEndTimePicker.value = true;
+};
+
+/**
+ * 隐藏结束时间选择器
+ */
+const hideEndTimePicker = () => {
+    showEndTimePicker.value = false;
+};
+
+/**
+ * 结束时间选择器变化
+ */
+const onEndTimeChange = (e: any) => {
+    const [hourIdx, minIdx] = e.detail.value;
+    endHourIndex.value = hourIdx;
+    endMinuteIndex.value = minIdx;
+};
+
+/**
+ * 确认结束时间选择
+ */
+const confirmEndTime = () => {
+    const hour = hours.value[endHourIndex.value];
+    const min = minutes.value[endMinuteIndex.value];
+    const _endTime = `${String(hour).padStart(2, '0')}:${String(min).padStart(2, '0')}`;
+    endTime.value = _endTime;
+    showEndTimePicker.value = false;
+    validateTimeRange();
+};
+
+/**
+ * 验证时间范围
+ */
+const validateTimeRange = () => {
+    const _startTime = startTime.value;
+    const _endTime = endTime.value;
+    if (_startTime && _endTime) {
+        const [sh, sm] = _startTime.split(':').map(Number);
+        const [eh, em] = _endTime.split(':').map(Number);
+        const start = sh * 60 + sm;
+        const end = eh * 60 + em;
+        if (end <= start) {
+            errorTime.value = '结束时间必须大于开始时间';
+            endTime.value = '';
+
+            // 显示提示信息
+            uni.showToast({
+                title: '结束时间不能早于开始时间',
+                icon: 'none',
+                duration: 2000
+            });
+        } else {
+            errorTime.value = '';
+            selectedTimeText.value = `${_startTime}-${_endTime}`;
+        }
+    }
+    validateForm();
+};
+
+/**
+ * 课程名称输入
+ */
+const onCourseNameInput = (e: any) => {
+    courseName.value = e.detail.value;
+    errorCourseName.value = e.detail.value.trim() ? '' : '请输入课程名称';
+    validateForm();
+};
+
+/**
+ * 学生人数输入
+ */
+const onStudentCountInput = (e: any) => {
+    const count = e.detail.value;
+    let errorMsg = '';
+    if (!count.trim()) {
+        errorMsg = '请输入学生人数';
+    } else if (parseInt(count) <= 0) {
+        errorMsg = '学生人数必须大于0';
+    } else if (selectedLab.value.capacity && parseInt(count) > selectedLab.value.capacity) {
+        errorMsg = `学生人数不能超过实验室容量(${selectedLab.value.capacity}人)`;
+    }
+    studentCount.value = count;
+    errorStudentCount.value = errorMsg;
+    validateForm();
+};
+
+/**
+ * 选择课程类型
+ */
+const selectCourseType = (e: any) => {
+    const index = e.currentTarget.dataset.index;
+    const _courseTypes = courseTypes.value;
+
+    // 单选模式
+    _courseTypes.forEach((type, i) => {
+        type.selected = i === index;
+    });
+    courseTypes.value = _courseTypes;
+};
+
+/**
+ * 备注输入
+ */
+const onRemarkInput = (e: any) => {
+    remark.value = e.detail.value;
+};
+
+/**
+ * 验证表单
+ */
+const validateForm = () => {
+    const _selectedLab = selectedLab.value;
+    const _selectedDate = selectedDate.value;
+    const _startTime = startTime.value;
+    const _endTime = endTime.value;
+    const _courseName = courseName.value;
+    const _studentCount = studentCount.value;
+    let _errorLab = '';
+    let _errorDate = '';
+    let _errorTime = '';
+    let _errorCourseName = '';
+    let _errorStudentCount = ''; // 验证实验室
+    if (!_selectedLab.id) {
+        _errorLab = '请选择实验室';
+    }
+
+    // 验证日期
+    if (!_selectedDate) {
+        _errorDate = '请选择预约日期';
+    }
+
+    // 验证时间
+    if (!_startTime || !_endTime) {
+        _errorTime = '请选择时间段';
+    } else {
+        const [sh, sm] = _startTime.split(':').map(Number);
+        const [eh, em] = _endTime.split(':').map(Number);
+        if (eh * 60 + em <= sh * 60 + sm) {
+            _errorTime = '结束时间必须大于开始时间';
+        }
+    }
+
+    // 验证课程名称
+    if (!_courseName.trim()) {
+        _errorCourseName = '请输入课程名称';
+    }
+
+    // 验证学生人数
+    if (!_studentCount.trim()) {
+        _errorStudentCount = '请输入学生人数';
+    } else if (parseInt(_studentCount) <= 0) {
+        _errorStudentCount = '学生人数必须大于0';
+    } else if (_selectedLab.capacity && parseInt(_studentCount) > _selectedLab.capacity) {
+        _errorStudentCount = `学生人数不能超过实验室容量(${_selectedLab.capacity}人)`;
+    }
+    const _canSubmit = !_errorLab && !_errorDate && !_errorTime && !_errorCourseName && !_errorStudentCount;
+    errorLab.value = _errorLab;
+    errorDate.value = _errorDate;
+    errorTime.value = _errorTime;
+    errorCourseName.value = _errorCourseName;
+    errorStudentCount.value = _errorStudentCount;
+    canSubmit.value = _canSubmit;
+};
+
+/**
+ * 提交申请
+ */
+const submitApplication = () => {
+    if (!canSubmit.value) {
+        uni.showToast({
+            title: '请完善申请信息',
+            icon: 'none'
+        });
+
+        // 自动滚动到第一个未填写项
+        const _selectedLab = selectedLab.value;
+        const _selectedDate = selectedDate.value;
+        const _startTime = startTime.value;
+        const _endTime = endTime.value;
+        const _courseName = courseName.value;
+        const _studentCount = studentCount.value;
+        let targetId = '';
+        if (!_selectedLab.id) targetId = 'labItem';
+        else if (!_selectedDate) targetId = 'dateItem';
+        else if (!_startTime || !_endTime) targetId = 'timeItem';
+        else if (!_courseName.trim()) targetId = 'courseItem';
+        else if (!_studentCount.trim() || parseInt(_studentCount) <= 0) {
+            targetId = 'countItem';
+        }
+        if (targetId) {
+            uni.pageScrollTo({
+                selector: `#${targetId}`,
+                duration: 300
+            });
+        }
+        return;
+    }
+
+    // 获取选中的时间段文本
+    const _selectedTimeText = `${startTime.value}-${endTime.value}`;
+    selectedTimeText.value = _selectedTimeText;
+    showConfirmModal.value = true;
+};
+
+/**
+ * 关闭确认弹窗
+ */
+const closeConfirmModal = () => {
+    showConfirmModal.value = false;
+};
+
+/**
+ * 阻止事件冒泡
+ */
+const stopPropagation = () => {
+    // 阻止点击弹窗内容时关闭弹窗
+};
+
+/**
+ * 确认提交
+ */
+const confirmSubmit = () => {
+    try {
+        // 再次验证申请人信息是否完整
+        if (!teacherInfo.value.name || !teacherInfo.value.phone) {
+            uni.showModal({
+                title: '信息不完整',
+                content: '申请人姓名或电话号码信息缺失，无法提交申请',
+                showCancel: false
+            });
+            return;
+        }
+        const selectedCourseType = courseTypes.value.find((type) => type.selected);
+        const application = {
+            id: 'app_' + Date.now(),
+            teacherId: teacherInfo.value.teacherId || '',
+            teacherName: teacherInfo.value.name || '未知教师',
+            teacherPhone: teacherInfo.value.phone || '',
+            // 确保包含申请人电话号码
+            applicantName: teacherInfo.value.name || '',
+            // 申请人姓名
+            applicantPhone: teacherInfo.value.phone || '',
+            // 申请人电话号码
+            labId: selectedLab.value.id,
+            labName: selectedLab.value.name,
+            date: selectedDate.value,
+            startTime: startTime.value,
+            endTime: endTime.value,
+            timeSlot: `${startTime.value}-${endTime.value}`,
+            courseName: courseName.value,
+            courseType: selectedCourseType ? selectedCourseType.name : '实验课',
+            studentCount: parseInt(studentCount.value),
+            remark: remark.value,
+            status: 'pending',
+            submitTime: new Date().toISOString(),
+            type: 'teacher'
+        };
+
+        // 保存到本地存储
+        const applications = uni.getStorageSync('teacherApplications') || [];
+        applications.unshift(application);
+        uni.setStorageSync('teacherApplications', applications);
+
+        // 同时保存到学生申请列表（供管理员查看）
+        const allApplications = uni.getStorageSync('studentApplications') || [];
+        allApplications.unshift(application);
+        uni.setStorageSync('studentApplications', allApplications);
+
+        // 清除保存的草稿
+        uni.removeStorageSync('teacherApplicationDraft');
+        showConfirmModal.value = false;
+        uni.showToast({
+            title: '申请提交成功',
+            icon: 'success'
+        });
+
+        // 延迟返回上一页
+        setTimeout(() => {
+            uni.navigateBack();
+        }, 1500);
+    } catch (error) {
+        console.log('CatchClause', error);
+        console.log('CatchClause', error);
+        console.error('提交申请失败:', error);
+        uni.showToast({
+            title: '提交失败',
+            icon: 'error'
+        });
+    }
+};
+
+/**
+ * 保存草稿
+ */
+const saveDraft = () => {
+    try {
+        const selectedCourseType = courseTypes.value.find((type) => type.selected);
+        const draft = {
+            teacherId: teacherInfo.value.teacherId || '',
+            labId: selectedLab.value.id || '',
+            labName: selectedLab.value.name || '',
+            date: selectedDate.value,
+            startTime: startTime.value,
+            endTime: endTime.value,
+            courseName: courseName.value,
+            courseType: selectedCourseType ? selectedCourseType.name : '',
+            studentCount: studentCount.value,
+            remark: remark.value,
+            saveTime: new Date().toISOString()
+        };
+        uni.setStorageSync('teacherApplicationDraft', draft);
+        uni.showToast({
+            title: '草稿保存成功',
+            icon: 'success'
+        });
+    } catch (error) {
+        console.log('CatchClause', error);
+        console.log('CatchClause', error);
+        console.error('保存草稿失败:', error);
+        uni.showToast({
+            title: '保存失败',
+            icon: 'error'
+        });
+    }
+};
+
+/**
+ * 加载草稿
+ */
+const loadDraft = () => {
+    try {
+        const draft = uni.getStorageSync('teacherApplicationDraft');
+        if (draft && draft.teacherId === teacherInfo.value.teacherId) {
+            // 询问是否加载草稿
+            uni.showModal({
+                title: '发现草稿',
+                content: '是否加载之前保存的草稿？',
+                success: (res) => {
+                    if (res.confirm) {
+                        applyDraft(draft);
+                    }
+                }
+            });
+        }
+    } catch (error) {
+        console.log('CatchClause', error);
+        console.log('CatchClause', error);
+        console.error('加载草稿失败:', error);
+    }
+};
+
+/**
+ * 应用草稿数据
+ */
+const applyDraft = (draft: any) => {
+    // 设置实验室
+    const _labIndex = labOptions.value.findIndex((lab) => lab.id === draft.labId);
+    if (_labIndex !== -1) {
+        selectedLabIndex.value = _labIndex;
+        selectedLab.value = labOptions.value[_labIndex];
+    }
+
+    // 设置其他数据
+    selectedDate.value = draft.date;
+    startTime.value = draft.startTime || '';
+    endTime.value = draft.endTime || '';
+    courseName.value = draft.courseName;
+    studentCount.value = draft.studentCount;
+    remark.value = draft.remark;
+
+    // 设置课程类型
+    if (draft.courseType) {
+        const _courseTypes = courseTypes.value.map((type) => ({
+            ...type,
+            selected: type.name === draft.courseType
+        }));
+        courseTypes.value = _courseTypes;
+    }
+    validateForm();
+    uni.showToast({
+        title: '草稿加载成功',
+        icon: 'success'
+    });
+};
 </script>
 <style>
 @import './teacher-reservation-apply.css';

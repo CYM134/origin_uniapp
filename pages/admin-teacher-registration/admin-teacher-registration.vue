@@ -192,372 +192,319 @@
     </view>
 </template>
 
-<script lang="ts">
-import zpMixins from '@/uni_modules/zp-mixins/index';
-import navigationBar from '@/components/navigation-bar/navigation-bar';
+<script setup lang="ts">
+import { ref } from 'vue';
+import { onLoad } from '@dcloudio/uni-app';
+import navigationBar from '@/components/navigation-bar/navigation-bar.vue';
 // teacher-registration.ts
-export default zpMixins.extend({
-    components: {
-        navigationBar
+
+const activeTab = ref('pending');
+// 'pending': 待审核, 'approved': 已通过, 'rejected': 已拒绝
+const searchValue = ref('');
+const pendingTeachers = ref<any[]>([]);
+const approvedTeachers = ref<any[]>([]);
+const rejectedTeachers = ref<any[]>([]);
+const filteredTeachers = ref<any[]>([]);
+const pendingCount = ref(0);
+const searchKeyword = ref('');
+const showDetailModal = ref(false);
+const showRejectModal = ref(false);
+const currentTeacher = ref<any>(null);
+const rejectReason = ref('');
+const reasonTemplates = ref<any[]>([
+    '证件照片不清晰，请重新上传',
+    '工号信息有误，请核对后重新提交',
+    '所属院系信息有误，请核对后重新提交',
+    '提交的信息与学校记录不符',
+    '请提供有效的教师证明材料'
+]);
+// 示例数据
+const mockTeachers = ref<any[]>([
+    {
+        id: 'T20230001',
+        name: '张教授',
+        // avatar: '/images/avatar/teacher1.png',  //这里放老师的照片，因为没有所以注释
+        department: '计算机科学与技术学院',
+        position: '教授',
+        phone: '13800138001',
+        email: 'zhang@university.edu',
+        idCardFront: '/images/icons/id-card-sample.png',
+        idCardBack: '/images/icons/id-card-sample.png',
+        teacherCardImage: '/images/teacher-card-sample.png',
+        registerTime: '2023-09-01 10:23:45',
+        status: 'pending',
+        approvalTime: '',
+        rejectReason: ''
     },
-    data() {
-        return {
-            activeTab: 'pending',
-            // 'pending': 待审核, 'approved': 已通过, 'rejected': 已拒绝
-            searchValue: '',
-            pendingTeachers: [] as any[],
-            approvedTeachers: [] as any[],
-            rejectedTeachers: [] as any[],
-            filteredTeachers: [] as any[],
-            pendingCount: 0,
-            searchKeyword: '',
-            showDetailModal: false,
-            showRejectModal: false,
-            currentTeacher: null as any,
-            rejectReason: '',
-            reasonTemplates: [
-                '证件照片不清晰，请重新上传',
-                '工号信息有误，请核对后重新提交',
-                '所属院系信息有误，请核对后重新提交',
-                '提交的信息与学校记录不符',
-                '请提供有效的教师证明材料'
-            ],
-            // 示例数据
-            mockTeachers: [
-                {
-                    id: 'T20230001',
-                    name: '张教授',
-                    // avatar: '/images/avatar/teacher1.png',  //这里放老师的照片，因为没有所以注释
-                    department: '计算机科学与技术学院',
-                    position: '教授',
-                    phone: '13800138001',
-                    email: 'zhang@university.edu',
-                    idCardFront: '/images/icons/id-card-sample.png',
-                    idCardBack: '/images/icons/id-card-sample.png',
-                    teacherCardImage: '/images/teacher-card-sample.png',
-                    registerTime: '2023-09-01 10:23:45',
-                    status: 'pending',
-                    approvalTime: '',
-                    rejectReason: ''
-                },
-                {
-                    id: 'T20230002',
-                    name: '李副教授',
-                    //avatar: '/images/avatar/teacher2.png',
-                    department: '物理学院',
-                    position: '副教授',
-                    phone: '13900139002',
-                    email: 'li@university.edu',
-                    idCardFront: '/images/id-card-sample.png',
-                    idCardBack: '/images/id-card-sample.png',
-                    teacherCardImage: '/images/teacher-card-sample.png',
-                    registerTime: '2023-09-02 14:35:22',
-                    status: 'approved',
-                    approvalTime: '2023-09-03 09:15:30',
-                    rejectReason: ''
-                },
-                {
-                    id: 'T20230003',
-                    name: '王讲师',
-                    //avatar: '/images/avatar/teacher3.png',
-                    department: '化学学院',
-                    position: '讲师',
-                    phone: '13700137003',
-                    email: 'wang@university.edu',
-                    idCardFront: '/images/id-card-sample.png',
-                    idCardBack: '/images/id-card-sample.png',
-                    teacherCardImage: '/images/teacher-card-sample.png',
-                    registerTime: '2023-09-03 16:42:18',
-                    status: 'rejected',
-                    approvalTime: '2023-09-04 11:20:45',
-                    rejectReason: '证件照片不清晰，请重新上传'
-                },
-                {
-                    id: 'T20230004',
-                    name: '刘教授',
-                    // avatar: '/images/avatar/teacher4.png',
-                    department: '数学学院',
-                    position: '教授',
-                    phone: '13600136004',
-                    email: 'liu@university.edu',
-                    idCardFront: '/images/id-card-sample.png',
-                    idCardBack: '/images/id-card-sample.png',
-                    teacherCardImage: '/images/teacher-card-sample.png',
-                    registerTime: '2023-09-04 09:18:33',
-                    status: 'pending',
-                    approvalTime: '',
-                    rejectReason: ''
-                },
-                {
-                    id: 'T20230005',
-                    name: '陈副教授',
-                    //avatar: '/images/avatar/teacher5.png',
-                    department: '外国语学院',
-                    position: '副教授',
-                    phone: '13500135005',
-                    email: 'chen@university.edu',
-                    idCardFront: '/images/id-card-sample.png',
-                    idCardBack: '/images/id-card-sample.png',
-                    teacherCardImage: '/images/teacher-card-sample.png',
-                    registerTime: '2023-09-05 15:27:56',
-                    status: 'approved',
-                    approvalTime: '2023-09-06 10:05:12',
-                    rejectReason: ''
-                }
-            ]
-        };
+    {
+        id: 'T20230002',
+        name: '李副教授',
+        //avatar: '/images/avatar/teacher2.png',
+        department: '物理学院',
+        position: '副教授',
+        phone: '13900139002',
+        email: 'li@university.edu',
+        idCardFront: '/images/id-card-sample.png',
+        idCardBack: '/images/id-card-sample.png',
+        teacherCardImage: '/images/teacher-card-sample.png',
+        registerTime: '2023-09-02 14:35:22',
+        status: 'approved',
+        approvalTime: '2023-09-03 09:15:30',
+        rejectReason: ''
     },
-    onLoad() {
-        this.filterTeachers();
-        // 计算待审核数量
-        this.setData({
-            pendingCount: this.pendingTeachers.length
-        });
+    {
+        id: 'T20230003',
+        name: '王讲师',
+        //avatar: '/images/avatar/teacher3.png',
+        department: '化学学院',
+        position: '讲师',
+        phone: '13700137003',
+        email: 'wang@university.edu',
+        idCardFront: '/images/id-card-sample.png',
+        idCardBack: '/images/id-card-sample.png',
+        teacherCardImage: '/images/teacher-card-sample.png',
+        registerTime: '2023-09-03 16:42:18',
+        status: 'rejected',
+        approvalTime: '2023-09-04 11:20:45',
+        rejectReason: '证件照片不清晰，请重新上传'
     },
-    methods: {
-        // 过滤教师列表
-        filterTeachers() {
-            const { mockTeachers, searchKeyword, activeTab } = this;
-
-            // 根据搜索值过滤
-            const allFiltered = searchKeyword
-                ? mockTeachers.filter((teacher) => teacher.name.includes(searchKeyword) || teacher.id.includes(searchKeyword) || teacher.department.includes(searchKeyword))
-                : mockTeachers;
-
-            // 按状态分类
-            const pendingTeachers = allFiltered.filter((t) => t.status === 'pending');
-            const approvedTeachers = allFiltered.filter((t) => t.status === 'approved');
-            const rejectedTeachers = allFiltered.filter((t) => t.status === 'rejected');
-
-            // 根据当前选中的tab筛选要显示的教师列表
-            let filteredTeachers: any[] = [];
-            if (activeTab === 'pending') {
-                filteredTeachers = pendingTeachers;
-            } else if (activeTab === 'approved') {
-                filteredTeachers = approvedTeachers;
-            } else if (activeTab === 'rejected') {
-                filteredTeachers = rejectedTeachers;
-            }
-            this.setData({
-                pendingTeachers,
-                approvedTeachers,
-                rejectedTeachers,
-                filteredTeachers,
-                pendingCount: pendingTeachers.length
-            });
-        },
-
-        // 切换选项卡
-        switchTab(e: any) {
-            const activeTab = e.currentTarget.dataset.tab;
-            this.setData(
-                {
-                    activeTab
-                },
-                () => {
-                    this.filterTeachers();
-                }
-            );
-        },
-
-        // 搜索
-        onSearchInput(e: any) {
-            this.setData(
-                {
-                    searchKeyword: e.detail.value
-                },
-                () => {
-                    this.filterTeachers();
-                }
-            );
-        },
-
-        // 清空搜索
-        clearSearch() {
-            this.setData(
-                {
-                    searchKeyword: ''
-                },
-                () => {
-                    this.filterTeachers();
-                }
-            );
-        },
-
-        // 显示教师详情
-        showTeacherDetail(e: any) {
-            const teacherId = e.currentTarget.dataset.id;
-            console.log('点击教师卡片，ID:', teacherId);
-
-            // 先从当前显示的教师列表中查找
-            let teacher = null;
-            const { activeTab, pendingTeachers, approvedTeachers, rejectedTeachers } = this;
-            if (activeTab === 'pending') {
-                teacher = pendingTeachers.find((t) => t.id === teacherId);
-            } else if (activeTab === 'approved') {
-                teacher = approvedTeachers.find((t) => t.id === teacherId);
-            } else if (activeTab === 'rejected') {
-                teacher = rejectedTeachers.find((t) => t.id === teacherId);
-            }
-
-            // 如果在当前列表中没找到，再从所有教师中查找
-            if (!teacher) {
-                teacher = this.mockTeachers.find((t) => t.id === teacherId);
-            }
-            if (teacher) {
-                console.log('找到教师信息:', teacher);
-                this.setData({
-                    currentTeacher: teacher,
-                    showDetailModal: true
-                });
-            } else {
-                console.log('未找到教师信息');
-                uni.showToast({
-                    title: '未找到教师信息',
-                    icon: 'none'
-                });
-            }
-        },
-
-        // 阻止事件冒泡
-        stopPropagation() {
-            // 仅用于阻止事件冒泡，无需实际逻辑
-        },
-
-        // 关闭详情弹窗
-        hideDetailModal() {
-            this.setData({
-                showDetailModal: false
-            });
-        },
-
-        // 显示拒绝弹窗
-        showRejectModalFun(e: any) {
-            const teacherId = e.currentTarget.dataset.id;
-            const teacher = this.mockTeachers.find((t) => t.id === teacherId);
-            if (teacher) {
-                this.setData({
-                    currentTeacher: teacher,
-                    showRejectModal: true,
-                    rejectReason: ''
-                });
-            }
-        },
-
-        // 关闭拒绝弹窗
-        hideRejectModal() {
-            this.setData({
-                showRejectModal: false
-            });
-        },
-
-        // 输入拒绝原因
-        onReasonInput(e: any) {
-            this.setData({
-                rejectReason: e.detail.value
-            });
-        },
-
-        // 选择拒绝原因模板
-        selectReasonTemplate(e: any) {
-            const reason = e.currentTarget.dataset.reason;
-            this.setData({
-                rejectReason: reason
-            });
-        },
-
-        // 预览证件图片
-        previewImage(e: any) {
-            const url = e.currentTarget.dataset.url;
-            uni.previewImage({
-                urls: [url],
-                current: url
-            });
-        },
-
-        // 通过审核
-        approveTeacher(e: any) {
-            const teacherId = e.currentTarget.dataset.id || (this.currentTeacher ? this.currentTeacher.id : '');
-            if (!teacherId) {
-                return;
-            }
-
-            // 更新教师状态
-            const mockTeachers = this.mockTeachers.map((teacher) => {
-                if (teacher.id === teacherId) {
-                    return {
-                        ...teacher,
-                        status: 'approved',
-                        approvalTime: this.formatDate(new Date())
-                    };
-                }
-                return teacher;
-            });
-            this.setData(
-                {
-                    mockTeachers,
-                    showDetailModal: false
-                },
-                () => {
-                    this.filterTeachers();
-                    uni.showToast({
-                        title: '已通过审核',
-                        icon: 'success'
-                    });
-                }
-            );
-        },
-
-        // 拒绝审核
-        rejectTeacher() {
-            const { currentTeacher, rejectReason } = this;
-            if (!currentTeacher || !rejectReason.trim()) {
-                uni.showToast({
-                    title: '请填写拒绝原因',
-                    icon: 'none'
-                });
-                return;
-            }
-
-            // 更新教师状态
-            const mockTeachers = this.mockTeachers.map((teacher) => {
-                if (teacher.id === currentTeacher.id) {
-                    return {
-                        ...teacher,
-                        status: 'rejected',
-                        approvalTime: this.formatDate(new Date()),
-                        rejectReason: rejectReason.trim()
-                    };
-                }
-                return teacher;
-            });
-            this.setData(
-                {
-                    mockTeachers,
-                    showRejectModal: false
-                },
-                () => {
-                    this.filterTeachers();
-                    uni.showToast({
-                        title: '已拒绝申请',
-                        icon: 'success'
-                    });
-                }
-            );
-        },
-
-        // 格式化日期
-        formatDate(date: Date) {
-            const year = date.getFullYear();
-            const month = (date.getMonth() + 1).toString().padStart(2, '0');
-            const day = date.getDate().toString().padStart(2, '0');
-            const hours = date.getHours().toString().padStart(2, '0');
-            const minutes = date.getMinutes().toString().padStart(2, '0');
-            const seconds = date.getSeconds().toString().padStart(2, '0');
-            return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
-        }
+    {
+        id: 'T20230004',
+        name: '刘教授',
+        // avatar: '/images/avatar/teacher4.png',
+        department: '数学学院',
+        position: '教授',
+        phone: '13600136004',
+        email: 'liu@university.edu',
+        idCardFront: '/images/id-card-sample.png',
+        idCardBack: '/images/id-card-sample.png',
+        teacherCardImage: '/images/teacher-card-sample.png',
+        registerTime: '2023-09-04 09:18:33',
+        status: 'pending',
+        approvalTime: '',
+        rejectReason: ''
+    },
+    {
+        id: 'T20230005',
+        name: '陈副教授',
+        //avatar: '/images/avatar/teacher5.png',
+        department: '外国语学院',
+        position: '副教授',
+        phone: '13500135005',
+        email: 'chen@university.edu',
+        idCardFront: '/images/id-card-sample.png',
+        idCardBack: '/images/id-card-sample.png',
+        teacherCardImage: '/images/teacher-card-sample.png',
+        registerTime: '2023-09-05 15:27:56',
+        status: 'approved',
+        approvalTime: '2023-09-06 10:05:12',
+        rejectReason: ''
     }
+]);
+
+onLoad(() => {
+    filterTeachers();
+    // 计算待审核数量
+    pendingCount.value = pendingTeachers.value.length;
 });
+
+// 过滤教师列表
+const filterTeachers = () => {
+    const _mockTeachers = mockTeachers.value;
+    const _searchKeyword = searchKeyword.value;
+    const _activeTab = activeTab.value;
+
+    // 根据搜索值过滤
+    const allFiltered = _searchKeyword
+        ? _mockTeachers.filter((teacher) => teacher.name.includes(_searchKeyword) || teacher.id.includes(_searchKeyword) || teacher.department.includes(_searchKeyword))
+        : _mockTeachers;
+
+    // 按状态分类
+    const _pendingTeachers = allFiltered.filter((t) => t.status === 'pending');
+    const _approvedTeachers = allFiltered.filter((t) => t.status === 'approved');
+    const _rejectedTeachers = allFiltered.filter((t) => t.status === 'rejected');
+
+    // 根据当前选中的tab筛选要显示的教师列表
+    let _filteredTeachers: any[] = [];
+    if (_activeTab === 'pending') {
+        _filteredTeachers = _pendingTeachers;
+    } else if (_activeTab === 'approved') {
+        _filteredTeachers = _approvedTeachers;
+    } else if (_activeTab === 'rejected') {
+        _filteredTeachers = _rejectedTeachers;
+    }
+    pendingTeachers.value = _pendingTeachers;
+    approvedTeachers.value = _approvedTeachers;
+    rejectedTeachers.value = _rejectedTeachers;
+    filteredTeachers.value = _filteredTeachers;
+    pendingCount.value = _pendingTeachers.length;
+};
+
+// 切换选项卡
+const switchTab = (e: any) => {
+    activeTab.value = e.currentTarget.dataset.tab;
+    filterTeachers();
+};
+
+// 搜索
+const onSearchInput = (e: any) => {
+    searchKeyword.value = e.detail.value;
+    filterTeachers();
+};
+
+// 清空搜索
+const clearSearch = () => {
+    searchKeyword.value = '';
+    filterTeachers();
+};
+
+// 显示教师详情
+const showTeacherDetail = (e: any) => {
+    const teacherId = e.currentTarget.dataset.id;
+    console.log('点击教师卡片，ID:', teacherId);
+
+    // 先从当前显示的教师列表中查找
+    let teacher = null;
+    const _activeTab = activeTab.value;
+    if (_activeTab === 'pending') {
+        teacher = pendingTeachers.value.find((t) => t.id === teacherId);
+    } else if (_activeTab === 'approved') {
+        teacher = approvedTeachers.value.find((t) => t.id === teacherId);
+    } else if (_activeTab === 'rejected') {
+        teacher = rejectedTeachers.value.find((t) => t.id === teacherId);
+    }
+
+    // 如果在当前列表中没找到，再从所有教师中查找
+    if (!teacher) {
+        teacher = mockTeachers.value.find((t) => t.id === teacherId);
+    }
+    if (teacher) {
+        console.log('找到教师信息:', teacher);
+        currentTeacher.value = teacher;
+        showDetailModal.value = true;
+    } else {
+        console.log('未找到教师信息');
+        uni.showToast({
+            title: '未找到教师信息',
+            icon: 'none'
+        });
+    }
+};
+
+// 阻止事件冒泡
+const stopPropagation = () => {
+    // 仅用于阻止事件冒泡，无需实际逻辑
+};
+
+// 关闭详情弹窗
+const hideDetailModal = () => {
+    showDetailModal.value = false;
+};
+
+// 显示拒绝弹窗
+const showRejectModalFun = (e: any) => {
+    const teacherId = e.currentTarget.dataset.id;
+    const teacher = mockTeachers.value.find((t) => t.id === teacherId);
+    if (teacher) {
+        currentTeacher.value = teacher;
+        showRejectModal.value = true;
+        rejectReason.value = '';
+    }
+};
+
+// 关闭拒绝弹窗
+const hideRejectModal = () => {
+    showRejectModal.value = false;
+};
+
+// 输入拒绝原因
+const onReasonInput = (e: any) => {
+    rejectReason.value = e.detail.value;
+};
+
+// 选择拒绝原因模板
+const selectReasonTemplate = (e: any) => {
+    const reason = e.currentTarget.dataset.reason;
+    rejectReason.value = reason;
+};
+
+// 预览证件图片
+const previewImage = (e: any) => {
+    const url = e.currentTarget.dataset.url;
+    uni.previewImage({
+        urls: [url],
+        current: url
+    });
+};
+
+// 通过审核
+const approveTeacher = (e: any) => {
+    const teacherId = e.currentTarget.dataset.id || (currentTeacher.value ? currentTeacher.value.id : '');
+    if (!teacherId) {
+        return;
+    }
+
+    // 更新教师状态
+    mockTeachers.value = mockTeachers.value.map((teacher) => {
+        if (teacher.id === teacherId) {
+            return {
+                ...teacher,
+                status: 'approved',
+                approvalTime: formatDate(new Date())
+            };
+        }
+        return teacher;
+    });
+    showDetailModal.value = false;
+    filterTeachers();
+    uni.showToast({
+        title: '已通过审核',
+        icon: 'success'
+    });
+};
+
+// 拒绝审核
+const rejectTeacher = () => {
+    const _currentTeacher = currentTeacher.value;
+    const _rejectReason = rejectReason.value;
+    if (!_currentTeacher || !_rejectReason.trim()) {
+        uni.showToast({
+            title: '请填写拒绝原因',
+            icon: 'none'
+        });
+        return;
+    }
+
+    // 更新教师状态
+    mockTeachers.value = mockTeachers.value.map((teacher) => {
+        if (teacher.id === _currentTeacher.id) {
+            return {
+                ...teacher,
+                status: 'rejected',
+                approvalTime: formatDate(new Date()),
+                rejectReason: _rejectReason.trim()
+            };
+        }
+        return teacher;
+    });
+    showRejectModal.value = false;
+    filterTeachers();
+    uni.showToast({
+        title: '已拒绝申请',
+        icon: 'success'
+    });
+};
+
+// 格式化日期
+const formatDate = (date: Date) => {
+    const year = date.getFullYear();
+    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+    const day = date.getDate().toString().padStart(2, '0');
+    const hours = date.getHours().toString().padStart(2, '0');
+    const minutes = date.getMinutes().toString().padStart(2, '0');
+    const seconds = date.getSeconds().toString().padStart(2, '0');
+    return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+};
 </script>
 <style lang="less">
 @import './admin-teacher-registration.less';

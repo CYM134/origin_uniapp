@@ -289,470 +289,394 @@
     </view>
 </template>
 
-<script lang="ts">
-import zpMixins from '@/uni_modules/zp-mixins/index';
-import navigationBar from '@/components/navigation-bar/navigation-bar';
+<script setup lang="ts">
+import { ref } from 'vue';
+import { onMounted } from 'vue';
+import navigationBar from '@/components/navigation-bar/navigation-bar.vue';
 // admin-reservation-approval.ts
-export default zpMixins.extend({
-    components: {
-        navigationBar
+
+// 筛选选项
+const statusOptions = ref<any[]>(['全部状态', '待审批', '已通过', '已拒绝']);
+
+const statusIndex = ref<number>(0);
+
+const labOptions = ref<any[]>([
+    {
+        id: '0',
+        name: '全部实验室'
     },
-    data() {
-        return {
-            // 筛选选项
-            statusOptions: ['全部状态', '待审批', '已通过', '已拒绝'],
-
-            statusIndex: 0,
-
-            labOptions: [
-                {
-                    id: '0',
-                    name: '全部实验室'
-                },
-                {
-                    id: '1',
-                    name: '国际课程实验室'
-                },
-                {
-                    id: '2',
-                    name: 'IBC实验中心'
-                },
-                {
-                    id: '3',
-                    name: '互联网+新商科实验室'
-                }
-            ],
-
-            labIndex: 0,
-            dateFilter: '',
-
-            // 自定义选择器控制
-            showStatusPickerModal: false,
-
-            showLabPickerModal: false,
-            showDatePickerModal: false,
-            tempStatusIndex: 0,
-            tempLabIndex: 0,
-
-            // 日期选择器数据
-            years: [2023, 2024, 2025],
-
-            months: Array.from(
-                {
-                    length: 12
-                },
-                (_, i) => i + 1
-            ),
-
-            days: Array.from(
-                {
-                    length: 31
-                },
-                (_, i) => i + 1
-            ),
-
-            tempYear: new Date().getFullYear(),
-            tempMonth: new Date().getMonth() + 1,
-            tempDay: new Date().getDate(),
-
-            // 预约列表
-            reservations: [
-                {
-                    id: 'R20230001',
-                    applicant: '张三',
-                    applicantType: '教师',
-                    contact: '13800138000',
-                    labId: '1',
-                    labName: '互联网+新商科实验室',
-                    date: '2023-11-15',
-                    timeSlot: '08:00-10:00',
-                    purpose: '网络协议分析实验，需要使用实验室的路由器和交换机设备进行数据包捕获和分析。',
-                    status: '待审批',
-                    applyTime: '2023-11-10 14:30:25',
-                    attachments: [
-                        {
-                            name: '实验计划.docx',
-                            url: 'https://example.com/plan.docx'
-                        }
-                    ]
-                },
-                {
-                    id: 'R20230002',
-                    applicant: '李四',
-                    applicantType: '学生',
-                    contact: '13900139000',
-                    labId: '2',
-                    labName: '国际课程实验室',
-                    date: '2023-11-16',
-                    timeSlot: '14:00-16:00',
-                    purpose: '课程设计小组讨论，需要使用数据库进行项目开发讨论事宜。',
-                    status: '已通过',
-                    applyTime: '2023-11-09 10:15:36',
-                    approvalTime: '2023-11-10 09:20:15'
-                },
-                {
-                    id: 'R20230003',
-                    applicant: '王五',
-                    applicantType: '教师',
-                    contact: '13700137000',
-                    labId: '3',
-                    labName: '互联网+新商科实验室',
-                    date: '2023-11-17',
-                    timeSlot: '10:00-12:00',
-                    purpose: '深度学习模型训练，需要使用GPU工作站进行大规模数据处理。',
-                    status: '已拒绝',
-                    applyTime: '2023-11-11 16:45:12',
-                    approvalTime: '2023-11-12 11:30:45',
-                    rejectReason: '该时段实验室已被其他教师预约使用。而且该实验室没有算力。'
-                },
-                {
-                    id: 'R20230004',
-                    applicant: '赵六',
-                    applicantType: '学生',
-                    contact: '13600136000',
-                    labId: '1',
-                    labName: '国际课程实验室',
-                    date: '2023-11-18',
-                    timeSlot: '16:00-18:00',
-                    purpose: '毕业设计实验，需要搭建小型网络环境进行测试。',
-                    status: '待审批',
-                    applyTime: '2023-11-12 09:10:28'
-                }
-            ],
-
-            filteredReservations: [] as any[],
-
-            // 详情弹窗
-            showDetailModal: false,
-
-            currentReservation: {} as any,
-
-            // 拒绝弹窗
-            showRejectModal: false,
-
-            rejectReason: '',
-            currentRejectId: '',
-
-            // 拒绝原因模板
-            reasonTemplates: ['该时段实验室已被预约', '实验室设备正在维修', '申请信息不完整', '申请用途不符合实验室使用规定', '需要提供更详细的实验计划'],
-
-            name: ''
-        };
+    {
+        id: '1',
+        name: '国际课程实验室'
     },
-    mounted() {
-        // 处理小程序 attached 生命周期
-        this.attached();
+    {
+        id: '2',
+        name: 'IBC实验中心'
     },
-    methods: {
-        attached() {
-            // 初始化过滤后的预约列表
-            this.filterReservations();
-        },
+    {
+        id: '3',
+        name: '互联网+新商科实验室'
+    }
+]);
 
-        // 显示状态选择器
-        showStatusPicker() {
-            this.setData({
-                showStatusPickerModal: true,
-                tempStatusIndex: this.statusIndex
-            });
-        },
+const labIndex = ref<number>(0);
+const dateFilter = ref<string>('');
 
-        // 隐藏状态选择器
-        hideStatusPicker() {
-            this.setData({
-                showStatusPickerModal: false
-            });
-        },
+// 自定义选择器控制
+const showStatusPickerModal = ref<boolean>(false);
 
-        // 状态选择变化
-        onStatusPickerChange(e: any) {
-            this.setData({
-                tempStatusIndex: e.detail.value[0]
-            });
-        },
+const showLabPickerModal = ref<boolean>(false);
+const showDatePickerModal = ref<boolean>(false);
+const tempStatusIndex = ref<number>(0);
+const tempLabIndex = ref<number>(0);
 
-        // 确认状态选择
-        confirmStatusPicker() {
-            this.setData(
-                {
-                    statusIndex: this.tempStatusIndex,
-                    showStatusPickerModal: false
-                },
-                () => {
-                    this.filterReservations();
-                }
-            );
-        },
+// 日期选择器数据
+const years = ref<any[]>([2023, 2024, 2025]);
 
-        // 显示实验室选择器
-        showLabPicker() {
-            this.setData({
-                showLabPickerModal: true,
-                tempLabIndex: this.labIndex
-            });
-        },
-
-        // 隐藏实验室选择器
-        hideLabPicker() {
-            this.setData({
-                showLabPickerModal: false
-            });
-        },
-
-        // 实验室选择变化
-        onLabPickerChange(e: any) {
-            this.setData({
-                tempLabIndex: e.detail.value[0]
-            });
-        },
-
-        // 确认实验室选择
-        confirmLabPicker() {
-            this.setData(
-                {
-                    labIndex: this.tempLabIndex,
-                    showLabPickerModal: false
-                },
-                () => {
-                    this.filterReservations();
-                }
-            );
-        },
-
-        // 显示日期选择器
-        showDatePicker() {
-            // 如果已有日期，解析为年月日
-            if (this.dateFilter) {
-                const parts = this.dateFilter.split('-');
-                this.setData({
-                    tempYear: parseInt(parts[0]),
-                    tempMonth: parseInt(parts[1]),
-                    tempDay: parseInt(parts[2])
-                });
-            } else {
-                // 否则使用当前日期
-                const now = new Date();
-                this.setData({
-                    tempYear: now.getFullYear(),
-                    tempMonth: now.getMonth() + 1,
-                    tempDay: now.getDate()
-                });
-            }
-            this.setData({
-                showDatePickerModal: true
-            });
-        },
-
-        // 隐藏日期选择器
-        hideDatePicker() {
-            this.setData({
-                showDatePickerModal: false
-            });
-        },
-
-        // 日期选择变化
-        onDatePickerChange(e: any) {
-            const values = e.detail.value;
-            this.setData({
-                tempYear: this.years[values[0]],
-                tempMonth: this.months[values[1]],
-                tempDay: this.days[values[2]]
-            });
-        },
-
-        // 确认日期选择
-        confirmDatePicker() {
-            const { tempYear, tempMonth, tempDay } = this;
-            const formattedDate = `${tempYear}-${String(tempMonth).padStart(2, '0')}-${String(tempDay).padStart(2, '0')}`;
-            this.setData(
-                {
-                    dateFilter: formattedDate,
-                    showDatePickerModal: false
-                },
-                () => {
-                    this.filterReservations();
-                }
-            );
-        },
-
-        // 过滤预约列表
-        filterReservations() {
-            const { reservations, statusIndex, labIndex, dateFilter, statusOptions, labOptions } = this;
-            let filtered = [...reservations];
-
-            // 按状态筛选
-            if (statusIndex > 0) {
-                const status = statusOptions[statusIndex];
-                filtered = filtered.filter((item) => item.status === status);
-            }
-
-            // 按实验室筛选
-            if (labIndex > 0) {
-                const labId = labOptions[labIndex].id;
-                filtered = filtered.filter((item) => item.labId === labId);
-            }
-
-            // 按日期筛选
-            if (dateFilter) {
-                filtered = filtered.filter((item) => item.date === dateFilter);
-            }
-
-            // 更新过滤后的列表
-            this.setData({
-                filteredReservations: filtered
-            });
-        },
-
-        // 显示预约详情
-        showReservationDetail(e: any) {
-            const id = e.currentTarget.dataset.id;
-            const reservation = this.reservations.find((item) => item.id === id);
-            if (reservation) {
-                this.setData({
-                    showDetailModal: true,
-                    currentReservation: reservation
-                });
-            }
-        },
-
-        // 隐藏详情弹窗
-        hideDetailModal() {
-            this.setData({
-                showDetailModal: false
-            });
-        },
-
-        // 显示拒绝弹窗
-        showRejectModalFun(e: any) {
-            const id = e.currentTarget.dataset.id;
-            this.setData({
-                showRejectModal: true,
-                currentRejectId: id,
-                rejectReason: ''
-            });
-
-            // 阻止事件冒泡
-            e.stopPropagation();
-        },
-
-        // 隐藏拒绝弹窗
-        hideRejectModal() {
-            this.setData({
-                showRejectModal: false
-            });
-        },
-
-        // 拒绝原因输入
-        onReasonInput(e: any) {
-            this.setData({
-                rejectReason: e.detail.value
-            });
-        },
-
-        // 选择拒绝原因模板
-        selectReasonTemplate(e: any) {
-            const reason = e.currentTarget.dataset.reason;
-            this.setData({
-                rejectReason: reason
-            });
-        },
-
-        // 阻止事件冒泡
-        stopPropagation(e: any) {
-            e.stopPropagation();
-        },
-
-        // 通过预约
-        approveReservation(e: any) {
-            const id = e.currentTarget.dataset.id;
-            uni.showModal({
-                title: '确认通过',
-                content: '确定通过此预约申请吗？',
-                confirmColor: '#1890FF',
-                success: (res) => {
-                    if (res.confirm) {
-                        this.updateReservationStatus(id, '已通过');
-                    }
-                }
-            });
-
-            // 阻止事件冒泡
-            e.stopPropagation();
-        },
-
-        // 拒绝预约
-        rejectReservation() {
-            const { currentRejectId, rejectReason } = this;
-            if (!rejectReason.trim()) {
-                uni.showToast({
-                    title: '请输入拒绝原因',
-                    icon: 'none'
-                });
-                return;
-            }
-            this.updateReservationStatus(currentRejectId, '已拒绝', rejectReason);
-
-            // 隐藏拒绝弹窗
-            this.hideRejectModal();
-        },
-
-        // 更新预约状态
-        updateReservationStatus(id: string, status: string, rejectReason?: string) {
-            const { reservations } = this;
-            const now = new Date();
-            const approvalTime = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')} ${String(now.getHours()).padStart(
-                2,
-                '0'
-            )}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`;
-
-            // 更新预约状态
-            const newReservations = reservations.map((item) => {
-                if (item.id === id) {
-                    const updatedItem = {
-                        ...item,
-                        status,
-                        approvalTime
-                    };
-                    if (status === '已拒绝' && rejectReason) {
-                        updatedItem.rejectReason = rejectReason;
-                    }
-                    return updatedItem;
-                }
-                return item;
-            });
-
-            // 更新数据
-            this.setData(
-                {
-                    reservations: newReservations,
-                    currentReservation: newReservations.find((item) => item.id === id) || {}
-                },
-                () => {
-                    // 重新过滤列表
-                    this.filterReservations();
-
-                    // 显示成功提示
-                    uni.showToast({
-                        title: status === '已通过' ? '已通过申请' : '已拒绝申请',
-                        icon: 'success'
-                    });
-                }
-            );
-        },
-
-        // 预览附件
-        previewAttachment(e: any) {
-            const url = e.currentTarget.dataset.url;
-
-            // 实际开发中可能需要下载文件后预览
-            uni.showToast({
-                title: '附件预览功能开发中',
-                icon: 'none'
-            });
-        }
+const months = ref<any[]>(Array.from(
+    {
+        length: 12
     },
-    created: function () {}
+    (_, i) => i + 1
+));
+
+const days = ref<any[]>(Array.from(
+    {
+        length: 31
+    },
+    (_, i) => i + 1
+));
+
+const tempYear = ref<number>(new Date().getFullYear());
+const tempMonth = ref<number>(new Date().getMonth() + 1);
+const tempDay = ref<number>(new Date().getDate());
+
+// 预约列表
+const reservations = ref<any[]>([
+    {
+        id: 'R20230001',
+        applicant: '张三',
+        applicantType: '教师',
+        contact: '13800138000',
+        labId: '1',
+        labName: '互联网+新商科实验室',
+        date: '2023-11-15',
+        timeSlot: '08:00-10:00',
+        purpose: '网络协议分析实验，需要使用实验室的路由器和交换机设备进行数据包捕获和分析。',
+        status: '待审批',
+        applyTime: '2023-11-10 14:30:25',
+        attachments: [
+            {
+                name: '实验计划.docx',
+                url: 'https://example.com/plan.docx'
+            }
+        ]
+    },
+    {
+        id: 'R20230002',
+        applicant: '李四',
+        applicantType: '学生',
+        contact: '13900139000',
+        labId: '2',
+        labName: '国际课程实验室',
+        date: '2023-11-16',
+        timeSlot: '14:00-16:00',
+        purpose: '课程设计小组讨论，需要使用数据库进行项目开发讨论事宜。',
+        status: '已通过',
+        applyTime: '2023-11-09 10:15:36',
+        approvalTime: '2023-11-10 09:20:15'
+    },
+    {
+        id: 'R20230003',
+        applicant: '王五',
+        applicantType: '教师',
+        contact: '13700137000',
+        labId: '3',
+        labName: '互联网+新商科实验室',
+        date: '2023-11-17',
+        timeSlot: '10:00-12:00',
+        purpose: '深度学习模型训练，需要使用GPU工作站进行大规模数据处理。',
+        status: '已拒绝',
+        applyTime: '2023-11-11 16:45:12',
+        approvalTime: '2023-11-12 11:30:45',
+        rejectReason: '该时段实验室已被其他教师预约使用。而且该实验室没有算力。'
+    },
+    {
+        id: 'R20230004',
+        applicant: '赵六',
+        applicantType: '学生',
+        contact: '13600136000',
+        labId: '1',
+        labName: '国际课程实验室',
+        date: '2023-11-18',
+        timeSlot: '16:00-18:00',
+        purpose: '毕业设计实验，需要搭建小型网络环境进行测试。',
+        status: '待审批',
+        applyTime: '2023-11-12 09:10:28'
+    }
+]);
+
+const filteredReservations = ref<any[]>([]);
+
+// 详情弹窗
+const showDetailModal = ref<boolean>(false);
+
+const currentReservation = ref<any>({});
+
+// 拒绝弹窗
+const showRejectModal = ref<boolean>(false);
+
+const rejectReason = ref<string>('');
+const currentRejectId = ref<string>('');
+
+// 拒绝原因模板
+const reasonTemplates = ref<any[]>(['该时段实验室已被预约', '实验室设备正在维修', '申请信息不完整', '申请用途不符合实验室使用规定', '需要提供更详细的实验计划']);
+
+const name = ref<string>('');
+
+onMounted(() => {
+    // 处理小程序 attached 生命周期
+    // 初始化过滤后的预约列表
+    filterReservations();
 });
+
+// 显示状态选择器
+const showStatusPicker = () => {
+    showStatusPickerModal.value = true;
+    tempStatusIndex.value = statusIndex.value;
+};
+
+// 隐藏状态选择器
+const hideStatusPicker = () => {
+    showStatusPickerModal.value = false;
+};
+
+// 状态选择变化
+const onStatusPickerChange = (e: any) => {
+    tempStatusIndex.value = e.detail.value[0];
+};
+
+// 确认状态选择
+const confirmStatusPicker = () => {
+    statusIndex.value = tempStatusIndex.value;
+    showStatusPickerModal.value = false;
+    filterReservations();
+};
+
+// 显示实验室选择器
+const showLabPicker = () => {
+    showLabPickerModal.value = true;
+    tempLabIndex.value = labIndex.value;
+};
+
+// 隐藏实验室选择器
+const hideLabPicker = () => {
+    showLabPickerModal.value = false;
+};
+
+// 实验室选择变化
+const onLabPickerChange = (e: any) => {
+    tempLabIndex.value = e.detail.value[0];
+};
+
+// 确认实验室选择
+const confirmLabPicker = () => {
+    labIndex.value = tempLabIndex.value;
+    showLabPickerModal.value = false;
+    filterReservations();
+};
+
+// 显示日期选择器
+const showDatePicker = () => {
+    // 如果已有日期，解析为年月日
+    if (dateFilter.value) {
+        const parts = dateFilter.value.split('-');
+        tempYear.value = parseInt(parts[0]);
+        tempMonth.value = parseInt(parts[1]);
+        tempDay.value = parseInt(parts[2]);
+    } else {
+        // 否则使用当前日期
+        const now = new Date();
+        tempYear.value = now.getFullYear();
+        tempMonth.value = now.getMonth() + 1;
+        tempDay.value = now.getDate();
+    }
+    showDatePickerModal.value = true;
+};
+
+// 隐藏日期选择器
+const hideDatePicker = () => {
+    showDatePickerModal.value = false;
+};
+
+// 日期选择变化
+const onDatePickerChange = (e: any) => {
+    const values = e.detail.value;
+    tempYear.value = years.value[values[0]];
+    tempMonth.value = months.value[values[1]];
+    tempDay.value = days.value[values[2]];
+};
+
+// 确认日期选择
+const confirmDatePicker = () => {
+    const formattedDate = `${tempYear.value}-${String(tempMonth.value).padStart(2, '0')}-${String(tempDay.value).padStart(2, '0')}`;
+    dateFilter.value = formattedDate;
+    showDatePickerModal.value = false;
+    filterReservations();
+};
+
+// 过滤预约列表
+const filterReservations = () => {
+    let filtered = [...reservations.value];
+
+    // 按状态筛选
+    if (statusIndex.value > 0) {
+        const status = statusOptions.value[statusIndex.value];
+        filtered = filtered.filter((item) => item.status === status);
+    }
+
+    // 按实验室筛选
+    if (labIndex.value > 0) {
+        const labId = labOptions.value[labIndex.value].id;
+        filtered = filtered.filter((item) => item.labId === labId);
+    }
+
+    // 按日期筛选
+    if (dateFilter.value) {
+        filtered = filtered.filter((item) => item.date === dateFilter.value);
+    }
+
+    // 更新过滤后的列表
+    filteredReservations.value = filtered;
+};
+
+// 显示预约详情
+const showReservationDetail = (e: any) => {
+    const id = e.currentTarget.dataset.id;
+    const reservation = reservations.value.find((item) => item.id === id);
+    if (reservation) {
+        showDetailModal.value = true;
+        currentReservation.value = reservation;
+    }
+};
+
+// 隐藏详情弹窗
+const hideDetailModal = () => {
+    showDetailModal.value = false;
+};
+
+// 显示拒绝弹窗
+const showRejectModalFun = (e: any) => {
+    const id = e.currentTarget.dataset.id;
+    showRejectModal.value = true;
+    currentRejectId.value = id;
+    rejectReason.value = '';
+
+    // 阻止事件冒泡
+    e.stopPropagation();
+};
+
+// 隐藏拒绝弹窗
+const hideRejectModal = () => {
+    showRejectModal.value = false;
+};
+
+// 拒绝原因输入
+const onReasonInput = (e: any) => {
+    rejectReason.value = e.detail.value;
+};
+
+// 选择拒绝原因模板
+const selectReasonTemplate = (e: any) => {
+    const reason = e.currentTarget.dataset.reason;
+    rejectReason.value = reason;
+};
+
+// 阻止事件冒泡
+const stopPropagation = (e: any) => {
+    e.stopPropagation();
+};
+
+// 通过预约
+const approveReservation = (e: any) => {
+    const id = e.currentTarget.dataset.id;
+    uni.showModal({
+        title: '确认通过',
+        content: '确定通过此预约申请吗？',
+        confirmColor: '#1890FF',
+        success: (res) => {
+            if (res.confirm) {
+                updateReservationStatus(id, '已通过');
+            }
+        }
+    });
+
+    // 阻止事件冒泡
+    e.stopPropagation();
+};
+
+// 拒绝预约
+const rejectReservation = () => {
+    if (!rejectReason.value.trim()) {
+        uni.showToast({
+            title: '请输入拒绝原因',
+            icon: 'none'
+        });
+        return;
+    }
+    updateReservationStatus(currentRejectId.value, '已拒绝', rejectReason.value);
+
+    // 隐藏拒绝弹窗
+    hideRejectModal();
+};
+
+// 更新预约状态
+const updateReservationStatus = (id: string, status: string, rejectReasonArg?: string) => {
+    const now = new Date();
+    const approvalTime = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')} ${String(now.getHours()).padStart(
+        2,
+        '0'
+    )}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`;
+
+    // 更新预约状态
+    const newReservations = reservations.value.map((item) => {
+        if (item.id === id) {
+            const updatedItem = {
+                ...item,
+                status,
+                approvalTime
+            };
+            if (status === '已拒绝' && rejectReasonArg) {
+                updatedItem.rejectReason = rejectReasonArg;
+            }
+            return updatedItem;
+        }
+        return item;
+    });
+
+    // 更新数据
+    reservations.value = newReservations;
+    currentReservation.value = newReservations.find((item) => item.id === id) || {};
+    // 重新过滤列表
+    filterReservations();
+
+    // 显示成功提示
+    uni.showToast({
+        title: status === '已通过' ? '已通过申请' : '已拒绝申请',
+        icon: 'success'
+    });
+};
+
+// 预览附件
+const previewAttachment = (e: any) => {
+    const url = e.currentTarget.dataset.url;
+
+    // 实际开发中可能需要下载文件后预览
+    uni.showToast({
+        title: '附件预览功能开发中',
+        icon: 'none'
+    });
+};
 </script>
 <style lang="less">
 @import './admin-reservation-approval.less';

@@ -112,312 +112,288 @@
     </view>
 </template>
 
-<script lang="ts">
-import zpMixins from '@/uni_modules/zp-mixins/index';
-import navigationBar from '@/components/navigation-bar/navigation-bar';
+<script setup lang="ts">
+import { ref } from 'vue';
+import navigationBar from '@/components/navigation-bar/navigation-bar.vue';
 // pages/student-register/student-register.ts
-export default zpMixins.extend({
-    components: {
-        navigationBar
-    },
-    data() {
-        return {
-            studentId: '',
-            name: '',
-            gender: '',
-            colleges: [
-                '计算机科学与技术学院',
-                '数学学院',
-                '物理学院',
-                '化学学院',
-                '生命科学学院',
-                '地理科学学院',
-                '心理学院',
-                '教育学院',
-                '外国语言文化学院',
-                '文学院',
-                '历史文化学院',
-                '马克思主义学院',
-                '经济与管理学院',
-                '法学院',
-                '公共管理学院',
-                '体育科学学院',
-                '音乐学院',
-                '美术学院'
-            ],
-            collegeIndex: -1,
-            major: '',
-            phone: '',
-            password: '',
-            confirmPassword: '',
-            showPassword: false,
-            showConfirmPassword: false,
-            agreeTerms: false,
-            showCollegePickerModal: false,
-            tempCollegeIndex: 0
-        };
-    },
-    methods: {
-        onStudentIdInput(e: any) {
-            this.setData({
-                studentId: e.detail.value
-            });
-        },
 
-        onNameInput(e: any) {
-            this.setData({
-                name: e.detail.value
-            });
-        },
+const studentId = ref<string>('');
+const name = ref<string>('');
+const gender = ref<string>('');
+const colleges = ref<string[]>([
+    '计算机科学与技术学院',
+    '数学学院',
+    '物理学院',
+    '化学学院',
+    '生命科学学院',
+    '地理科学学院',
+    '心理学院',
+    '教育学院',
+    '外国语言文化学院',
+    '文学院',
+    '历史文化学院',
+    '马克思主义学院',
+    '经济与管理学院',
+    '法学院',
+    '公共管理学院',
+    '体育科学学院',
+    '音乐学院',
+    '美术学院'
+]);
+const collegeIndex = ref<number>(-1);
+const major = ref<string>('');
+const phone = ref<string>('');
+const password = ref<string>('');
+const confirmPassword = ref<string>('');
+const showPassword = ref<boolean>(false);
+const showConfirmPassword = ref<boolean>(false);
+const agreeTerms = ref<boolean>(false);
+const showCollegePickerModal = ref<boolean>(false);
+const tempCollegeIndex = ref<number>(0);
 
-        selectGender(e: any) {
-            const gender = e.currentTarget.dataset.gender;
-            this.setData({
-                gender: gender
-            });
-        },
+const onStudentIdInput = (e: any) => {
+    studentId.value = e.detail.value;
+};
 
-        onCollegeChange(e: any) {
-            this.setData({
-                collegeIndex: e.detail.value
-            });
-        },
+const onNameInput = (e: any) => {
+    name.value = e.detail.value;
+};
 
-        onMajorInput(e: any) {
-            this.setData({
-                major: e.detail.value
-            });
-        },
+const selectGender = (e: any) => {
+    const genderVal = e.currentTarget.dataset.gender;
+    gender.value = genderVal;
+};
 
-        onPhoneInput(e: any) {
-            this.setData({
-                phone: e.detail.value
-            });
-        },
+const onCollegeChange = (e: any) => {
+    collegeIndex.value = e.detail.value;
+};
 
-        onPasswordInput(e: any) {
-            this.setData({
-                password: e.detail.value
-            });
-        },
+const onMajorInput = (e: any) => {
+    major.value = e.detail.value;
+};
 
-        onConfirmPasswordInput(e: any) {
-            this.setData({
-                confirmPassword: e.detail.value
-            });
-        },
+const onPhoneInput = (e: any) => {
+    phone.value = e.detail.value;
+};
 
-        togglePasswordVisibility() {
-            this.setData({
-                showPassword: !this.showPassword
-            });
-        },
+const onPasswordInput = (e: any) => {
+    password.value = e.detail.value;
+};
 
-        toggleConfirmPasswordVisibility() {
-            this.setData({
-                showConfirmPassword: !this.showConfirmPassword
-            });
-        },
+const onConfirmPasswordInput = (e: any) => {
+    confirmPassword.value = e.detail.value;
+};
 
-        toggleAgreement() {
-            this.setData({
-                agreeTerms: !this.agreeTerms
-            });
-        },
+const togglePasswordVisibility = () => {
+    showPassword.value = !showPassword.value;
+};
 
-        showTerms() {
-            uni.showModal({
-                title: '用户协议',
-                content:
-                    '1. 请确保提供的个人信息真实有效\n2. 账号仅限本人使用，不得转借他人\n3. 遵守实验室相关规定和预约制度\n4. 如发现违规行为，将取消使用资格\n5. 个人信息仅用于实验室管理，不会泄露给第三方',
-                showCancel: false,
-                confirmText: '我知道了'
-            });
-        },
+const toggleConfirmPasswordVisibility = () => {
+    showConfirmPassword.value = !showConfirmPassword.value;
+};
 
-        validateForm() {
-            const { studentId, name, gender, collegeIndex, major, phone, password, confirmPassword, agreeTerms } = this;
-            if (!studentId.trim()) {
-                uni.showToast({
-                    title: '请输入学号',
-                    icon: 'none'
-                });
-                return false;
-            }
-            if (!/^\d+$/.test(studentId)) {
-                uni.showToast({
-                    title: '学号格式不正确',
-                    icon: 'none'
-                });
-                return false;
-            }
-            if (!name.trim()) {
-                uni.showToast({
-                    title: '请输入姓名',
-                    icon: 'none'
-                });
-                return false;
-            }
-            if (!/^[\u4e00-\u9fa5]{2,10}$/.test(name)) {
-                uni.showToast({
-                    title: '请输入正确的中文姓名',
-                    icon: 'none'
-                });
-                return false;
-            }
-            if (!gender) {
-                uni.showToast({
-                    title: '请选择性别',
-                    icon: 'none'
-                });
-                return false;
-            }
-            if (collegeIndex === -1) {
-                uni.showToast({
-                    title: '请选择所属学院',
-                    icon: 'none'
-                });
-                return false;
-            }
-            if (!major.trim()) {
-                uni.showToast({
-                    title: '请输入年级专业',
-                    icon: 'none'
-                });
-                return false;
-            }
-            if (!phone.trim()) {
-                uni.showToast({
-                    title: '请输入手机号',
-                    icon: 'none'
-                });
-                return false;
-            }
-            if (!/^1[3-9]\d{9}$/.test(phone)) {
-                uni.showToast({
-                    title: '手机号格式不正确',
-                    icon: 'none'
-                });
-                return false;
-            }
-            if (!password.trim()) {
-                uni.showToast({
-                    title: '请设置密码',
-                    icon: 'none'
-                });
-                return false;
-            }
-            if (password.length < 6) {
-                uni.showToast({
-                    title: '密码至少6位',
-                    icon: 'none'
-                });
-                return false;
-            }
-            if (password !== confirmPassword) {
-                uni.showToast({
-                    title: '两次密码不一致',
-                    icon: 'none'
-                });
-                return false;
-            }
-            if (!agreeTerms) {
-                uni.showToast({
-                    title: '请同意用户协议',
-                    icon: 'none'
-                });
-                return false;
-            }
-            return true;
-        },
+const toggleAgreement = () => {
+    agreeTerms.value = !agreeTerms.value;
+};
 
-        checkStudentIdExists(studentId: string) {
-            // 模拟检查学号是否已存在
-            // 实际应用中应该调用后端API
-            const existingStudents = uni.getStorageSync('registeredStudents') || [];
-            return existingStudents.some((student: any) => student.studentId === studentId);
-        },
+const showTerms = () => {
+    uni.showModal({
+        title: '用户协议',
+        content:
+            '1. 请确保提供的个人信息真实有效\n2. 账号仅限本人使用，不得转借他人\n3. 遵守实验室相关规定和预约制度\n4. 如发现违规行为，将取消使用资格\n5. 个人信息仅用于实验室管理，不会泄露给第三方',
+        showCancel: false,
+        confirmText: '我知道了'
+    });
+};
 
-        register() {
-            if (!this.validateForm()) {
-                return;
-            }
-            const { studentId, name, gender, collegeIndex, colleges, major, phone, password } = this;
-
-            // 检查学号是否已存在
-            if (this.checkStudentIdExists(studentId)) {
-                uni.showToast({
-                    title: '该学号已注册',
-                    icon: 'none'
-                });
-                return;
-            }
-            uni.showLoading({
-                title: '注册中...',
-                mask: true
-            });
-
-            // 模拟注册过程
-            setTimeout(() => {
-                uni.hideLoading();
-
-                // 保存注册信息
-                const existingStudents = uni.getStorageSync('registeredStudents') || [];
-                const newStudent = {
-                    studentId,
-                    name,
-                    gender,
-                    college: colleges[collegeIndex],
-                    major,
-                    phone,
-                    password,
-                    registerTime: new Date().toISOString()
-                };
-                existingStudents.push(newStudent);
-                uni.setStorageSync('registeredStudents', existingStudents);
-                uni.showModal({
-                    title: '注册成功',
-                    content: '恭喜您注册成功！现在可以使用学号和密码登录了。',
-                    showCancel: false,
-                    confirmText: '去登录',
-                    success: () => {
-                        uni.navigateBack();
-                    }
-                });
-            }, 2000);
-        },
-
-        goToLogin() {
-            uni.navigateBack();
-        },
-
-        showCollegePicker() {
-            this.setData({
-                showCollegePickerModal: true,
-                tempCollegeIndex: this.collegeIndex === -1 ? 0 : this.collegeIndex
-            });
-        },
-
-        hideCollegePicker() {
-            this.setData({
-                showCollegePickerModal: false
-            });
-        },
-
-        onCollegePickerChange(e: any) {
-            this.setData({
-                tempCollegeIndex: e.detail.value[0]
-            });
-        },
-
-        confirmCollegePicker() {
-            this.setData({
-                collegeIndex: this.tempCollegeIndex,
-                showCollegePickerModal: false
-            });
-        }
+const validateForm = () => {
+    const studentIdVal = studentId.value;
+    const nameVal = name.value;
+    const genderVal = gender.value;
+    const collegeIndexVal = collegeIndex.value;
+    const majorVal = major.value;
+    const phoneVal = phone.value;
+    const passwordVal = password.value;
+    const confirmPasswordVal = confirmPassword.value;
+    const agreeTermsVal = agreeTerms.value;
+    if (!studentIdVal.trim()) {
+        uni.showToast({
+            title: '请输入学号',
+            icon: 'none'
+        });
+        return false;
     }
-});
+    if (!/^\d+$/.test(studentIdVal)) {
+        uni.showToast({
+            title: '学号格式不正确',
+            icon: 'none'
+        });
+        return false;
+    }
+    if (!nameVal.trim()) {
+        uni.showToast({
+            title: '请输入姓名',
+            icon: 'none'
+        });
+        return false;
+    }
+    if (!/^[一-龥]{2,10}$/.test(nameVal)) {
+        uni.showToast({
+            title: '请输入正确的中文姓名',
+            icon: 'none'
+        });
+        return false;
+    }
+    if (!genderVal) {
+        uni.showToast({
+            title: '请选择性别',
+            icon: 'none'
+        });
+        return false;
+    }
+    if (collegeIndexVal === -1) {
+        uni.showToast({
+            title: '请选择所属学院',
+            icon: 'none'
+        });
+        return false;
+    }
+    if (!majorVal.trim()) {
+        uni.showToast({
+            title: '请输入年级专业',
+            icon: 'none'
+        });
+        return false;
+    }
+    if (!phoneVal.trim()) {
+        uni.showToast({
+            title: '请输入手机号',
+            icon: 'none'
+        });
+        return false;
+    }
+    if (!/^1[3-9]\d{9}$/.test(phoneVal)) {
+        uni.showToast({
+            title: '手机号格式不正确',
+            icon: 'none'
+        });
+        return false;
+    }
+    if (!passwordVal.trim()) {
+        uni.showToast({
+            title: '请设置密码',
+            icon: 'none'
+        });
+        return false;
+    }
+    if (passwordVal.length < 6) {
+        uni.showToast({
+            title: '密码至少6位',
+            icon: 'none'
+        });
+        return false;
+    }
+    if (passwordVal !== confirmPasswordVal) {
+        uni.showToast({
+            title: '两次密码不一致',
+            icon: 'none'
+        });
+        return false;
+    }
+    if (!agreeTermsVal) {
+        uni.showToast({
+            title: '请同意用户协议',
+            icon: 'none'
+        });
+        return false;
+    }
+    return true;
+};
+
+const checkStudentIdExists = (studentIdArg: string) => {
+    // 模拟检查学号是否已存在
+    // 实际应用中应该调用后端API
+    const existingStudents = uni.getStorageSync('registeredStudents') || [];
+    return existingStudents.some((student: any) => student.studentId === studentIdArg);
+};
+
+const register = () => {
+    if (!validateForm()) {
+        return;
+    }
+    const studentIdVal = studentId.value;
+    const nameVal = name.value;
+    const genderVal = gender.value;
+    const collegeIndexVal = collegeIndex.value;
+    const collegesVal = colleges.value;
+    const majorVal = major.value;
+    const phoneVal = phone.value;
+    const passwordVal = password.value;
+
+    // 检查学号是否已存在
+    if (checkStudentIdExists(studentIdVal)) {
+        uni.showToast({
+            title: '该学号已注册',
+            icon: 'none'
+        });
+        return;
+    }
+    uni.showLoading({
+        title: '注册中...',
+        mask: true
+    });
+
+    // 模拟注册过程
+    setTimeout(() => {
+        uni.hideLoading();
+
+        // 保存注册信息
+        const existingStudents = uni.getStorageSync('registeredStudents') || [];
+        const newStudent = {
+            studentId: studentIdVal,
+            name: nameVal,
+            gender: genderVal,
+            college: collegesVal[collegeIndexVal],
+            major: majorVal,
+            phone: phoneVal,
+            password: passwordVal,
+            registerTime: new Date().toISOString()
+        };
+        existingStudents.push(newStudent);
+        uni.setStorageSync('registeredStudents', existingStudents);
+        uni.showModal({
+            title: '注册成功',
+            content: '恭喜您注册成功！现在可以使用学号和密码登录了。',
+            showCancel: false,
+            confirmText: '去登录',
+            success: () => {
+                uni.navigateBack();
+            }
+        });
+    }, 2000);
+};
+
+const goToLogin = () => {
+    uni.navigateBack();
+};
+
+const showCollegePicker = () => {
+    showCollegePickerModal.value = true;
+    tempCollegeIndex.value = collegeIndex.value === -1 ? 0 : collegeIndex.value;
+};
+
+const hideCollegePicker = () => {
+    showCollegePickerModal.value = false;
+};
+
+const onCollegePickerChange = (e: any) => {
+    tempCollegeIndex.value = e.detail.value[0];
+};
+
+const confirmCollegePicker = () => {
+    collegeIndex.value = tempCollegeIndex.value;
+    showCollegePickerModal.value = false;
+};
 </script>
 <style lang="less">
 @import './student-register.less';

@@ -250,545 +250,477 @@
     </view>
 </template>
 
-<script lang="ts">
-import zpMixins from '@/uni_modules/zp-mixins/index';
-import navigationBar from '@/components/navigation-bar/navigation-bar';
+<script setup lang="ts">
+import { ref } from 'vue';
+import { onLoad, onShow, onPullDownRefresh } from '@dcloudio/uni-app';
+import navigationBar from '@/components/navigation-bar/navigation-bar.vue';
 // pages/student-schedule-preview/student-schedule-preview.ts
-export default zpMixins.extend({
-    components: {
-        navigationBar
+
+// 日期相关
+const selectedDate = ref<string>('');
+const isToday = ref<boolean>(true);
+const isTomorrow = ref<boolean>(false);
+const showDateModal = ref<boolean>(false);
+
+// 视图模式
+const viewMode = ref<string>('day');
+
+// 'day' | 'week'
+
+// 实验室筛选
+const selectedLab = ref<string>('all');
+const selectedLabName = ref<string>('全部实验室');
+const showLabPickerModal = ref<boolean>(false);
+const labPickerIndex = ref<number[]>([0]);
+
+const labs = ref<any[]>([
+    {
+        id: 'all',
+        name: '全部实验室'
     },
-    data() {
-        return {
-            // 日期相关
-            selectedDate: '',
-
-            isToday: true,
-            isTomorrow: false,
-            showDateModal: false,
-
-            // 视图模式
-            viewMode: 'day',
-
-            // 'day' | 'week'
-
-            // 实验室筛选
-            selectedLab: 'all',
-
-            selectedLabName: '全部实验室',
-            showLabPickerModal: false,
-            labPickerIndex: [0],
-
-            labs: [
-                {
-                    id: 'all',
-                    name: '全部实验室'
-                },
-                {
-                    id: 'lab1',
-                    name: '国际课程实验室'
-                },
-                {
-                    id: 'lab2',
-                    name: '新商科实验室'
-                },
-                {
-                    id: 'lab3',
-                    name: 'VR实验室'
-                },
-                {
-                    id: 'lab4',
-                    name: '法语实验室'
-                },
-                {
-                    id: 'lab5',
-                    name: '402实验室'
-                }
-            ],
-
-            // 时间段
-            timeSlots: ['08:00', '09:00', '10:00', '11:00', '14:00', '15:00', '16:00', '17:00', '19:00', '20:00', '21:00'],
-
-            // 课程数据
-            courses: [] as any[],
-
-            filteredCourses: [] as any[],
-
-            // 周视图相关
-            weekRange: '',
-
-            weekDays: [] as any[],
-            currentWeekStart: null as Date | null,
-
-            // 课程详情弹窗
-            showCourseModal: false,
-
-            selectedCourse: null,
-
-            // picker-view日期选择相关
-            years: [] as number[],
-
-            months: [] as number[],
-            days: [] as number[],
-            tempYearIndex: 0,
-            tempMonthIndex: 0,
-            tempDayIndex: 0,
-            labPickerOptions: [] as any[],
-            tempLabIndex: 0,
-            dayIndex: 0,
-
-            course: {
-                timeSlot: '',
-                status: '',
-                courseName: '',
-                labName: ''
-            },
-
-            day: {
-                courses: []
-            }
-        };
+    {
+        id: 'lab1',
+        name: '国际课程实验室'
     },
-    onLoad() {
-        this.initializeDate();
-        this.loadCourses();
+    {
+        id: 'lab2',
+        name: '新商科实验室'
     },
-    onShow() {
-        this.loadCourses();
+    {
+        id: 'lab3',
+        name: 'VR实验室'
     },
-    onPullDownRefresh() {
-        this.loadCourses();
-        uni.stopPullDownRefresh();
+    {
+        id: 'lab4',
+        name: '法语实验室'
     },
-    methods: {
-        // 初始化日期
-        initializeDate() {
-            const today = new Date();
-            const year = today.getFullYear();
-            const month = String(today.getMonth() + 1).padStart(2, '0');
-            const day = String(today.getDate()).padStart(2, '0');
-            const selectedDate = `${year}-${month}-${day}`;
-            this.setData({
-                selectedDate,
-                isToday: true,
-                isTomorrow: false
-            });
-            this.initializeWeek(today);
-        },
-
-        // 初始化周视图
-        initializeWeek(date: Date) {
-            const startOfWeek = new Date(date);
-            const day = startOfWeek.getDay();
-            const diff = startOfWeek.getDate() - day + (day === 0 ? -6 : 1); // 调整为周一开始
-            startOfWeek.setDate(diff);
-            const endOfWeek = new Date(startOfWeek);
-            endOfWeek.setDate(startOfWeek.getDate() + 6);
-            const weekDays = [];
-            const dayNames = ['周一', '周二', '周三', '周四', '周五', '周六', '周日'];
-            for (let i = 0; i < 7; i++) {
-                const currentDay = new Date(startOfWeek);
-                currentDay.setDate(startOfWeek.getDate() + i);
-                weekDays.push({
-                    name: dayNames[i],
-                    date: `${currentDay.getMonth() + 1}/${currentDay.getDate()}`,
-                    fullDate: this.formatDate(currentDay),
-                    courses: []
-                });
-            }
-            const weekRange = `${startOfWeek.getMonth() + 1}月${startOfWeek.getDate()}日 - ${endOfWeek.getMonth() + 1}月${endOfWeek.getDate()}日`;
-            this.setData({
-                weekRange,
-                weekDays,
-                currentWeekStart: startOfWeek
-            });
-        },
-
-        // 格式化日期
-        formatDate(date: Date): string {
-            const year = date.getFullYear();
-            const month = String(date.getMonth() + 1).padStart(2, '0');
-            const day = String(date.getDate()).padStart(2, '0');
-            return `${year}-${month}-${day}`;
-        },
-
-        // 加载课程数据
-        loadCourses() {
-            // 模拟课程数据
-            const mockCourses = [
-                {
-                    id: 'course1',
-                    courseName: '数据结构与算法',
-                    labName: '新商科实验室',
-                    labId: 'lab2',
-                    teacherName: '张教授',
-                    startTime: '08:00',
-                    endTime: '09:50',
-                    date: this.selectedDate,
-                    timeSlot: '08:00',
-                    currentStudents: 25,
-                    maxStudents: 30,
-                    courseType: '必修课',
-                    status: 'available',
-                    statusText: '仅供查看',
-                    canReserve: true,
-                    description: '学习基本的数据结构和算法设计方法，包括线性表、栈、队列、树、图等数据结构的实现和应用。'
-                },
-                {
-                    id: 'course2',
-                    courseName: '计算机网络',
-                    labName: '国际课程实验室',
-                    labId: 'lab1',
-                    teacherName: '李教授',
-                    startTime: '10:00',
-                    endTime: '11:50',
-                    date: this.selectedDate,
-                    timeSlot: '10:00',
-                    currentStudents: 30,
-                    maxStudents: 30,
-                    courseType: '必修课',
-                    status: 'full',
-                    statusText: '已满员',
-                    canReserve: false,
-                    description: '深入学习计算机网络的基本原理、协议和技术，包括TCP/IP协议栈、网络安全等内容。'
-                },
-                {
-                    id: 'course3',
-                    courseName: '软件工程',
-                    labName: '法语实验室',
-                    labId: 'lab4',
-                    teacherName: '王教授',
-                    startTime: '14:00',
-                    endTime: '15:50',
-                    date: this.selectedDate,
-                    timeSlot: '14:00',
-                    currentStudents: 20,
-                    maxStudents: 25,
-                    courseType: '选修课',
-                    status: 'ongoing',
-                    statusText: '进行中',
-                    canReserve: false,
-                    description: '学习软件开发的全生命周期管理，包括需求分析、系统设计、编码实现、测试和维护。'
-                }
-            ];
-            this.setData({
-                courses: mockCourses
-            });
-            this.filterCourses();
-            this.loadWeekCourses();
-        },
-
-        // 筛选课程
-        filterCourses() {
-            const { courses, selectedLab, selectedDate } = this;
-            let filtered = courses.filter((course) => course.date === selectedDate);
-            if (selectedLab !== 'all') {
-                filtered = filtered.filter((course) => course.labId === selectedLab);
-            }
-            this.setData({
-                filteredCourses: filtered
-            });
-        },
-
-        // 加载周视图课程
-        loadWeekCourses() {
-            const { courses, weekDays } = this;
-            const updatedWeekDays = weekDays.map((day) => {
-                const dayCourses = courses.filter((course) => course.date === day.fullDate);
-                return {
-                    ...day,
-                    courses: dayCourses
-                };
-            });
-            this.setData({
-                weekDays: updatedWeekDays
-            });
-        },
-
-        // 显示实验室选择器
-        showLabPicker() {
-            this.setData({
-                labPickerOptions: this.labs,
-                tempLabIndex: this.labPickerIndex[0] || 0,
-                showLabPickerModal: true
-            });
-        },
-
-        hideLabPicker() {
-            this.setData({
-                showLabPickerModal: false
-            });
-        },
-
-        // 实验室选择器变化
-        onLabPickerChange(e: any) {
-            const index = e.detail.value[0];
-            this.setData({
-                tempLabIndex: index
-            });
-        },
-
-        // 确认实验室选择
-        confirmLabSelection() {
-            const lab = this.labPickerOptions[this.tempLabIndex];
-            this.setData({
-                labPickerIndex: [this.tempLabIndex],
-                selectedLab: lab.id,
-                selectedLabName: lab.name,
-                showLabPickerModal: false
-            });
-            this.filterCourses();
-        },
-
-        // 取消实验室选择
-        cancelLabSelection() {
-            this.setData({
-                showLabPickerModal: false
-            });
-        },
-
-        // 初始化picker-view日期数据
-        initDatePickerData(selectedDate: any = '') {
-            const today = new Date();
-            const startYear = today.getFullYear() - 2;
-            const years = [];
-            for (let i = 0; i <= 2026 - startYear; i++) {
-                years.push(startYear + i);
-            }
-            let year;
-            let month;
-            let day;
-            if (selectedDate) {
-                [year, month, day] = selectedDate.split('-').map(Number);
-            } else {
-                year = today.getFullYear();
-                month = today.getMonth() + 1;
-                day = today.getDate();
-            }
-            let months;
-            if (year === 2026) {
-                months = Array.from(
-                    {
-                        length: 9
-                    },
-                    (_, i) => i + 1
-                );
-                if (month > 9) {
-                    month = 9;
-                }
-            } else {
-                months = Array.from(
-                    {
-                        length: 12
-                    },
-                    (_, i) => i + 1
-                );
-            }
-            const days = Array.from(
-                {
-                    length: new Date(year, month, 0).getDate()
-                },
-                (_, i) => i + 1
-            );
-            const tempYearIndex = years.indexOf(year);
-            const tempMonthIndex = months.indexOf(month);
-            const tempDayIndex = days.indexOf(day);
-            this.setData({
-                years,
-                months,
-                days,
-                tempYearIndex,
-                tempMonthIndex,
-                tempDayIndex
-            });
-        },
-
-        // 显示日期选择器
-        showDatePicker() {
-            this.initDatePickerData(this.selectedDate);
-            this.setData({
-                showDateModal: true
-            });
-        },
-
-        // 关闭日期选择器
-        closeDateModal() {
-            this.setData({
-                showDateModal: false
-            });
-        },
-
-        // 日期改变
-        onDateChange(e: any) {
-            const selectedDate = e.detail.value;
-            this.setData({
-                selectedDate
-            });
-        },
-
-        // 确认日期
-        confirmDate() {
-            const { selectedDate } = this;
-            const today = this.formatDate(new Date());
-            const tomorrow = this.formatDate(new Date(Date.now() + 86400 * 1000));
-            this.setData({
-                isToday: selectedDate === today,
-                isTomorrow: selectedDate === tomorrow,
-                showDateModal: false
-            });
-            this.filterCourses();
-        },
-
-        // 选择今天
-        selectToday() {
-            const today = this.formatDate(new Date());
-            this.setData({
-                selectedDate: today,
-                isToday: true,
-                isTomorrow: false,
-                viewMode: 'day'
-            });
-            this.filterCourses();
-        },
-
-        // 选择明天
-        selectTomorrow() {
-            const tomorrow = this.formatDate(new Date(Date.now() + 86400 * 1000));
-            this.setData({
-                selectedDate: tomorrow,
-                isToday: false,
-                isTomorrow: true,
-                viewMode: 'day'
-            });
-            this.filterCourses();
-        },
-
-        // 选择本周
-        selectThisWeek() {
-            this.setData({
-                viewMode: 'week'
-            });
-        },
-
-        // 切换视图模式
-        switchViewMode(e: any) {
-            const mode = e.currentTarget.dataset.mode;
-            this.setData({
-                viewMode: mode
-            });
-        },
-
-        // 上一周
-        prevWeek() {
-            const { currentWeekStart } = this;
-            const prevWeek = new Date(currentWeekStart!);
-            prevWeek.setDate(prevWeek.getDate() - 7);
-            this.initializeWeek(prevWeek);
-            this.loadWeekCourses();
-        },
-
-        // 下一周
-        nextWeek() {
-            const { currentWeekStart } = this;
-            const nextWeek = new Date(currentWeekStart!);
-            nextWeek.setDate(nextWeek.getDate() + 7);
-            this.initializeWeek(nextWeek);
-            this.loadWeekCourses();
-        },
-
-        // 查看课程详情
-        viewCourseDetail(e: any) {
-            const course = e.currentTarget.dataset.course;
-            this.setData({
-                selectedCourse: course,
-                showCourseModal: true
-            });
-        },
-
-        // 关闭课程详情
-        closeCourseModal() {
-            this.setData({
-                showCourseModal: false,
-                selectedCourse: null
-            });
-        },
-
-        // 查看课程详情（仅供查看）
-        viewCourseInfo() {
-            uni.showToast({
-                title: '仅供查看，无法预约',
-                icon: 'none'
-            });
-        },
-
-        // 跳转到预约申请页面
-        goToReservation() {
-            uni.navigateTo({
-                url: '/pages/student-reservation-apply/student-reservation-apply'
-            });
-        },
-
-        // 阻止事件冒泡
-        stopPropagation() {
-            // 阻止事件冒泡
-        },
-
-        onDatePickerChange(e: any) {
-            const [yearIdx, monthIdx, dayIdx] = e.detail.value;
-            const year = this.years[yearIdx];
-            let months;
-            if (year === 2026) {
-                months = Array.from(
-                    {
-                        length: 9
-                    },
-                    (_, i) => i + 1
-                );
-            } else {
-                months = Array.from(
-                    {
-                        length: 12
-                    },
-                    (_, i) => i + 1
-                );
-            }
-            let month = months[monthIdx];
-            const days = Array.from(
-                {
-                    length: new Date(year, month, 0).getDate()
-                },
-                (_, i) => i + 1
-            );
-            let tempDayIndex = dayIdx;
-            if (tempDayIndex >= days.length) {
-                tempDayIndex = days.length - 1;
-            }
-            this.setData({
-                tempYearIndex: yearIdx,
-                months,
-                tempMonthIndex: monthIdx,
-                days,
-                tempDayIndex
-            });
-        },
-
-        confirmDatePicker() {
-            const year = this.years[this.tempYearIndex];
-            const month = this.months[this.tempMonthIndex];
-            const day = this.days[this.tempDayIndex];
-            const selectedDate = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-            const today = this.formatDate(new Date());
-            const tomorrow = this.formatDate(new Date(Date.now() + 86400 * 1000));
-            this.setData({
-                selectedDate,
-                isToday: selectedDate === today,
-                isTomorrow: selectedDate === tomorrow,
-                showDateModal: false
-            });
-            this.filterCourses();
-        }
+    {
+        id: 'lab5',
+        name: '402实验室'
     }
+]);
+
+// 时间段
+const timeSlots = ref<string[]>(['08:00', '09:00', '10:00', '11:00', '14:00', '15:00', '16:00', '17:00', '19:00', '20:00', '21:00']);
+
+// 课程数据
+const courses = ref<any[]>([]);
+const filteredCourses = ref<any[]>([]);
+
+// 周视图相关
+const weekRange = ref<string>('');
+const weekDays = ref<any[]>([]);
+const currentWeekStart = ref<Date | null>(null);
+
+// 课程详情弹窗
+const showCourseModal = ref<boolean>(false);
+const selectedCourse = ref<any>(null);
+
+// picker-view日期选择相关
+const years = ref<number[]>([]);
+const months = ref<number[]>([]);
+const days = ref<number[]>([]);
+const tempYearIndex = ref<number>(0);
+const tempMonthIndex = ref<number>(0);
+const tempDayIndex = ref<number>(0);
+const labPickerOptions = ref<any[]>([]);
+const tempLabIndex = ref<number>(0);
+const dayIndex = ref<number>(0);
+
+const course = ref<any>({
+    timeSlot: '',
+    status: '',
+    courseName: '',
+    labName: ''
 });
+
+const day = ref<any>({
+    courses: []
+});
+
+onLoad(() => {
+    initializeDate();
+    loadCourses();
+});
+
+onShow(() => {
+    loadCourses();
+});
+
+onPullDownRefresh(() => {
+    loadCourses();
+    uni.stopPullDownRefresh();
+});
+
+// 初始化日期
+const initializeDate = () => {
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    const day = String(today.getDate()).padStart(2, '0');
+    selectedDate.value = `${year}-${month}-${day}`;
+    isToday.value = true;
+    isTomorrow.value = false;
+    initializeWeek(today);
+};
+
+// 初始化周视图
+const initializeWeek = (date: Date) => {
+    const startOfWeek = new Date(date);
+    const day = startOfWeek.getDay();
+    const diff = startOfWeek.getDate() - day + (day === 0 ? -6 : 1); // 调整为周一开始
+    startOfWeek.setDate(diff);
+    const endOfWeek = new Date(startOfWeek);
+    endOfWeek.setDate(startOfWeek.getDate() + 6);
+    const newWeekDays = [];
+    const dayNames = ['周一', '周二', '周三', '周四', '周五', '周六', '周日'];
+    for (let i = 0; i < 7; i++) {
+        const currentDay = new Date(startOfWeek);
+        currentDay.setDate(startOfWeek.getDate() + i);
+        newWeekDays.push({
+            name: dayNames[i],
+            date: `${currentDay.getMonth() + 1}/${currentDay.getDate()}`,
+            fullDate: formatDate(currentDay),
+            courses: []
+        });
+    }
+    weekRange.value = `${startOfWeek.getMonth() + 1}月${startOfWeek.getDate()}日 - ${endOfWeek.getMonth() + 1}月${endOfWeek.getDate()}日`;
+    weekDays.value = newWeekDays;
+    currentWeekStart.value = startOfWeek;
+};
+
+// 格式化日期
+const formatDate = (date: Date): string => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+};
+
+// 加载课程数据
+const loadCourses = () => {
+    // 模拟课程数据
+    const mockCourses = [
+        {
+            id: 'course1',
+            courseName: '数据结构与算法',
+            labName: '新商科实验室',
+            labId: 'lab2',
+            teacherName: '张教授',
+            startTime: '08:00',
+            endTime: '09:50',
+            date: selectedDate.value,
+            timeSlot: '08:00',
+            currentStudents: 25,
+            maxStudents: 30,
+            courseType: '必修课',
+            status: 'available',
+            statusText: '仅供查看',
+            canReserve: true,
+            description: '学习基本的数据结构和算法设计方法，包括线性表、栈、队列、树、图等数据结构的实现和应用。'
+        },
+        {
+            id: 'course2',
+            courseName: '计算机网络',
+            labName: '国际课程实验室',
+            labId: 'lab1',
+            teacherName: '李教授',
+            startTime: '10:00',
+            endTime: '11:50',
+            date: selectedDate.value,
+            timeSlot: '10:00',
+            currentStudents: 30,
+            maxStudents: 30,
+            courseType: '必修课',
+            status: 'full',
+            statusText: '已满员',
+            canReserve: false,
+            description: '深入学习计算机网络的基本原理、协议和技术，包括TCP/IP协议栈、网络安全等内容。'
+        },
+        {
+            id: 'course3',
+            courseName: '软件工程',
+            labName: '法语实验室',
+            labId: 'lab4',
+            teacherName: '王教授',
+            startTime: '14:00',
+            endTime: '15:50',
+            date: selectedDate.value,
+            timeSlot: '14:00',
+            currentStudents: 20,
+            maxStudents: 25,
+            courseType: '选修课',
+            status: 'ongoing',
+            statusText: '进行中',
+            canReserve: false,
+            description: '学习软件开发的全生命周期管理，包括需求分析、系统设计、编码实现、测试和维护。'
+        }
+    ];
+    courses.value = mockCourses;
+    filterCourses();
+    loadWeekCourses();
+};
+
+// 筛选课程
+const filterCourses = () => {
+    let filtered = courses.value.filter((course) => course.date === selectedDate.value);
+    if (selectedLab.value !== 'all') {
+        filtered = filtered.filter((course) => course.labId === selectedLab.value);
+    }
+    filteredCourses.value = filtered;
+};
+
+// 加载周视图课程
+const loadWeekCourses = () => {
+    const updatedWeekDays = weekDays.value.map((day) => {
+        const dayCourses = courses.value.filter((course) => course.date === day.fullDate);
+        return {
+            ...day,
+            courses: dayCourses
+        };
+    });
+    weekDays.value = updatedWeekDays;
+};
+
+// 显示实验室选择器
+const showLabPicker = () => {
+    labPickerOptions.value = labs.value;
+    tempLabIndex.value = labPickerIndex.value[0] || 0;
+    showLabPickerModal.value = true;
+};
+
+const hideLabPicker = () => {
+    showLabPickerModal.value = false;
+};
+
+// 实验室选择器变化
+const onLabPickerChange = (e: any) => {
+    const index = e.detail.value[0];
+    tempLabIndex.value = index;
+};
+
+// 确认实验室选择
+const confirmLabSelection = () => {
+    const lab = labPickerOptions.value[tempLabIndex.value];
+    labPickerIndex.value = [tempLabIndex.value];
+    selectedLab.value = lab.id;
+    selectedLabName.value = lab.name;
+    showLabPickerModal.value = false;
+    filterCourses();
+};
+
+// 取消实验室选择
+const cancelLabSelection = () => {
+    showLabPickerModal.value = false;
+};
+
+// 初始化picker-view日期数据
+const initDatePickerData = (selectedDateArg: any = '') => {
+    const today = new Date();
+    const startYear = today.getFullYear() - 2;
+    const newYears = [];
+    for (let i = 0; i <= 2026 - startYear; i++) {
+        newYears.push(startYear + i);
+    }
+    let year;
+    let month;
+    let day;
+    if (selectedDateArg) {
+        [year, month, day] = selectedDateArg.split('-').map(Number);
+    } else {
+        year = today.getFullYear();
+        month = today.getMonth() + 1;
+        day = today.getDate();
+    }
+    let newMonths;
+    if (year === 2026) {
+        newMonths = Array.from(
+            {
+                length: 9
+            },
+            (_, i) => i + 1
+        );
+        if (month > 9) {
+            month = 9;
+        }
+    } else {
+        newMonths = Array.from(
+            {
+                length: 12
+            },
+            (_, i) => i + 1
+        );
+    }
+    const newDays = Array.from(
+        {
+            length: new Date(year, month, 0).getDate()
+        },
+        (_, i) => i + 1
+    );
+    years.value = newYears;
+    months.value = newMonths;
+    days.value = newDays;
+    tempYearIndex.value = newYears.indexOf(year);
+    tempMonthIndex.value = newMonths.indexOf(month);
+    tempDayIndex.value = newDays.indexOf(day);
+};
+
+// 显示日期选择器
+const showDatePicker = () => {
+    initDatePickerData(selectedDate.value);
+    showDateModal.value = true;
+};
+
+// 关闭日期选择器
+const closeDateModal = () => {
+    showDateModal.value = false;
+};
+
+// 日期改变
+const onDateChange = (e: any) => {
+    selectedDate.value = e.detail.value;
+};
+
+// 确认日期
+const confirmDate = () => {
+    const today = formatDate(new Date());
+    const tomorrow = formatDate(new Date(Date.now() + 86400 * 1000));
+    isToday.value = selectedDate.value === today;
+    isTomorrow.value = selectedDate.value === tomorrow;
+    showDateModal.value = false;
+    filterCourses();
+};
+
+// 选择今天
+const selectToday = () => {
+    const today = formatDate(new Date());
+    selectedDate.value = today;
+    isToday.value = true;
+    isTomorrow.value = false;
+    viewMode.value = 'day';
+    filterCourses();
+};
+
+// 选择明天
+const selectTomorrow = () => {
+    const tomorrow = formatDate(new Date(Date.now() + 86400 * 1000));
+    selectedDate.value = tomorrow;
+    isToday.value = false;
+    isTomorrow.value = true;
+    viewMode.value = 'day';
+    filterCourses();
+};
+
+// 选择本周
+const selectThisWeek = () => {
+    viewMode.value = 'week';
+};
+
+// 切换视图模式
+const switchViewMode = (e: any) => {
+    const mode = e.currentTarget.dataset.mode;
+    viewMode.value = mode;
+};
+
+// 上一周
+const prevWeek = () => {
+    const prevWeekDate = new Date(currentWeekStart.value!);
+    prevWeekDate.setDate(prevWeekDate.getDate() - 7);
+    initializeWeek(prevWeekDate);
+    loadWeekCourses();
+};
+
+// 下一周
+const nextWeek = () => {
+    const nextWeekDate = new Date(currentWeekStart.value!);
+    nextWeekDate.setDate(nextWeekDate.getDate() + 7);
+    initializeWeek(nextWeekDate);
+    loadWeekCourses();
+};
+
+// 查看课程详情
+const viewCourseDetail = (e: any) => {
+    const courseItem = e.currentTarget.dataset.course;
+    selectedCourse.value = courseItem;
+    showCourseModal.value = true;
+};
+
+// 关闭课程详情
+const closeCourseModal = () => {
+    showCourseModal.value = false;
+    selectedCourse.value = null;
+};
+
+// 查看课程详情（仅供查看）
+const viewCourseInfo = () => {
+    uni.showToast({
+        title: '仅供查看，无法预约',
+        icon: 'none'
+    });
+};
+
+// 跳转到预约申请页面
+const goToReservation = () => {
+    uni.navigateTo({
+        url: '/pages/student-reservation-apply/student-reservation-apply'
+    });
+};
+
+// 阻止事件冒泡
+const stopPropagation = () => {
+    // 阻止事件冒泡
+};
+
+const onDatePickerChange = (e: any) => {
+    const [yearIdx, monthIdx, dayIdx] = e.detail.value;
+    const year = years.value[yearIdx];
+    let newMonths;
+    if (year === 2026) {
+        newMonths = Array.from(
+            {
+                length: 9
+            },
+            (_, i) => i + 1
+        );
+    } else {
+        newMonths = Array.from(
+            {
+                length: 12
+            },
+            (_, i) => i + 1
+        );
+    }
+    let month = newMonths[monthIdx];
+    const newDays = Array.from(
+        {
+            length: new Date(year, month, 0).getDate()
+        },
+        (_, i) => i + 1
+    );
+    let newTempDayIndex = dayIdx;
+    if (newTempDayIndex >= newDays.length) {
+        newTempDayIndex = newDays.length - 1;
+    }
+    tempYearIndex.value = yearIdx;
+    months.value = newMonths;
+    tempMonthIndex.value = monthIdx;
+    days.value = newDays;
+    tempDayIndex.value = newTempDayIndex;
+};
+
+const confirmDatePicker = () => {
+    const year = years.value[tempYearIndex.value];
+    const month = months.value[tempMonthIndex.value];
+    const day = days.value[tempDayIndex.value];
+    const newSelectedDate = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+    const today = formatDate(new Date());
+    const tomorrow = formatDate(new Date(Date.now() + 86400 * 1000));
+    selectedDate.value = newSelectedDate;
+    isToday.value = newSelectedDate === today;
+    isTomorrow.value = newSelectedDate === tomorrow;
+    showDateModal.value = false;
+    filterCourses();
+};
 </script>
 <style lang="less">
 @import './student-schedule-preview.less';

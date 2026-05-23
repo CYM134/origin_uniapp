@@ -242,367 +242,336 @@
     </view>
 </template>
 
-<script lang="ts">
-import zpMixins from '@/uni_modules/zp-mixins/index';
-import navigationBar from '@/components/navigation-bar/navigation-bar';
+<script setup lang="ts">
+import { ref } from 'vue';
+import { onLoad, onShow, onPullDownRefresh } from '@dcloudio/uni-app';
+import navigationBar from '@/components/navigation-bar/navigation-bar.vue';
 // pages/student-pending-process/student-pending-process.ts
-export default zpMixins.extend({
-    components: {
-        navigationBar
-    },
-    data() {
-        return {
-            // 筛选状态
-            selectedStatus: 'all',
 
-            statusMap: {
-                all: '全部',
-                pending: '待教师审核',
-                teacher_approved: '待管理员审核',
-                approved: '已通过',
-                rejected: '已拒绝',
-                cancelled: '已取消'
-            },
+// 筛选状态
+const selectedStatus = ref('all');
 
-            // 申请数据
-            applications: [],
+const statusMap = ref({
+    all: '全部',
+    pending: '待教师审核',
+    teacher_approved: '待管理员审核',
+    approved: '已通过',
+    rejected: '已拒绝',
+    cancelled: '已取消'
+});
 
-            filteredApplications: [],
+// 申请数据
+const applications = ref<any[]>([]);
 
-            // 状态统计
-            statusCounts: {
-                all: 0,
-                pending: 0,
-                teacher_approved: 0,
-                approved: 0,
-                rejected: 0,
-                cancelled: 0
-            },
+const filteredApplications = ref<any[]>([]);
 
-            // 弹窗相关
-            showDetailModal: false,
+// 状态统计
+const statusCounts = ref({
+    all: 0,
+    pending: 0,
+    teacher_approved: 0,
+    approved: 0,
+    rejected: 0,
+    cancelled: 0
+});
 
-            showCancelModal: false,
-            selectedApplication: null,
-            cancelApplicationId: '',
-            name: ''
-        };
-    },
-    onLoad() {
-        this.loadApplications();
-    },
-    onShow() {
-        this.loadApplications();
-    },
-    onPullDownRefresh() {
-        this.loadApplications();
-        uni.stopPullDownRefresh();
-    },
-    methods: {
-        // 加载申请数据
-        loadApplications() {
-            try {
-                // 获取当前登录学生信息
-                const currentStudent = uni.getStorageSync('studentInfo');
-                if (!currentStudent || !currentStudent.studentId) {
-                    uni.showToast({
-                        title: '请先登录',
-                        icon: 'none'
-                    });
-                    return;
+// 弹窗相关
+const showDetailModal = ref(false);
+
+const showCancelModal = ref(false);
+const selectedApplication = ref<any>(null);
+const cancelApplicationId = ref('');
+const name = ref('');
+
+onLoad(() => {
+    loadApplications();
+});
+
+onShow(() => {
+    loadApplications();
+});
+
+onPullDownRefresh(() => {
+    loadApplications();
+    uni.stopPullDownRefresh();
+});
+
+// 格式化日期时间
+const formatDateTime = (date: Date): string => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    return `${year}-${month}-${day} ${hours}:${minutes}`;
+};
+
+// 加载申请数据
+const loadApplications = () => {
+    try {
+        // 获取当前登录学生信息
+        const currentStudent = uni.getStorageSync('studentInfo');
+        if (!currentStudent || !currentStudent.studentId) {
+            uni.showToast({
+                title: '请先登录',
+                icon: 'none'
+            });
+            return;
+        }
+
+        // 从本地存储加载申请数据
+        const allApplications = uni.getStorageSync('studentApplications') || [];
+
+        // 只显示当前登录学生的申请
+        const myApplications = allApplications.filter((app: any) => {
+            // 通过申请人信息匹配当前登录学生
+            return app.applicant === currentStudent.name || app.studentId === currentStudent.studentId || app.studentName === currentStudent.name;
+        });
+
+        // 处理申请数据，添加显示用的字段
+        const processedApplications = myApplications.map((app: any) => {
+            const submitTime = new Date(app.submitTime);
+            const reviewTime = app.reviewTime ? new Date(app.reviewTime) : null;
+            const teacherReviewTime = app.teacherReviewTime ? new Date(app.teacherReviewTime) : null;
+            let timeText = app.timeText;
+            if (!timeText) {
+                if (app.startTime && app.endTime) {
+                    timeText = `${app.startTime}-${app.endTime}`;
+                } else {
+                    timeText = '未选择时间段';
                 }
+            }
 
-                // 从本地存储加载申请数据
-                const allApplications = uni.getStorageSync('studentApplications') || [];
+            // 根据状态设置显示文本和样式
+            let statusText = '';
+            let statusClass = '';
+            let progressText = '';
+            switch (app.status) {
+                case 'pending':
+                    statusText = '待教师审核';
+                    statusClass = 'status-pending';
+                    progressText = '等待教师审核...';
+                    break;
+                case 'teacher_approved':
+                    statusText = '待管理员审核';
+                    statusClass = 'status-teacher-approved';
+                    progressText = '教师已审核通过，等待管理员最终审核...';
+                    break;
+                case 'approved':
+                    statusText = '已通过';
+                    statusClass = 'status-approved';
+                    progressText = '审核通过，可正常使用';
+                    break;
+                case 'rejected':
+                    statusText = '已拒绝';
+                    statusClass = 'status-rejected';
+                    progressText = '申请被拒绝';
+                    break;
+                case 'cancelled':
+                    statusText = '已取消';
+                    statusClass = 'status-cancelled';
+                    progressText = '申请已取消';
+                    break;
+                default:
+                    statusText = '未知状态';
+                    statusClass = 'status-unknown';
+                    progressText = '状态未知';
+            }
+            const canModify = app.status === 'approved' && new Date(app.date).getTime() > Date.now() + 86400 * 1000;
+            return {
+                ...app,
+                timeText,
+                canModify,
+                statusText,
+                statusClass,
+                progressText,
+                submitTimeText: formatDateTime(submitTime),
+                reviewTimeText: reviewTime ? formatDateTime(reviewTime) : '',
+                teacherReviewTimeText: teacherReviewTime ? formatDateTime(teacherReviewTime) : '',
+                teacherReviewerName: app.teacherReviewerName || '',
+                showTeacherReview: app.status === 'teacher_approved' || app.status === 'approved'
+            };
+        });
 
-                // 只显示当前登录学生的申请
-                const myApplications = allApplications.filter((app: any) => {
-                    // 通过申请人信息匹配当前登录学生
-                    return app.applicant === currentStudent.name || app.studentId === currentStudent.studentId || app.studentName === currentStudent.name;
-                });
+        // 按提交时间倒序排列
+        processedApplications.sort((a: any, b: any) => new Date(b.submitTime).getTime() - new Date(a.submitTime).getTime());
+        applications.value = processedApplications;
+        calculateStatusCounts();
+        filterApplications();
+    } catch (error) {
+        console.log('CatchClause', error);
+        console.log('CatchClause', error);
+        console.error('加载申请数据失败:', error);
+        uni.showToast({
+            title: '加载数据失败',
+            icon: 'none'
+        });
+    }
+};
 
-                // 处理申请数据，添加显示用的字段
-                const processedApplications = myApplications.map((app: any) => {
-                    const submitTime = new Date(app.submitTime);
-                    const reviewTime = app.reviewTime ? new Date(app.reviewTime) : null;
-                    const teacherReviewTime = app.teacherReviewTime ? new Date(app.teacherReviewTime) : null;
-                    let timeText = app.timeText;
-                    if (!timeText) {
-                        if (app.startTime && app.endTime) {
-                            timeText = `${app.startTime}-${app.endTime}`;
-                        } else {
-                            timeText = '未选择时间段';
-                        }
-                    }
+// 计算状态统计
+const calculateStatusCounts = () => {
+    const counts = {
+        all: applications.value.length,
+        pending: 0,
+        teacher_approved: 0,
+        approved: 0,
+        rejected: 0,
+        cancelled: 0
+    };
+    applications.value.forEach((app: any) => {
+        if (counts.hasOwnProperty(app.status)) {
+            counts[app.status as keyof typeof counts]++;
+        }
+    });
+    statusCounts.value = counts;
+};
 
-                    // 根据状态设置显示文本和样式
-                    let statusText = '';
-                    let statusClass = '';
-                    let progressText = '';
-                    switch (app.status) {
-                        case 'pending':
-                            statusText = '待教师审核';
-                            statusClass = 'status-pending';
-                            progressText = '等待教师审核...';
-                            break;
-                        case 'teacher_approved':
-                            statusText = '待管理员审核';
-                            statusClass = 'status-teacher-approved';
-                            progressText = '教师已审核通过，等待管理员最终审核...';
-                            break;
-                        case 'approved':
-                            statusText = '已通过';
-                            statusClass = 'status-approved';
-                            progressText = '审核通过，可正常使用';
-                            break;
-                        case 'rejected':
-                            statusText = '已拒绝';
-                            statusClass = 'status-rejected';
-                            progressText = '申请被拒绝';
-                            break;
-                        case 'cancelled':
-                            statusText = '已取消';
-                            statusClass = 'status-cancelled';
-                            progressText = '申请已取消';
-                            break;
-                        default:
-                            statusText = '未知状态';
-                            statusClass = 'status-unknown';
-                            progressText = '状态未知';
-                    }
-                    const canModify = app.status === 'approved' && new Date(app.date).getTime() > Date.now() + 86400 * 1000;
+// 按状态筛选
+const filterByStatus = (e: any) => {
+    const status = e.currentTarget.dataset.status;
+    selectedStatus.value = status;
+    filterApplications();
+};
+
+// 筛选申请
+const filterApplications = () => {
+    let filtered = applications.value;
+    if (selectedStatus.value !== 'all') {
+        filtered = applications.value.filter((app: any) => app.status === selectedStatus.value);
+    }
+    filteredApplications.value = filtered;
+};
+
+// 查看申请详情
+const viewApplicationDetail = (e: any) => {
+    const application = e.currentTarget.dataset.application;
+    selectedApplication.value = application;
+    showDetailModal.value = true;
+};
+
+// 关闭详情弹窗
+const closeDetailModal = () => {
+    showDetailModal.value = false;
+    selectedApplication.value = null;
+};
+
+// 取消申请
+const cancelApplication = (e: any) => {
+    const id = e.currentTarget.dataset.id;
+    cancelApplicationId.value = id;
+    showCancelModal.value = true;
+};
+
+// 从详情页取消申请
+const cancelApplicationFromDetail = () => {
+    if (selectedApplication.value) {
+        cancelApplicationId.value = (selectedApplication.value as any).id;
+        showCancelModal.value = true;
+        showDetailModal.value = false;
+    }
+};
+
+// 关闭取消确认弹窗
+const closeCancelModal = () => {
+    showCancelModal.value = false;
+    cancelApplicationId.value = '';
+};
+
+// 确认取消申请
+const confirmCancel = () => {
+    if (!cancelApplicationId.value) {
+        return;
+    }
+    uni.showLoading({
+        title: '取消中...'
+    });
+
+    // 模拟取消请求
+    setTimeout(() => {
+        uni.hideLoading();
+        try {
+            // 更新本地存储
+            const apps = uni.getStorageSync('studentApplications') || [];
+            const updatedApplications = apps.map((app: any) => {
+                if (app.id === cancelApplicationId.value) {
                     return {
                         ...app,
-                        timeText,
-                        canModify,
-                        statusText,
-                        statusClass,
-                        progressText,
-                        submitTimeText: this.formatDateTime(submitTime),
-                        reviewTimeText: reviewTime ? this.formatDateTime(reviewTime) : '',
-                        teacherReviewTimeText: teacherReviewTime ? this.formatDateTime(teacherReviewTime) : '',
-                        teacherReviewerName: app.teacherReviewerName || '',
-                        showTeacherReview: app.status === 'teacher_approved' || app.status === 'approved'
+                        status: 'cancelled',
+                        statusText: '已取消',
+                        cancelTime: new Date().toISOString()
                     };
-                });
-
-                // 按提交时间倒序排列
-                processedApplications.sort((a: any, b: any) => new Date(b.submitTime).getTime() - new Date(a.submitTime).getTime());
-                this.setData({
-                    applications: processedApplications
-                });
-                this.calculateStatusCounts();
-                this.filterApplications();
-            } catch (error) {
-                console.log('CatchClause', error);
-                console.log('CatchClause', error);
-                console.error('加载申请数据失败:', error);
-                uni.showToast({
-                    title: '加载数据失败',
-                    icon: 'none'
-                });
-            }
-        },
-
-        // 格式化日期时间
-        formatDateTime(date: Date): string {
-            const year = date.getFullYear();
-            const month = String(date.getMonth() + 1).padStart(2, '0');
-            const day = String(date.getDate()).padStart(2, '0');
-            const hours = String(date.getHours()).padStart(2, '0');
-            const minutes = String(date.getMinutes()).padStart(2, '0');
-            return `${year}-${month}-${day} ${hours}:${minutes}`;
-        },
-
-        // 计算状态统计
-        calculateStatusCounts() {
-            const { applications } = this;
-            const counts = {
-                all: applications.length,
-                pending: 0,
-                teacher_approved: 0,
-                approved: 0,
-                rejected: 0,
-                cancelled: 0
-            };
-            applications.forEach((app: any) => {
-                if (counts.hasOwnProperty(app.status)) {
-                    counts[app.status as keyof typeof counts]++;
                 }
+                return app;
             });
-            this.setData({
-                statusCounts: counts
+            uni.setStorageSync('studentApplications', updatedApplications);
+            uni.showToast({
+                title: '申请已取消',
+                icon: 'success'
             });
-        },
-
-        // 按状态筛选
-        filterByStatus(e: any) {
-            const status = e.currentTarget.dataset.status;
-            this.setData({
-                selectedStatus: status
+            showCancelModal.value = false;
+            cancelApplicationId.value = '';
+            loadApplications();
+        } catch (error) {
+            console.log('CatchClause', error);
+            console.log('CatchClause', error);
+            uni.showToast({
+                title: '取消失败，请重试',
+                icon: 'none'
             });
-            this.filterApplications();
-        },
-
-        // 筛选申请
-        filterApplications() {
-            const { applications, selectedStatus } = this;
-            let filtered = applications;
-            if (selectedStatus !== 'all') {
-                filtered = applications.filter((app: any) => app.status === selectedStatus);
-            }
-            this.setData({
-                filteredApplications: filtered
-            });
-        },
-
-        // 查看申请详情
-        viewApplicationDetail(e: any) {
-            const application = e.currentTarget.dataset.application;
-            this.setData({
-                selectedApplication: application,
-                showDetailModal: true
-            });
-        },
-
-        // 关闭详情弹窗
-        closeDetailModal() {
-            this.setData({
-                showDetailModal: false,
-                selectedApplication: null
-            });
-        },
-
-        // 取消申请
-        cancelApplication(e: any) {
-            const id = e.currentTarget.dataset.id;
-            this.setData({
-                cancelApplicationId: id,
-                showCancelModal: true
-            });
-        },
-
-        // 从详情页取消申请
-        cancelApplicationFromDetail() {
-            const { selectedApplication } = this;
-            if (selectedApplication) {
-                this.setData({
-                    cancelApplicationId: (selectedApplication as any).id,
-                    showCancelModal: true,
-                    showDetailModal: false
-                });
-            }
-        },
-
-        // 关闭取消确认弹窗
-        closeCancelModal() {
-            this.setData({
-                showCancelModal: false,
-                cancelApplicationId: ''
-            });
-        },
-
-        // 确认取消申请
-        confirmCancel() {
-            const { cancelApplicationId } = this;
-            if (!cancelApplicationId) {
-                return;
-            }
-            uni.showLoading({
-                title: '取消中...'
-            });
-
-            // 模拟取消请求
-            setTimeout(() => {
-                uni.hideLoading();
-                try {
-                    // 更新本地存储
-                    const applications = uni.getStorageSync('studentApplications') || [];
-                    const updatedApplications = applications.map((app: any) => {
-                        if (app.id === cancelApplicationId) {
-                            return {
-                                ...app,
-                                status: 'cancelled',
-                                statusText: '已取消',
-                                cancelTime: new Date().toISOString()
-                            };
-                        }
-                        return app;
-                    });
-                    uni.setStorageSync('studentApplications', updatedApplications);
-                    uni.showToast({
-                        title: '申请已取消',
-                        icon: 'success'
-                    });
-                    this.setData({
-                        showCancelModal: false,
-                        cancelApplicationId: ''
-                    });
-                    this.loadApplications();
-                } catch (error) {
-                    console.log('CatchClause', error);
-                    console.log('CatchClause', error);
-                    uni.showToast({
-                        title: '取消失败，请重试',
-                        icon: 'none'
-                    });
-                }
-            }, 1500);
-        },
-
-        // 重新申请
-        reapplyApplication(e: any) {
-            const application = e.currentTarget.dataset.application;
-
-            // 跳转到申请页面，并传递原申请数据
-            uni.navigateTo({
-                url: `/pages/student-reservation-apply/student-reservation-apply?reapply=true&data=${encodeURIComponent(JSON.stringify(application))}`
-            });
-        },
-
-        // 从详情页重新申请
-        reapplyApplicationFromDetail() {
-            const { selectedApplication } = this;
-            if (selectedApplication) {
-                uni.navigateTo({
-                    url: `/pages/student-reservation-apply/student-reservation-apply?reapply=true&data=${encodeURIComponent(JSON.stringify(selectedApplication))}`
-                });
-            }
-        },
-
-        // 修改申请
-        modifyApplication(e: any) {
-            const application = e.currentTarget.dataset.application;
-
-            // 跳转到申请页面，并传递原申请数据
-            uni.navigateTo({
-                url: `/pages/student-reservation-apply/student-reservation-apply?modify=true&data=${encodeURIComponent(JSON.stringify(application))}`
-            });
-        },
-
-        // 从详情页修改申请
-        modifyApplicationFromDetail() {
-            const { selectedApplication } = this;
-            if (selectedApplication) {
-                uni.navigateTo({
-                    url: `/pages/student-reservation-apply/student-reservation-apply?modify=true&data=${encodeURIComponent(JSON.stringify(selectedApplication))}`
-                });
-            }
-        },
-
-        // 跳转到新建申请
-        goToNewApplication() {
-            uni.navigateTo({
-                url: '/pages/student-reservation-apply/student-reservation-apply'
-            });
-        },
-
-        // 阻止事件冒泡
-        stopPropagation() {
-            // 阻止事件冒泡
         }
+    }, 1500);
+};
+
+// 重新申请
+const reapplyApplication = (e: any) => {
+    const application = e.currentTarget.dataset.application;
+
+    // 跳转到申请页面，并传递原申请数据
+    uni.navigateTo({
+        url: `/pages/student-reservation-apply/student-reservation-apply?reapply=true&data=${encodeURIComponent(JSON.stringify(application))}`
+    });
+};
+
+// 从详情页重新申请
+const reapplyApplicationFromDetail = () => {
+    if (selectedApplication.value) {
+        uni.navigateTo({
+            url: `/pages/student-reservation-apply/student-reservation-apply?reapply=true&data=${encodeURIComponent(JSON.stringify(selectedApplication.value))}`
+        });
     }
-});
+};
+
+// 修改申请
+const modifyApplication = (e: any) => {
+    const application = e.currentTarget.dataset.application;
+
+    // 跳转到申请页面，并传递原申请数据
+    uni.navigateTo({
+        url: `/pages/student-reservation-apply/student-reservation-apply?modify=true&data=${encodeURIComponent(JSON.stringify(application))}`
+    });
+};
+
+// 从详情页修改申请
+const modifyApplicationFromDetail = () => {
+    if (selectedApplication.value) {
+        uni.navigateTo({
+            url: `/pages/student-reservation-apply/student-reservation-apply?modify=true&data=${encodeURIComponent(JSON.stringify(selectedApplication.value))}`
+        });
+    }
+};
+
+// 跳转到新建申请
+const goToNewApplication = () => {
+    uni.navigateTo({
+        url: '/pages/student-reservation-apply/student-reservation-apply'
+    });
+};
+
+// 阻止事件冒泡
+const stopPropagation = () => {
+    // 阻止事件冒泡
+};
 </script>
 <style lang="less">
 @import './student-pending-process.less';

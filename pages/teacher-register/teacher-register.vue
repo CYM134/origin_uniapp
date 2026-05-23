@@ -108,291 +108,258 @@
     </view>
 </template>
 
-<script lang="ts">
-import zpMixins from '@/uni_modules/zp-mixins/index';
-import navigationBar from '@/components/navigation-bar/navigation-bar';
+<script setup lang="ts">
+import { ref } from 'vue';
+import navigationBar from '@/components/navigation-bar/navigation-bar.vue';
 // pages/teacher-register/teacher-register.ts
-export default zpMixins.extend({
-    components: {
-        navigationBar
-    },
-    data() {
-        return {
-            teacherId: '',
-            name: '',
-            password: '',
-            confirmPassword: '',
-            genderIndex: -1,
-            genderOptions: ['男', '女'],
-            college: '',
-            phone: '',
-            showPassword: false,
-            showConfirmPassword: false,
-            gender: '',
-            colleges: [
-                '计算机科学与技术学院',
-                '数学学院',
-                '物理学院',
-                '化学学院',
-                '生命科学学院',
-                '地理科学学院',
-                '心理学院',
-                '教育学院',
-                '外国语言文化学院',
-                '文学院',
-                '历史文化学院',
-                '马克思主义学院',
-                '经济与管理学院',
-                '法学院',
-                '公共管理学院',
-                '体育科学学院',
-                '音乐学院',
-                '美术学院'
-            ],
-            collegeIndex: -1,
-            showCollegePickerModal: false,
-            tempCollegeIndex: 0,
-            agreeTerms: false
-        };
-    },
-    methods: {
-        onTeacherIdInput(e: any) {
-            this.setData({
-                teacherId: e.detail.value
-            });
-        },
 
-        onNameInput(e: any) {
-            this.setData({
-                name: e.detail.value
-            });
-        },
+const teacherId = ref<string>('');
+const name = ref<string>('');
+const password = ref<string>('');
+const confirmPassword = ref<string>('');
+const genderIndex = ref<number>(-1);
+const genderOptions = ref<string[]>(['男', '女']);
+const college = ref<string>('');
+const phone = ref<string>('');
+const showPassword = ref<boolean>(false);
+const showConfirmPassword = ref<boolean>(false);
+const gender = ref<string>('');
+const colleges = ref<string[]>([
+    '计算机科学与技术学院',
+    '数学学院',
+    '物理学院',
+    '化学学院',
+    '生命科学学院',
+    '地理科学学院',
+    '心理学院',
+    '教育学院',
+    '外国语言文化学院',
+    '文学院',
+    '历史文化学院',
+    '马克思主义学院',
+    '经济与管理学院',
+    '法学院',
+    '公共管理学院',
+    '体育科学学院',
+    '音乐学院',
+    '美术学院'
+]);
+const collegeIndex = ref<number>(-1);
+const showCollegePickerModal = ref<boolean>(false);
+const tempCollegeIndex = ref<number>(0);
+const agreeTerms = ref<boolean>(false);
 
-        onPasswordInput(e: any) {
-            this.setData({
-                password: e.detail.value
-            });
-        },
+const onTeacherIdInput = (e: any) => {
+    teacherId.value = e.detail.value;
+};
 
-        onConfirmPasswordInput(e: any) {
-            this.setData({
-                confirmPassword: e.detail.value
-            });
-        },
+const onNameInput = (e: any) => {
+    name.value = e.detail.value;
+};
 
-        onGenderChange(e: any) {
-            this.setData({
-                genderIndex: e.detail.value
-            });
-        },
+const onPasswordInput = (e: any) => {
+    password.value = e.detail.value;
+};
 
-        onCollegeInput(e: any) {
-            this.setData({
-                college: e.detail.value
-            });
-        },
+const onConfirmPasswordInput = (e: any) => {
+    confirmPassword.value = e.detail.value;
+};
 
-        onPhoneInput(e: any) {
-            this.setData({
-                phone: e.detail.value
-            });
-        },
+const onGenderChange = (e: any) => {
+    genderIndex.value = e.detail.value;
+};
 
-        togglePasswordVisibility() {
-            this.setData({
-                showPassword: !this.showPassword
-            });
-        },
+const onCollegeInput = (e: any) => {
+    college.value = e.detail.value;
+};
 
-        toggleConfirmPasswordVisibility() {
-            this.setData({
-                showConfirmPassword: !this.showConfirmPassword
-            });
-        },
+const onPhoneInput = (e: any) => {
+    phone.value = e.detail.value;
+};
 
-        selectGender(e: any) {
-            const gender = e.currentTarget.dataset.gender;
-            this.setData({
-                gender: gender
-            });
-        },
+const togglePasswordVisibility = () => {
+    showPassword.value = !showPassword.value;
+};
 
-        showCollegePicker() {
-            this.setData({
-                showCollegePickerModal: true,
-                tempCollegeIndex: this.collegeIndex === -1 ? 0 : this.collegeIndex
-            });
-        },
+const toggleConfirmPasswordVisibility = () => {
+    showConfirmPassword.value = !showConfirmPassword.value;
+};
 
-        hideCollegePicker() {
-            this.setData({
-                showCollegePickerModal: false
-            });
-        },
+const selectGender = (e: any) => {
+    const genderVal = e.currentTarget.dataset.gender;
+    gender.value = genderVal;
+};
 
-        onCollegePickerChange(e: any) {
-            this.setData({
-                tempCollegeIndex: e.detail.value[0]
-            });
-        },
+const showCollegePicker = () => {
+    showCollegePickerModal.value = true;
+    tempCollegeIndex.value = collegeIndex.value === -1 ? 0 : collegeIndex.value;
+};
 
-        confirmCollegePicker() {
-            this.setData({
-                collegeIndex: this.tempCollegeIndex,
-                showCollegePickerModal: false
-            });
-        },
+const hideCollegePicker = () => {
+    showCollegePickerModal.value = false;
+};
 
-        toggleAgreement() {
-            this.setData({
-                agreeTerms: !this.agreeTerms
-            });
-        },
+const onCollegePickerChange = (e: any) => {
+    tempCollegeIndex.value = e.detail.value[0];
+};
 
-        showTerms() {
-            uni.showModal({
-                title: '用户协议',
-                content:
-                    '1. 请确保提供的个人信息真实有效\n2. 账号仅限本人使用，不得转借他人\n3. 遵守实验室相关规定和预约制度\n4. 如发现违规行为，将取消使用资格\n5. 个人信息仅用于实验室管理，不会泄露给第三方\n6. 教师有权审核学生的实验室预约申请',
-                showCancel: false,
-                confirmText: '我知道了'
-            });
-        },
+const confirmCollegePicker = () => {
+    collegeIndex.value = tempCollegeIndex.value;
+    showCollegePickerModal.value = false;
+};
 
-        register() {
-            const { teacherId, name, password, confirmPassword, gender, collegeIndex, phone } = this;
+const toggleAgreement = () => {
+    agreeTerms.value = !agreeTerms.value;
+};
 
-            // 表单验证
-            if (!teacherId.trim()) {
-                uni.showToast({
-                    title: '请输入工号',
-                    icon: 'none'
-                });
-                return;
-            }
+const showTerms = () => {
+    uni.showModal({
+        title: '用户协议',
+        content:
+            '1. 请确保提供的个人信息真实有效\n2. 账号仅限本人使用，不得转借他人\n3. 遵守实验室相关规定和预约制度\n4. 如发现违规行为，将取消使用资格\n5. 个人信息仅用于实验室管理，不会泄露给第三方\n6. 教师有权审核学生的实验室预约申请',
+        showCancel: false,
+        confirmText: '我知道了'
+    });
+};
 
-            // 工号格式验证
-            if (!/^[a-zA-Z0-9]+$/.test(teacherId)) {
-                uni.showToast({
-                    title: '工号格式不正确',
-                    icon: 'none'
-                });
-                return;
-            }
-            if (!name.trim()) {
-                uni.showToast({
-                    title: '请输入姓名',
-                    icon: 'none'
-                });
-                return;
-            }
-            if (!password.trim()) {
-                uni.showToast({
-                    title: '请输入密码',
-                    icon: 'none'
-                });
-                return;
-            }
-            if (password.length < 6) {
-                uni.showToast({
-                    title: '密码长度至少6位',
-                    icon: 'none'
-                });
-                return;
-            }
-            if (password !== confirmPassword) {
-                uni.showToast({
-                    title: '两次密码输入不一致',
-                    icon: 'none'
-                });
-                return;
-            }
-            if (!gender) {
-                uni.showToast({
-                    title: '请选择性别',
-                    icon: 'none'
-                });
-                return;
-            }
-            if (collegeIndex === -1) {
-                uni.showToast({
-                    title: '请选择所属学院',
-                    icon: 'none'
-                });
-                return;
-            }
-            if (!phone.trim()) {
-                uni.showToast({
-                    title: '请输入手机号',
-                    icon: 'none'
-                });
-                return;
-            }
+const register = () => {
+    const teacherIdVal = teacherId.value;
+    const nameVal = name.value;
+    const passwordVal = password.value;
+    const confirmPasswordVal = confirmPassword.value;
+    const genderVal = gender.value;
+    const collegeIndexVal = collegeIndex.value;
+    const phoneVal = phone.value;
 
-            // 手机号格式验证
-            if (!/^1[3-9]\d{9}$/.test(phone)) {
-                uni.showToast({
-                    title: '手机号格式不正确',
-                    icon: 'none'
-                });
-                return;
-            }
-            if (!this.agreeTerms) {
-                uni.showToast({
-                    title: '请同意用户协议',
-                    icon: 'none'
-                });
-                return;
-            }
-            uni.showLoading({
-                title: '注册中...',
-                mask: true
-            });
-
-            // 模拟注册过程
-            setTimeout(() => {
-                uni.hideLoading();
-
-                // 检查工号是否已存在
-                const registeredTeachers = uni.getStorageSync('registeredTeachers') || [];
-                const existingTeacher = registeredTeachers.find((t: any) => t.teacherId === teacherId);
-                if (existingTeacher) {
-                    uni.showToast({
-                        title: '该工号已被注册',
-                        icon: 'none'
-                    });
-                    return;
-                }
-
-                // 保存新教师信息
-                const newTeacher = {
-                    teacherId,
-                    name,
-                    password,
-                    gender: gender === 'male' ? '男' : '女',
-                    college: this.colleges[collegeIndex],
-                    phone,
-                    registerTime: new Date().getTime()
-                };
-                registeredTeachers.push(newTeacher);
-                uni.setStorageSync('registeredTeachers', registeredTeachers);
-                uni.showModal({
-                    title: '注册成功',
-                    content: '您的账号已成功注册，现在可以使用工号和密码登录了。',
-                    showCancel: false,
-                    confirmText: '去登录',
-                    success: () => {
-                        uni.navigateBack();
-                    }
-                });
-            }, 1500);
-        },
-
-        goToLogin() {
-            uni.navigateBack();
-        }
+    // 表单验证
+    if (!teacherIdVal.trim()) {
+        uni.showToast({
+            title: '请输入工号',
+            icon: 'none'
+        });
+        return;
     }
-});
+
+    // 工号格式验证
+    if (!/^[a-zA-Z0-9]+$/.test(teacherIdVal)) {
+        uni.showToast({
+            title: '工号格式不正确',
+            icon: 'none'
+        });
+        return;
+    }
+    if (!nameVal.trim()) {
+        uni.showToast({
+            title: '请输入姓名',
+            icon: 'none'
+        });
+        return;
+    }
+    if (!passwordVal.trim()) {
+        uni.showToast({
+            title: '请输入密码',
+            icon: 'none'
+        });
+        return;
+    }
+    if (passwordVal.length < 6) {
+        uni.showToast({
+            title: '密码长度至少6位',
+            icon: 'none'
+        });
+        return;
+    }
+    if (passwordVal !== confirmPasswordVal) {
+        uni.showToast({
+            title: '两次密码输入不一致',
+            icon: 'none'
+        });
+        return;
+    }
+    if (!genderVal) {
+        uni.showToast({
+            title: '请选择性别',
+            icon: 'none'
+        });
+        return;
+    }
+    if (collegeIndexVal === -1) {
+        uni.showToast({
+            title: '请选择所属学院',
+            icon: 'none'
+        });
+        return;
+    }
+    if (!phoneVal.trim()) {
+        uni.showToast({
+            title: '请输入手机号',
+            icon: 'none'
+        });
+        return;
+    }
+
+    // 手机号格式验证
+    if (!/^1[3-9]\d{9}$/.test(phoneVal)) {
+        uni.showToast({
+            title: '手机号格式不正确',
+            icon: 'none'
+        });
+        return;
+    }
+    if (!agreeTerms.value) {
+        uni.showToast({
+            title: '请同意用户协议',
+            icon: 'none'
+        });
+        return;
+    }
+    uni.showLoading({
+        title: '注册中...',
+        mask: true
+    });
+
+    // 模拟注册过程
+    setTimeout(() => {
+        uni.hideLoading();
+
+        // 检查工号是否已存在
+        const registeredTeachers = uni.getStorageSync('registeredTeachers') || [];
+        const existingTeacher = registeredTeachers.find((t: any) => t.teacherId === teacherIdVal);
+        if (existingTeacher) {
+            uni.showToast({
+                title: '该工号已被注册',
+                icon: 'none'
+            });
+            return;
+        }
+
+        // 保存新教师信息
+        const newTeacher = {
+            teacherId: teacherIdVal,
+            name: nameVal,
+            password: passwordVal,
+            gender: genderVal === 'male' ? '男' : '女',
+            college: colleges.value[collegeIndexVal],
+            phone: phoneVal,
+            registerTime: new Date().getTime()
+        };
+        registeredTeachers.push(newTeacher);
+        uni.setStorageSync('registeredTeachers', registeredTeachers);
+        uni.showModal({
+            title: '注册成功',
+            content: '您的账号已成功注册，现在可以使用工号和密码登录了。',
+            showCancel: false,
+            confirmText: '去登录',
+            success: () => {
+                uni.navigateBack();
+            }
+        });
+    }, 1500);
+};
+
+const goToLogin = () => {
+    uni.navigateBack();
+};
 </script>
 <style>
 @import './teacher-register.css';

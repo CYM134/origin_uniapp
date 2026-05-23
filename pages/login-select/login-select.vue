@@ -39,65 +39,52 @@
     </view>
 </template>
 
-<script lang="ts">
-import zpMixins from '@/uni_modules/zp-mixins/index';
-import navigationBar from '@/components/navigation-bar/navigation-bar';
+<script setup lang="ts">
+import navigationBar from '@/components/navigation-bar/navigation-bar.vue';
 // login-select.ts
-export default zpMixins.extend({
-    components: {
-        navigationBar
-    },
-    data() {
-        return {
-            // 页面数据
-        };
-    },
-    methods: {
-        // 跳转到管理员登录页面
-        navigateToAdmin() {
-            uni.navigateTo({
-                url: '../admin-login/admin-login',
-                fail: () => {
-                    // 如果页面不存在，给出提示
-                    uni.showToast({
-                        title: '页面开发中',
-                        icon: 'none',
-                        duration: 2000
-                    });
-                }
-            });
-        },
-        // 跳转到学生登录页面
-        navigateToStudent() {
-            uni.navigateTo({
-                url: '../student-login/student-login',
-                fail: () => {
-                    // 如果页面不存在，给出提示
-                    uni.showToast({
-                        title: '页面开发中',
-                        icon: 'none',
-                        duration: 2000
-                    });
-                }
-            });
-        },
-        // 跳转到教师登录页面
-        navigateToTeacher() {
-            uni.navigateTo({
-                url: '../teacher-login/teacher-login',
-                fail: () => {
-                    // 如果页面不存在，给出提示
-                    uni.showToast({
-                        title: '页面开发中',
-                        icon: 'none',
-                        duration: 2000
-                    });
-                }
+
+// 跳转到管理员登录页面
+const navigateToAdmin = () => {
+    uni.navigateTo({
+        url: '../admin-login/admin-login',
+        fail: () => {
+            // 如果页面不存在，给出提示
+            uni.showToast({
+                title: '页面开发中',
+                icon: 'none',
+                duration: 2000
             });
         }
-    },
-    created: function () {}
-});
+    });
+};
+// 跳转到学生登录页面
+const navigateToStudent = () => {
+    uni.navigateTo({
+        url: '../student-login/student-login',
+        fail: () => {
+            // 如果页面不存在，给出提示
+            uni.showToast({
+                title: '页面开发中',
+                icon: 'none',
+                duration: 2000
+            });
+        }
+    });
+};
+// 跳转到教师登录页面
+const navigateToTeacher = () => {
+    uni.navigateTo({
+        url: '../teacher-login/teacher-login',
+        fail: () => {
+            // 如果页面不存在，给出提示
+            uni.showToast({
+                title: '页面开发中',
+                icon: 'none',
+                duration: 2000
+            });
+        }
+    });
+};
 </script>
 <style>
 @import './login-select.css';

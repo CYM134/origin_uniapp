@@ -132,470 +132,433 @@
     </view>
 </template>
 
-<script lang="ts">
-import zpMixins from '@/uni_modules/zp-mixins/index';
-import navigationBar from '@/components/navigation-bar/navigation-bar';
+<script setup lang="ts">
+import { ref } from 'vue';
+import { onLoad, onUnload } from '@dcloudio/uni-app';
+import navigationBar from '@/components/navigation-bar/navigation-bar.vue';
 // pages/student-personal-info/student-personal-info.ts
-export default zpMixins.extend({
-    components: {
-        navigationBar
-    },
-    data() {
-        return {
-            studentInfo: {
-                name: '',
-                studentId: '',
-                gender: '',
-                college: '',
-                major: '',
-                phone: '',
-                registerTime: '',
-                password: ''
-            },
-            originalInfo: {},
-            // 保存原始信息，用于取消编辑时恢复
-            showEditModal: false,
-            editField: '',
-            editType: '',
-            // 'input', 'picker', 'gender'
-            editValue: '',
-            pickerOptions: [],
-            pickerIndex: -1,
-            colleges: [
-                '计算机学院',
-                '软件学院',
-                '信息工程学院',
-                '电子信息学院',
-                '数学科学学院',
-                '物理与电信工程学院',
-                '化学学院',
-                '生命科学学院',
-                '地理科学学院',
-                '心理学院',
-                '教育科学学院',
-                '外国语言文化学院',
-                '文学院',
-                '历史文化学院',
-                '马克思主义学院',
-                '法学院',
-                '经济与管理学院',
-                '公共管理学院',
-                '旅游管理学院',
-                '体育科学学院',
-                '音乐学院',
-                '美术学院'
-            ],
-            showPasswordModal: false,
-            oldPassword: '',
-            newPassword: '',
-            confirmNewPassword: '',
-            formattedRegisterTime: '2024-01-01'
-        };
-    },
-    /**
-     * 生命周期函数--监听页面加载
-     */
-    onLoad() {
-        this.loadStudentInfo();
-    },
-    /**
-     * 页面返回时检查是否有未保存的修改
-     */
-    onUnload() {
-        const hasChanges = JSON.stringify(this.studentInfo) !== JSON.stringify(this.originalInfo);
-        if (hasChanges) {
-            // 这里可以提示用户是否保存修改
-            console.log('有未保存的修改');
-        }
-    },
-    methods: {
-        /**
-         * 格式化注册时间
-         */
-        formatRegisterTime(registerTime: string) {
-            if (!registerTime) {
-                return '2024-01-01';
-            }
-            try {
-                const date = new Date(registerTime);
-                const year = date.getFullYear();
-                const month = String(date.getMonth() + 1).padStart(2, '0');
-                const day = String(date.getDate()).padStart(2, '0');
-                return `${year}-${month}-${day}`;
-            } catch (error) {
-                console.log('CatchClause', error);
-                console.log('CatchClause', error);
-                console.error('格式化注册时间失败:', error);
-                return '2024-01-01';
-            }
-        },
 
-        /**
-         * 加载学生信息
-         */
-        loadStudentInfo() {
-            try {
-                let studentInfo = uni.getStorageSync('studentInfo');
-                if (studentInfo && studentInfo.studentId) {
-                    // 从注册学生列表中获取完整信息
-                    const registeredStudents = uni.getStorageSync('registeredStudents') || [];
-                    const found = registeredStudents.find((stu: any) => stu.studentId === studentInfo.studentId);
-                    if (found) {
-                        // 使用注册时的完整信息，确保所有字段都正确
-                        const completeInfo = {
-                            name: found.name || studentInfo.name,
-                            studentId: found.studentId || studentInfo.studentId,
-                            gender: found.gender || studentInfo.gender,
-                            college: found.college || studentInfo.college,
-                            major: found.major || studentInfo.major,
-                            phone: found.phone || studentInfo.phone,
-                            password: found.password || studentInfo.password,
-                            registerTime: found.registerTime || studentInfo.registerTime
-                        };
+const studentInfo = ref<any>({
+    name: '',
+    studentId: '',
+    gender: '',
+    college: '',
+    major: '',
+    phone: '',
+    registerTime: '',
+    password: ''
+});
+const originalInfo = ref<any>({});
+// 保存原始信息，用于取消编辑时恢复
+const showEditModal = ref(false);
+const editField = ref('');
+const editType = ref('');
+// 'input', 'picker', 'gender'
+const editValue = ref('');
+const pickerOptions = ref<any[]>([]);
+const pickerIndex = ref(-1);
+const colleges = ref<any[]>([
+    '计算机学院',
+    '软件学院',
+    '信息工程学院',
+    '电子信息学院',
+    '数学科学学院',
+    '物理与电信工程学院',
+    '化学学院',
+    '生命科学学院',
+    '地理科学学院',
+    '心理学院',
+    '教育科学学院',
+    '外国语言文化学院',
+    '文学院',
+    '历史文化学院',
+    '马克思主义学院',
+    '法学院',
+    '经济与管理学院',
+    '公共管理学院',
+    '旅游管理学院',
+    '体育科学学院',
+    '音乐学院',
+    '美术学院'
+]);
+const showPasswordModal = ref(false);
+const oldPassword = ref('');
+const newPassword = ref('');
+const confirmNewPassword = ref('');
+const formattedRegisterTime = ref('2024-01-01');
 
-                        // 更新本地存储的学生信息
-                        uni.setStorageSync('studentInfo', completeInfo);
-                        this.setData({
-                            studentInfo: completeInfo,
-                            originalInfo: JSON.parse(JSON.stringify(completeInfo)),
-                            formattedRegisterTime: this.formatRegisterTime(completeInfo.registerTime)
-                        });
-                    } else {
-                        // 如果在注册列表中找不到，使用现有信息
-                        this.setData({
-                            studentInfo: studentInfo,
-                            originalInfo: JSON.parse(JSON.stringify(studentInfo)),
-                            formattedRegisterTime: this.formatRegisterTime(studentInfo.registerTime)
-                        });
-                    }
-                } else {
-                    // 如果没有学生信息，设置默认值
-                    this.setData({
-                        formattedRegisterTime: '2024-01-01'
-                    });
-                }
-            } catch (error) {
-                console.log('CatchClause', error);
-                console.log('CatchClause', error);
-                console.error('加载学生信息失败:', error);
-                uni.showToast({
-                    title: '加载信息失败',
-                    icon: 'error'
-                });
-            }
-        },
+/**
+ * 生命周期函数--监听页面加载
+ */
+onLoad(() => {
+    loadStudentInfo();
+});
 
-        /**
-         * 编辑头像
-         */
-        editAvatar() {
-            uni.showActionSheet({
-                itemList: ['拍照', '从相册选择'],
-                success: (res) => {
-                    if (res.tapIndex === 0) {
-                        this.chooseImage('camera');
-                    } else if (res.tapIndex === 1) {
-                        this.chooseImage('album');
-                    }
-                }
-            });
-        },
-
-        /**
-         * 选择图片
-         */
-        chooseImage(sourceType: 'camera' | 'album') {
-            uni.chooseMedia({
-                count: 1,
-                mediaType: ['image'],
-                sourceType: [sourceType],
-                success: (res) => {
-                    // 这里可以上传图片到服务器，目前只是模拟
-                    uni.showToast({
-                        title: '头像更新成功',
-                        icon: 'success'
-                    });
-                },
-                fail: (error) => {
-                    console.error('选择图片失败:', error);
-                }
-            });
-        },
-
-        /**
-         * 编辑姓名
-         */
-        editName() {
-            this.openEditModal('姓名', 'input', this.studentInfo.name);
-        },
-
-        /**
-         * 编辑性别
-         */
-        editGender() {
-            this.openEditModal('性别', 'gender', this.studentInfo.gender);
-        },
-
-        /**
-         * 编辑学院
-         */
-        editCollege() {
-            const currentIndex = this.colleges.indexOf(this.studentInfo.college);
-            this.setData({
-                pickerOptions: this.colleges,
-                pickerIndex: currentIndex
-            });
-            this.openEditModal('所属学院', 'picker', this.studentInfo.college);
-        },
-
-        /**
-         * 编辑专业
-         */
-        editMajor() {
-            this.openEditModal('年级专业', 'input', this.studentInfo.major);
-        },
-
-        /**
-         * 编辑手机号
-         */
-        editPhone() {
-            this.openEditModal('手机号', 'input', this.studentInfo.phone);
-        },
-
-        /**
-         * 打开编辑弹窗
-         */
-        openEditModal(field: string, type: string, value: string) {
-            this.setData({
-                showEditModal: true,
-                editField: field,
-                editType: type,
-                editValue: value
-            });
-        },
-
-        /**
-         * 关闭编辑弹窗
-         */
-        closeEditModal() {
-            this.setData({
-                showEditModal: false,
-                editField: '',
-                editType: '',
-                editValue: ''
-            });
-        },
-
-        /**
-         * 阻止事件冒泡
-         */
-        stopPropagation() {
-            // 阻止点击弹窗内容时关闭弹窗
-        },
-
-        /**
-         * 编辑输入事件
-         */
-        onEditInput(e: any) {
-            this.setData({
-                editValue: e.detail.value
-            });
-        },
-
-        /**
-         * 选择器变化事件
-         */
-        onPickerChange(e: any) {
-            const index = e.detail.value;
-            this.setData({
-                pickerIndex: index,
-                editValue: this.pickerOptions[index]
-            });
-        },
-
-        /**
-         * 选择性别
-         */
-        selectGender(e: any) {
-            const gender = e.currentTarget.dataset.gender;
-            this.setData({
-                editValue: gender
-            });
-        },
-
-        /**
-         * 确认编辑
-         */
-        confirmEdit() {
-            const { editField, editValue } = this;
-            if (!editValue.trim()) {
-                uni.showToast({
-                    title: `请输入${editField}`,
-                    icon: 'error'
-                });
-                return;
-            }
-
-            // 验证手机号格式
-            if (editField === '手机号') {
-                const phoneRegex = /^1[3-9]\d{9}$/;
-                if (!phoneRegex.test(editValue)) {
-                    uni.showToast({
-                        title: '手机号格式不正确',
-                        icon: 'error'
-                    });
-                    return;
-                }
-            }
-
-            // 更新对应字段
-            const updateData: any = {};
-            switch (editField) {
-                case '姓名':
-                    updateData['studentInfo.name'] = editValue;
-                    break;
-                case '性别':
-                    updateData['studentInfo.gender'] = editValue;
-                    break;
-                case '所属学院':
-                    updateData['studentInfo.college'] = editValue;
-                    break;
-                case '年级专业':
-                    updateData['studentInfo.major'] = editValue;
-                    break;
-                case '手机号':
-                    updateData['studentInfo.phone'] = editValue;
-                    break;
-            }
-            this.setData(updateData);
-            this.closeEditModal();
-            uni.showToast({
-                title: '修改成功',
-                icon: 'success'
-            });
-        },
-
-        /**
-         * 保存信息
-         */
-        saveInfo() {
-            try {
-                // 保存到本地存储
-                uni.setStorageSync('studentInfo', this.studentInfo);
-
-                // 更新注册学生列表中的信息
-                const registeredStudents = uni.getStorageSync('registeredStudents') || [];
-                const studentIndex = registeredStudents.findIndex((student: any) => student.studentId === this.studentInfo.studentId);
-                if (studentIndex !== -1) {
-                    registeredStudents[studentIndex] = {
-                        ...registeredStudents[studentIndex],
-                        ...this.studentInfo
-                    };
-                    uni.setStorageSync('registeredStudents', registeredStudents);
-                }
-                uni.showToast({
-                    title: '保存成功',
-                    icon: 'success'
-                });
-
-                // 更新原始信息
-                this.setData({
-                    originalInfo: JSON.parse(JSON.stringify(this.studentInfo))
-                });
-            } catch (error) {
-                console.log('CatchClause', error);
-                console.log('CatchClause', error);
-                console.error('保存信息失败:', error);
-                uni.showToast({
-                    title: '保存失败',
-                    icon: 'error'
-                });
-            }
-        },
-
-        /**
-         * 修改密码
-         */
-        resetPassword() {
-            this.setData({
-                showPasswordModal: true,
-                oldPassword: '',
-                newPassword: '',
-                confirmNewPassword: ''
-            });
-        },
-
-        closePasswordModal() {
-            this.setData({
-                showPasswordModal: false,
-                oldPassword: '',
-                newPassword: '',
-                confirmNewPassword: ''
-            });
-        },
-
-        onOldPasswordInput(e: any) {
-            this.setData({
-                oldPassword: e.detail.value
-            });
-        },
-
-        onNewPasswordInput(e: any) {
-            this.setData({
-                newPassword: e.detail.value
-            });
-        },
-
-        onConfirmNewPasswordInput(e: any) {
-            this.setData({
-                confirmNewPassword: e.detail.value
-            });
-        },
-
-        confirmPasswordChange() {
-            const { oldPassword, newPassword, confirmNewPassword, studentInfo } = this;
-            if (!oldPassword || !newPassword || !confirmNewPassword) {
-                uni.showToast({
-                    title: '请填写完整',
-                    icon: 'none'
-                });
-                return;
-            }
-            if (oldPassword !== studentInfo.password) {
-                uni.showToast({
-                    title: '原密码错误',
-                    icon: 'none'
-                });
-                return;
-            }
-            if (newPassword.length < 6) {
-                uni.showToast({
-                    title: '新密码至少6位',
-                    icon: 'none'
-                });
-                return;
-            }
-            if (newPassword !== confirmNewPassword) {
-                uni.showToast({
-                    title: '两次新密码不一致',
-                    icon: 'none'
-                });
-                return;
-            }
-            // 修改密码
-            this.setData({
-                'studentInfo.password': newPassword,
-                showPasswordModal: false
-            });
-            // 同步到本地存储
-            uni.setStorageSync('studentInfo', this.studentInfo);
-            uni.showToast({
-                title: '密码修改成功',
-                icon: 'success'
-            });
-        }
+/**
+ * 页面返回时检查是否有未保存的修改
+ */
+onUnload(() => {
+    const hasChanges = JSON.stringify(studentInfo.value) !== JSON.stringify(originalInfo.value);
+    if (hasChanges) {
+        // 这里可以提示用户是否保存修改
+        console.log('有未保存的修改');
     }
 });
+
+/**
+ * 格式化注册时间
+ */
+const formatRegisterTime = (registerTime: string) => {
+    if (!registerTime) {
+        return '2024-01-01';
+    }
+    try {
+        const date = new Date(registerTime);
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    } catch (error) {
+        console.log('CatchClause', error);
+        console.log('CatchClause', error);
+        console.error('格式化注册时间失败:', error);
+        return '2024-01-01';
+    }
+};
+
+/**
+ * 加载学生信息
+ */
+const loadStudentInfo = () => {
+    try {
+        let _studentInfo = uni.getStorageSync('studentInfo');
+        if (_studentInfo && _studentInfo.studentId) {
+            // 从注册学生列表中获取完整信息
+            const registeredStudents = uni.getStorageSync('registeredStudents') || [];
+            const found = registeredStudents.find((stu: any) => stu.studentId === _studentInfo.studentId);
+            if (found) {
+                // 使用注册时的完整信息，确保所有字段都正确
+                const completeInfo = {
+                    name: found.name || _studentInfo.name,
+                    studentId: found.studentId || _studentInfo.studentId,
+                    gender: found.gender || _studentInfo.gender,
+                    college: found.college || _studentInfo.college,
+                    major: found.major || _studentInfo.major,
+                    phone: found.phone || _studentInfo.phone,
+                    password: found.password || _studentInfo.password,
+                    registerTime: found.registerTime || _studentInfo.registerTime
+                };
+
+                // 更新本地存储的学生信息
+                uni.setStorageSync('studentInfo', completeInfo);
+                studentInfo.value = completeInfo;
+                originalInfo.value = JSON.parse(JSON.stringify(completeInfo));
+                formattedRegisterTime.value = formatRegisterTime(completeInfo.registerTime);
+            } else {
+                // 如果在注册列表中找不到，使用现有信息
+                studentInfo.value = _studentInfo;
+                originalInfo.value = JSON.parse(JSON.stringify(_studentInfo));
+                formattedRegisterTime.value = formatRegisterTime(_studentInfo.registerTime);
+            }
+        } else {
+            // 如果没有学生信息，设置默认值
+            formattedRegisterTime.value = '2024-01-01';
+        }
+    } catch (error) {
+        console.log('CatchClause', error);
+        console.log('CatchClause', error);
+        console.error('加载学生信息失败:', error);
+        uni.showToast({
+            title: '加载信息失败',
+            icon: 'error'
+        });
+    }
+};
+
+/**
+ * 编辑头像
+ */
+const editAvatar = () => {
+    uni.showActionSheet({
+        itemList: ['拍照', '从相册选择'],
+        success: (res) => {
+            if (res.tapIndex === 0) {
+                chooseImage('camera');
+            } else if (res.tapIndex === 1) {
+                chooseImage('album');
+            }
+        }
+    });
+};
+
+/**
+ * 选择图片
+ */
+const chooseImage = (sourceType: 'camera' | 'album') => {
+    uni.chooseMedia({
+        count: 1,
+        mediaType: ['image'],
+        sourceType: [sourceType],
+        success: (res) => {
+            // 这里可以上传图片到服务器，目前只是模拟
+            uni.showToast({
+                title: '头像更新成功',
+                icon: 'success'
+            });
+        },
+        fail: (error) => {
+            console.error('选择图片失败:', error);
+        }
+    });
+};
+
+/**
+ * 编辑姓名
+ */
+const editName = () => {
+    openEditModal('姓名', 'input', studentInfo.value.name);
+};
+
+/**
+ * 编辑性别
+ */
+const editGender = () => {
+    openEditModal('性别', 'gender', studentInfo.value.gender);
+};
+
+/**
+ * 编辑学院
+ */
+const editCollege = () => {
+    const currentIndex = colleges.value.indexOf(studentInfo.value.college);
+    pickerOptions.value = colleges.value;
+    pickerIndex.value = currentIndex;
+    openEditModal('所属学院', 'picker', studentInfo.value.college);
+};
+
+/**
+ * 编辑专业
+ */
+const editMajor = () => {
+    openEditModal('年级专业', 'input', studentInfo.value.major);
+};
+
+/**
+ * 编辑手机号
+ */
+const editPhone = () => {
+    openEditModal('手机号', 'input', studentInfo.value.phone);
+};
+
+/**
+ * 打开编辑弹窗
+ */
+const openEditModal = (field: string, type: string, value: string) => {
+    showEditModal.value = true;
+    editField.value = field;
+    editType.value = type;
+    editValue.value = value;
+};
+
+/**
+ * 关闭编辑弹窗
+ */
+const closeEditModal = () => {
+    showEditModal.value = false;
+    editField.value = '';
+    editType.value = '';
+    editValue.value = '';
+};
+
+/**
+ * 阻止事件冒泡
+ */
+const stopPropagation = () => {
+    // 阻止点击弹窗内容时关闭弹窗
+};
+
+/**
+ * 编辑输入事件
+ */
+const onEditInput = (e: any) => {
+    editValue.value = e.detail.value;
+};
+
+/**
+ * 选择器变化事件
+ */
+const onPickerChange = (e: any) => {
+    const index = e.detail.value;
+    pickerIndex.value = index;
+    editValue.value = pickerOptions.value[index];
+};
+
+/**
+ * 选择性别
+ */
+const selectGender = (e: any) => {
+    const gender = e.currentTarget.dataset.gender;
+    editValue.value = gender;
+};
+
+/**
+ * 确认编辑
+ */
+const confirmEdit = () => {
+    const _editField = editField.value;
+    const _editValue = editValue.value;
+    if (!_editValue.trim()) {
+        uni.showToast({
+            title: `请输入${_editField}`,
+            icon: 'error'
+        });
+        return;
+    }
+
+    // 验证手机号格式
+    if (_editField === '手机号') {
+        const phoneRegex = /^1[3-9]\d{9}$/;
+        if (!phoneRegex.test(_editValue)) {
+            uni.showToast({
+                title: '手机号格式不正确',
+                icon: 'error'
+            });
+            return;
+        }
+    }
+
+    // 更新对应字段
+    switch (_editField) {
+        case '姓名':
+            studentInfo.value.name = _editValue;
+            break;
+        case '性别':
+            studentInfo.value.gender = _editValue;
+            break;
+        case '所属学院':
+            studentInfo.value.college = _editValue;
+            break;
+        case '年级专业':
+            studentInfo.value.major = _editValue;
+            break;
+        case '手机号':
+            studentInfo.value.phone = _editValue;
+            break;
+    }
+    closeEditModal();
+    uni.showToast({
+        title: '修改成功',
+        icon: 'success'
+    });
+};
+
+/**
+ * 保存信息
+ */
+const saveInfo = () => {
+    try {
+        // 保存到本地存储
+        uni.setStorageSync('studentInfo', studentInfo.value);
+
+        // 更新注册学生列表中的信息
+        const registeredStudents = uni.getStorageSync('registeredStudents') || [];
+        const studentIndex = registeredStudents.findIndex((student: any) => student.studentId === studentInfo.value.studentId);
+        if (studentIndex !== -1) {
+            registeredStudents[studentIndex] = {
+                ...registeredStudents[studentIndex],
+                ...studentInfo.value
+            };
+            uni.setStorageSync('registeredStudents', registeredStudents);
+        }
+        uni.showToast({
+            title: '保存成功',
+            icon: 'success'
+        });
+
+        // 更新原始信息
+        originalInfo.value = JSON.parse(JSON.stringify(studentInfo.value));
+    } catch (error) {
+        console.log('CatchClause', error);
+        console.log('CatchClause', error);
+        console.error('保存信息失败:', error);
+        uni.showToast({
+            title: '保存失败',
+            icon: 'error'
+        });
+    }
+};
+
+/**
+ * 修改密码
+ */
+const resetPassword = () => {
+    showPasswordModal.value = true;
+    oldPassword.value = '';
+    newPassword.value = '';
+    confirmNewPassword.value = '';
+};
+
+const closePasswordModal = () => {
+    showPasswordModal.value = false;
+    oldPassword.value = '';
+    newPassword.value = '';
+    confirmNewPassword.value = '';
+};
+
+const onOldPasswordInput = (e: any) => {
+    oldPassword.value = e.detail.value;
+};
+
+const onNewPasswordInput = (e: any) => {
+    newPassword.value = e.detail.value;
+};
+
+const onConfirmNewPasswordInput = (e: any) => {
+    confirmNewPassword.value = e.detail.value;
+};
+
+const confirmPasswordChange = () => {
+    const _oldPassword = oldPassword.value;
+    const _newPassword = newPassword.value;
+    const _confirmNewPassword = confirmNewPassword.value;
+    if (!_oldPassword || !_newPassword || !_confirmNewPassword) {
+        uni.showToast({
+            title: '请填写完整',
+            icon: 'none'
+        });
+        return;
+    }
+    if (_oldPassword !== studentInfo.value.password) {
+        uni.showToast({
+            title: '原密码错误',
+            icon: 'none'
+        });
+        return;
+    }
+    if (_newPassword.length < 6) {
+        uni.showToast({
+            title: '新密码至少6位',
+            icon: 'none'
+        });
+        return;
+    }
+    if (_newPassword !== _confirmNewPassword) {
+        uni.showToast({
+            title: '两次新密码不一致',
+            icon: 'none'
+        });
+        return;
+    }
+    // 修改密码
+    studentInfo.value.password = _newPassword;
+    showPasswordModal.value = false;
+    // 同步到本地存储
+    uni.setStorageSync('studentInfo', studentInfo.value);
+    uni.showToast({
+        title: '密码修改成功',
+        icon: 'success'
+    });
+};
 </script>
 <style lang="less">
 @import './student-personal-info.less';
