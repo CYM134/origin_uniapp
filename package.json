@@ -1,18 +1,20 @@
 {
-	"name": "miniprogram-ts-less-quickstart",
+	"name": "lab-reservation-uniapp",
 	"version": "1.0.0",
-	"description": "",
+	"description": "实验室预约管理系统 - uni-app 多端 (H5 / 微信小程序 / Android / iOS / 平板)",
 	"main": "main.js",
 	"scripts": {},
 	"author": "",
 	"license": "",
-	"keywords": [],
+	"keywords": [
+		"uni-app",
+		"vue3"
+	],
 	"devDependencies": {
 		"@dcloudio/types": "^3.4.31",
 		"@types/node": "^25.9.1",
-		"miniprogram-api-typings": "^2.8.3-1",
-		"typescript": "^6.0.3",
-		"vue": "^2.7.16",
-		"vue-tsc": "^1.8.27"
+		"typescript": "^5.4.5",
+		"vue": "^3.4.21",
+		"vue-tsc": "^2.0.29"
 	}
 }

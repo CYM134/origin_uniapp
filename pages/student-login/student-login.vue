@@ -50,157 +50,142 @@
     </view>
 </template>
 
-<script lang="ts">
-import zpMixins from '@/uni_modules/zp-mixins/index';
-import navigationBar from '@/components/navigation-bar/navigation-bar';
+<script setup lang="ts">
+import { ref } from 'vue';
+import { onLoad } from '@dcloudio/uni-app';
+import navigationBar from '@/components/navigation-bar/navigation-bar.vue';
 // pages/student-login/student-login.ts
-export default zpMixins.extend({
-    components: {
-        navigationBar
-    },
-    data() {
-        return {
-            username: '',
-            password: '',
-            rememberPassword: false,
-            showPassword: false
-        };
-    },
-    onLoad() {
-        const savedUsername = uni.getStorageSync('studentUsername');
-        const savedPassword = uni.getStorageSync('studentPassword');
-        const rememberPassword = uni.getStorageSync('studentRememberPassword');
-        if (rememberPassword && savedUsername && savedPassword) {
-            this.setData({
-                username: savedUsername,
-                password: savedPassword,
-                rememberPassword: true
-            });
-        }
-    },
-    methods: {
-        onUsernameInput(e: any) {
-            this.setData({
-                username: e.detail.value
-            });
-        },
 
-        onPasswordInput(e: any) {
-            this.setData({
-                password: e.detail.value
-            });
-        },
+const username = ref<string>('');
+const password = ref<string>('');
+const rememberPassword = ref<boolean>(false);
+const showPassword = ref<boolean>(false);
 
-        toggleRememberPassword() {
-            this.setData({
-                rememberPassword: !this.rememberPassword
-            });
-        },
-
-        togglePasswordVisibility() {
-            this.setData({
-                showPassword: !this.showPassword
-            });
-        },
-
-        forgotPassword() {
-            uni.showModal({
-                title: '忘记密码',
-                content: '请联系管理员重置密码，或通过注册新账号的方式找回。',
-                showCancel: false,
-                confirmText: '知道了'
-            });
-        },
-
-        login() {
-            const { username, password, rememberPassword } = this;
-            if (!username.trim()) {
-                uni.showToast({
-                    title: '请输入学号',
-                    icon: 'none'
-                });
-                return;
-            }
-            if (!password.trim()) {
-                uni.showToast({
-                    title: '请输入密码',
-                    icon: 'none'
-                });
-                return;
-            }
-
-            // 简单的学号格式验证（假设学号为数字）
-            if (!/^\d+$/.test(username)) {
-                uni.showToast({
-                    title: '学号格式不正确',
-                    icon: 'none'
-                });
-                return;
-            }
-            uni.showLoading({
-                title: '登录中...',
-                mask: true
-            });
-
-            // 模拟登录验证
-            setTimeout(() => {
-                uni.hideLoading();
-
-                // 检查已注册的学生账号
-                const registeredStudents = uni.getStorageSync('registeredStudents') || [];
-                const student = registeredStudents.find((s: any) => s.studentId === username && s.password === password);
-                if (student) {
-                    if (rememberPassword) {
-                        uni.setStorageSync('studentUsername', username);
-                        uni.setStorageSync('studentPassword', password);
-                        uni.setStorageSync('studentRememberPassword', true);
-                    } else {
-                        uni.removeStorageSync('studentUsername');
-                        uni.removeStorageSync('studentPassword');
-                        uni.removeStorageSync('studentRememberPassword');
-                    }
-
-                    // 保存学生登录状态
-                    uni.setStorageSync('studentInfo', {
-                        studentId: username,
-                        name: student.name,
-                        gender: student.gender,
-                        college: student.college,
-                        major: student.major,
-                        phone: student.phone,
-                        password: student.password,
-                        registerTime: student.registerTime,
-                        loginTime: new Date().getTime()
-                    });
-
-                    // 跳转到学生主页（这里需要根据实际情况修改）
-                    setTimeout(() => {
-                        uni.navigateTo({
-                            url: '../student-work/student-work',
-                            success: () => {
-                                uni.showToast({
-                                    title: '登录成功',
-                                    icon: 'success'
-                                });
-                            }
-                        });
-                    }, 1500);
-                } else {
-                    uni.showToast({
-                        title: '学号或密码错误',
-                        icon: 'none'
-                    });
-                }
-            }, 1500);
-        },
-
-        goToRegister() {
-            uni.navigateTo({
-                url: '../student-register/student-register'
-            });
-        }
+onLoad(() => {
+    const savedUsername = uni.getStorageSync('studentUsername');
+    const savedPassword = uni.getStorageSync('studentPassword');
+    const savedRemember = uni.getStorageSync('studentRememberPassword');
+    if (savedRemember && savedUsername && savedPassword) {
+        username.value = savedUsername;
+        password.value = savedPassword;
+        rememberPassword.value = true;
     }
 });
+
+const onUsernameInput = (e: any) => {
+    username.value = e.detail.value;
+};
+
+const onPasswordInput = (e: any) => {
+    password.value = e.detail.value;
+};
+
+const toggleRememberPassword = () => {
+    rememberPassword.value = !rememberPassword.value;
+};
+
+const togglePasswordVisibility = () => {
+    showPassword.value = !showPassword.value;
+};
+
+const forgotPassword = () => {
+    uni.showModal({
+        title: '忘记密码',
+        content: '请联系管理员重置密码，或通过注册新账号的方式找回。',
+        showCancel: false,
+        confirmText: '知道了'
+    });
+};
+
+const login = () => {
+    const usernameVal = username.value;
+    const passwordVal = password.value;
+    const rememberVal = rememberPassword.value;
+    if (!usernameVal.trim()) {
+        uni.showToast({
+            title: '请输入学号',
+            icon: 'none'
+        });
+        return;
+    }
+    if (!passwordVal.trim()) {
+        uni.showToast({
+            title: '请输入密码',
+            icon: 'none'
+        });
+        return;
+    }
+
+    // 简单的学号格式验证（假设学号为数字）
+    if (!/^\d+$/.test(usernameVal)) {
+        uni.showToast({
+            title: '学号格式不正确',
+            icon: 'none'
+        });
+        return;
+    }
+    uni.showLoading({
+        title: '登录中...',
+        mask: true
+    });
+
+    // 模拟登录验证
+    setTimeout(() => {
+        uni.hideLoading();
+
+        // 检查已注册的学生账号
+        const registeredStudents = uni.getStorageSync('registeredStudents') || [];
+        const student = registeredStudents.find((s: any) => s.studentId === usernameVal && s.password === passwordVal);
+        if (student) {
+            if (rememberVal) {
+                uni.setStorageSync('studentUsername', usernameVal);
+                uni.setStorageSync('studentPassword', passwordVal);
+                uni.setStorageSync('studentRememberPassword', true);
+            } else {
+                uni.removeStorageSync('studentUsername');
+                uni.removeStorageSync('studentPassword');
+                uni.removeStorageSync('studentRememberPassword');
+            }
+
+            // 保存学生登录状态
+            uni.setStorageSync('studentInfo', {
+                studentId: usernameVal,
+                name: student.name,
+                gender: student.gender,
+                college: student.college,
+                major: student.major,
+                phone: student.phone,
+                password: student.password,
+                registerTime: student.registerTime,
+                loginTime: new Date().getTime()
+            });
+
+            // 跳转到学生主页（这里需要根据实际情况修改）
+            setTimeout(() => {
+                uni.navigateTo({
+                    url: '../student-work/student-work',
+                    success: () => {
+                        uni.showToast({
+                            title: '登录成功',
+                            icon: 'success'
+                        });
+                    }
+                });
+            }, 1500);
+        } else {
+            uni.showToast({
+                title: '学号或密码错误',
+                icon: 'none'
+            });
+        }
+    }, 1500);
+};
+
+const goToRegister = () => {
+    uni.navigateTo({
+        url: '../student-register/student-register'
+    });
+};
 </script>
 <style lang="less">
 @import './student-login.less';

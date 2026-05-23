@@ -1,3 +1,135 @@
-<script setup lang="ts">\nimport { ref, watch, onMounted } from "vue";\nconst props = defineProps({\n    extClass: { type: String, default: "" },\n    title: { type: String, default: "" },\n    background: { type: String, default: "" },\n    color: { type: String, default: "" },\n    back: { type: Boolean, default: true },\n    loading: { type: Boolean, default: false },\n    homeButton: { type: Boolean, default: false },\n    animated: { type: Boolean, default: true },\n    show: { type: Boolean, default: true },\n    delta: { type: Number, default: 1 }\n});\nconst emit = defineEmits(["back"]);\nconst displayStyle = ref("");\nconst ios = ref<boolean>(false);\nconst innerPaddingRight = ref("");\nconst leftWidth = ref("");\nconst safeAreaTop = ref("");\nonMounted(() => { initAttached(); });\nconst initAttached = () => {\n    let rect;\n    // #ifndef H5\n    try { rect = uni.getMenuButtonBoundingClientRect(); } catch(e) {}\n    // #endif\n    uni.getSystemInfo({\n        success: (res) => {\n            const isAndroid = res.platform === "android";\n            const isDevtools = res.platform === "devtools";\n            ios.value = !isAndroid;\n            if (rect) {\n                innerPaddingRight.value = "padding-right: " + (res.windowWidth - rect.left) + "px";\n                leftWidth.value = "width: " + (res.windowWidth - rect.left) + "px";\n            }\n            safeAreaTop.value = isDevtools || (isAndroid && res.safeArea) ? "height: calc(var(--height) + " + res.safeArea.top + "px); padding-top: " + res.safeArea.top + "px" : "";\n        }\n    });\n};\nconst showChangeFun = (show: boolean) => {\n    displayStyle.value = props.animated ? "opacity: " + (show ? 1 : 0) + ";transition:opacity 0.5s;" : "display: " + (show ? "" : "none");\n};\nconst backFun = () => {\n    if (props.delta) uni.navigateBack({ delta: props.delta });\n    emit("back", { detail: { delta: props.delta } });\n};\nconst home = () => { console.log("home clicked"); };\nwatch(() => props.show, (newVal) => { showChangeFun(newVal); }, { immediate: true });\n</script>\n<style lang="less">
+<template>
+    <view class="weui-navigation-bar" :class="{ android: !ios }">
+        <view
+            v-if="show"
+            :class="['weui-navigation-bar__inner', extClass]"
+            :style="
+                displayStyle +
+                ';' +
+                safeAreaTop +
+                ';' +
+                innerPaddingRight +
+                ';background:' +
+                background +
+                ';color:' +
+                color
+            "
+        >
+            <view class="weui-navigation-bar__left" :style="leftWidth">
+                <view
+                    v-if="back"
+                    class="weui-navigation-bar__btn_goback_wrapper"
+                    hover-class="weui-active"
+                    hover-stop-propagation
+                    @tap="backFun"
+                >
+                    <view class="weui-navigation-bar__btn_goback"></view>
+                </view>
+                <view
+                    v-if="homeButton"
+                    class="weui-navigation-bar__btn_home_wrapper"
+                    hover-class="weui-active"
+                    hover-stop-propagation
+                    @tap="home"
+                >
+                    <view class="weui-navigation-bar__btn_home"></view>
+                </view>
+            </view>
+            <view class="weui-navigation-bar__center">
+                <view v-if="loading" class="weui-navigation-bar__loading">
+                    <view class="weui-loading"></view>
+                </view>
+                <text>{{ title }}</text>
+            </view>
+            <view class="weui-navigation-bar__right"></view>
+        </view>
+    </view>
+</template>
+
+<script setup lang="ts">
+import { ref, watch, onMounted } from 'vue';
+
+const props = defineProps({
+    extClass: { type: String, default: '' },
+    title: { type: String, default: '' },
+    background: { type: String, default: '' },
+    color: { type: String, default: '' },
+    back: { type: Boolean, default: true },
+    loading: { type: Boolean, default: false },
+    homeButton: { type: Boolean, default: false },
+    animated: { type: Boolean, default: true },
+    show: { type: Boolean, default: true },
+    delta: { type: Number, default: 1 }
+});
+
+const emit = defineEmits(['back']);
+
+const displayStyle = ref('');
+const ios = ref<boolean>(false);
+const innerPaddingRight = ref('');
+const leftWidth = ref('');
+const safeAreaTop = ref('');
+
+const initAttached = () => {
+    let rect: UniApp.GetMenuButtonBoundingClientRectRes | undefined;
+    // #ifndef H5
+    try {
+        rect = uni.getMenuButtonBoundingClientRect();
+    } catch (e) {
+        // 部分平台不支持，忽略
+    }
+    // #endif
+    uni.getSystemInfo({
+        success: (res) => {
+            const isAndroid = res.platform === 'android';
+            const isDevtools = res.platform === 'devtools';
+            ios.value = !isAndroid;
+            if (rect) {
+                innerPaddingRight.value = 'padding-right: ' + (res.windowWidth - rect.left) + 'px';
+                leftWidth.value = 'width: ' + (res.windowWidth - rect.left) + 'px';
+            }
+            safeAreaTop.value =
+                isDevtools || (isAndroid && res.safeArea)
+                    ? 'height: calc(var(--height) + ' +
+                      res.safeArea!.top +
+                      'px); padding-top: ' +
+                      res.safeArea!.top +
+                      'px'
+                    : '';
+        }
+    });
+};
+
+const showChangeFun = (visible: boolean) => {
+    displayStyle.value = props.animated
+        ? 'opacity: ' + (visible ? 1 : 0) + ';transition:opacity 0.5s;'
+        : 'display: ' + (visible ? '' : 'none');
+};
+
+const backFun = () => {
+    if (props.delta) {
+        uni.navigateBack({ delta: props.delta });
+    }
+    emit('back', { detail: { delta: props.delta } });
+};
+
+const home = () => {
+    console.log('home clicked');
+};
+
+watch(
+    () => props.show,
+    (newVal) => {
+        showChangeFun(newVal);
+    },
+    { immediate: true }
+);
+
+onMounted(() => {
+    initAttached();
+});
+</script>
+
+<style lang="less">
 @import './navigation-bar.less';
 </style>
