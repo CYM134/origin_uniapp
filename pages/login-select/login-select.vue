@@ -10,26 +10,20 @@
             </view>
 
             <view class="button-group">
-                <button class="identity-btn admin-btn" @tap="navigateToAdmin">
-                    <view class="btn-content">
-                        <image class="btn-icon" src="/static/images/icons/管理员_角色管理.png" mode="aspectFit"></image>
-                        <text>我是管理员</text>
-                    </view>
-                </button>
+                <view class="identity-card admin-card" @tap="navigateToAdmin">
+                    <image class="card-icon" src="/static/images/icons/管理员_角色管理.png" mode="aspectFit"></image>
+                    <text class="card-title">我是管理员</text>
+                </view>
 
-                <button class="identity-btn student-btn" @tap="navigateToStudent">
-                    <view class="btn-content">
-                        <image class="btn-icon" src="/static/images/icons/学生.png" mode="aspectFit"></image>
-                        <text>我是学生</text>
-                    </view>
-                </button>
+                <view class="identity-card student-card" @tap="navigateToStudent">
+                    <image class="card-icon" src="/static/images/icons/学生.png" mode="aspectFit"></image>
+                    <text class="card-title">我是学生</text>
+                </view>
 
-                <button class="identity-btn teacher-btn" @tap="navigateToTeacher">
-                    <view class="btn-content">
-                        <image class="btn-icon" src="/static/images/icons/教师，领导中心.png" mode="aspectFit"></image>
-                        <text>我是教师</text>
-                    </view>
-                </button>
+                <view class="identity-card teacher-card" @tap="navigateToTeacher">
+                    <image class="card-icon" src="/static/images/icons/教师，领导中心.png" mode="aspectFit"></image>
+                    <text class="card-title">我是教师</text>
+                </view>
             </view>
 
             <view class="footer">

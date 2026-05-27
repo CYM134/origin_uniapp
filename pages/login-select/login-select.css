@@ -1,61 +1,147 @@
 /* login-select.wxss */
 page {
     height: 100vh;
-    background-color: #f5f5f5;
+    background-color: #f7f9fc; /* 更现代的微灰背景 */
+    overflow: hidden; /* 防止出现滚动条 */
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
 }
 
 .container {
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: center;
-    height: 100%;
-    padding: 40rpx;
+    justify-content: flex-start;
+    height: calc(100vh - 44px); /* 减去 navigation-bar 高度，需要根据实际情况 */
+    padding: 6vh 40rpx 4vh;
+    box-sizing: border-box;
 }
 
 .logo-container {
-    margin-bottom: 80rpx;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-bottom: 5vh;
 }
 
 .logo {
-    width: 200rpx;
-    height: 200rpx;
+    width: 160rpx;
+    height: 160rpx;
+    margin-bottom: 24rpx;
 }
 
-.identity-options {
+.title {
+    font-size: 44rpx;
+    font-weight: 600;
+    color: #333333;
+    margin-bottom: 12rpx;
+    letter-spacing: 2rpx;
+}
+
+.subtitle {
+    font-size: 32rpx;
+    color: #666666;
+    font-weight: 400;
+}
+
+.button-group {
     width: 100%;
+    max-width: 800px;
+    display: flex;
+    flex-direction: row; /* 默认横向排列 */
+    justify-content: center;
+    gap: 40rpx;
+    flex-wrap: wrap; /* 空间不足时自动换行，适合多端自适应 */
+    flex: 1; /* 占据剩余中间空间 */
+    align-items: center;
+}
+
+/* 移动端屏幕窄时，自动纵向排列 */
+@media screen and (max-width: 600px) {
+    .button-group {
+        flex-direction: column;
+        gap: 32rpx;
+        align-items: center;
+        flex: none; /* 取消弹性占据剩余空间 */
+        margin-bottom: auto;
+    }
+}
+
+.identity-card {
+    flex: 1;
+    min-width: 200px;
+    max-width: 250px;
+    height: 220px; /* 适度的高度 */
+    background: #ffffff;
+    border-radius: 24rpx;
     display: flex;
     flex-direction: column;
-    gap: 40rpx;
-}
-
-.option-btn {
-    width: 120%;
-    height: 100rpx;
-    border-radius: 50rpx;
-    font-size: 40rpx;
-    font-weight: bold;
-    display: flex;
     align-items: center;
     justify-content: center;
-    transition: all 0.3s ease;
+    box-shadow: 0 8rpx 24rpx rgba(0, 0, 0, 0.05); /* 柔和阴影 */
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+    cursor: pointer;
+    box-sizing: border-box;
+    padding: 30rpx;
+    border: 2rpx solid transparent; /* 为hover做准备 */
 }
 
-.option-btn:active {
-    transform: scale(0.98);
+@media screen and (max-width: 600px) {
+    .identity-card {
+        height: 120px; /* 移动端更紧凑的高度 */
+        flex-direction: row; /* 图标文字横排 */
+        width: 100%;
+        max-width: 100%;
+        gap: 40rpx;
+    }
 }
 
-.admin {
-    background-color: #ff6b81;
-    color: white;
+.identity-card:hover {
+    transform: translateY(-8rpx);
+    box-shadow: 0 16rpx 40rpx rgba(0, 0, 0, 0.08); /* 悬浮加深阴影 */
+    border-color: #3a7bd5; /* 配合导航栏的蓝色 */
 }
 
-.student {
-    background-color: #1dd1a1;
-    color: white;
+.identity-card:active {
+    transform: translateY(-2rpx);
+    box-shadow: 0 8rpx 16rpx rgba(0, 0, 0, 0.06);
 }
 
-.teacher {
-    background-color: #54a0ff;
-    color: white;
+.card-icon {
+    width: 120rpx;
+    height: 120rpx;
+    margin-bottom: 30rpx;
+}
+
+@media screen and (max-width: 600px) {
+    .card-icon {
+        width: 80rpx;
+        height: 80rpx;
+        margin-bottom: 0;
+    }
+}
+
+.card-title {
+    font-size: 36rpx;
+    font-weight: 500;
+    color: #444444;
+}
+
+/* 添加不同角色的个性化徽标色彩倾向(可选) */
+.admin-card { border-top: 8rpx solid #ff6b81; }
+.student-card { border-top: 8rpx solid #1dd1a1; }
+.teacher-card { border-top: 8rpx solid #54a0ff; }
+
+/* 防止 hover 时被边框覆盖掉顶部特色色块 */
+.admin-card:hover { border-color: #ff6b81; }
+.student-card:hover { border-color: #1dd1a1; }
+.teacher-card:hover { border-color: #54a0ff; }
+
+.footer {
+    margin-top: auto; /* 始终沉底 */
+    padding-top: 4vh;
+}
+
+.footer text {
+    font-size: 24rpx;
+    color: #999999;
 }
