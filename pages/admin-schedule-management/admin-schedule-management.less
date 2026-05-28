@@ -1,113 +1,144 @@
-/* admin-schedule-management.less */
+/* admin-schedule-management.less - 管理员课表管理（琥珀橙主题） */
+
+@admin-primary: #F5A623;
+@admin-dark: #E8921A;
+@admin-light: #FEF3C7;
+@admin-bg: #FFFBF0;
+
 page {
-    height: 100vh;
-    display: flex;
-    flex-direction: column;
-    background-color: #f5f5f5;
+    
+    background: #F8F9FC;
+    font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Helvetica Neue',
+        'Microsoft YaHei', sans-serif;
 }
 
 .container {
-    height: 100%;
+    
     display: flex;
     flex-direction: column;
-    padding: 30rpx;
+    background: #F8F9FC;
+    padding: 20rpx;
     box-sizing: border-box;
     overflow-y: auto;
+    padding-bottom: calc(40rpx + constant(safe-area-inset-bottom));
+    padding-bottom: calc(40rpx + env(safe-area-inset-bottom));
 }
 
-/* 选项卡样式 */
+/* ---- Tab 切换 ---- */
 .tabs {
     display: flex;
-    background-color: white;
-    width: 400rpx;
-    border-radius: 10rpx;
-    margin-bottom: 30rpx;
+    background: #FFFFFF;
+    border-radius: 16rpx;
+    margin-bottom: 24rpx;
     overflow: hidden;
-    box-shadow: 0 2rpx 6rpx rgba(0, 0, 0, 0.1);
+    box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.07);
+    padding: 6rpx;
+    gap: 0;
 }
 
 .tab {
     flex: 1;
     text-align: center;
-    padding: 25rpx 0;
-    font-size: 30rpx;
-    color: #666;
+    padding: 22rpx 0;
+    font-size: 28rpx;
+    color: #6B7280;
     position: relative;
-    transition: all 0.3s;
+    transition: all 0.2s;
+    border-radius: 12rpx;
+    font-weight: 500;
 }
 
 .tab.active {
-    color: #3a7bd5;
-    font-weight: bold;
+    color: #FFFFFF;
+    background: @admin-primary;
+    font-weight: 600;
+    box-shadow: 0 4rpx 12rpx rgba(245, 166, 35, 0.30);
 }
 
-.tab.active::after {
-    content: '';
-    position: absolute;
-    bottom: 0;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 60rpx;
-    height: 6rpx;
-    background-color: #3a7bd5;
-    border-radius: 3rpx;
-}
-
-/* 内容区域样式 */
+/* ---- 内容区 ---- */
 .tab-content {
     flex: 1;
     overflow-y: auto;
 }
 
+/* ---- 通用卡片区块 ---- */
 .section {
-    background-color: white;
-    border-radius: 10rpx;
-    padding: 30rpx;
-    margin-bottom: 30rpx;
-    box-shadow: 0 2rpx 6rpx rgba(0, 0, 0, 0.1);
+    background: #FFFFFF;
+    border-radius: 20rpx;
+    padding: 28rpx 32rpx;
+    margin-bottom: 20rpx;
+    box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.07);
 }
 
 .section-title {
-    font-size: 30rpx;
-    font-weight: bold;
-    color: #333;
+    font-size: 28rpx;
+    font-weight: 700;
+    color: #1A1A2E;
     margin-bottom: 20rpx;
     display: flex;
     align-items: center;
+    padding-bottom: 16rpx;
+    border-bottom: 2rpx solid #F3F4F6;
 }
 
-/* 选择器样式 */
+.section-title::before {
+    content: '';
+    display: inline-block;
+    width: 6rpx;
+    height: 26rpx;
+    background: @admin-primary;
+    border-radius: 3rpx;
+    margin-right: 14rpx;
+}
+
+/* ---- 选择器 ---- */
 .picker {
-    height: 80rpx;
-    background-color: #f5f5f5;
-    border-radius: 8rpx;
+    height: 88rpx;
+    background: #F4F5F8;
+    border: 2rpx solid transparent;
+    border-radius: 12rpx;
     display: flex;
     align-items: center;
     justify-content: space-between;
     padding: 0 20rpx;
-    font-size: 32rpx;
-    color: #333;
+    font-size: 28rpx;
+    color: #1A1A2E;
+    transition: border-color 0.2s;
+}
+
+.picker:active {
+    border-color: @admin-primary;
+    background: @admin-bg;
 }
 
 .arrow-icon {
-    width: 30rpx;
-    height: 30rpx;
+    width: 20rpx;
+    height: 20rpx;
+    opacity: 0.5;
 }
 
 .picker-text {
-    font-size: 32rpx;
-    color: #333;
+    font-size: 28rpx;
+    color: #1A1A2E;
+    flex: 1;
 }
 
-/* 上传框样式 */
+/* ---- 上传区 ---- */
 .upload-box {
-    height: 200rpx;
-    background-color: #f5f5f5;
-    border-radius: 8rpx;
+    min-height: 180rpx;
+    background: #F4F5F8;
+    border-radius: 12rpx;
+    border: 2rpx dashed #D1D5DB;
     display: flex;
     align-items: center;
     justify-content: center;
     overflow: hidden;
+    transition: border-color 0.2s, background 0.2s;
+}
+
+.upload-box:active {
+    border-color: @admin-primary;
+    background: @admin-bg;
 }
 
 .upload-placeholder {
@@ -115,116 +146,141 @@ page {
     flex-direction: column;
     align-items: center;
     justify-content: center;
+    padding: 32rpx;
 }
 
 .upload-placeholder image {
-    width: 80rpx;
-    height: 80rpx;
-    margin-bottom: 20rpx;
+    width: 72rpx;
+    height: 72rpx;
+    margin-bottom: 16rpx;
+    opacity: 0.4;
 }
 
 .upload-placeholder text {
-    font-size: 28rpx;
-    color: #999;
+    font-size: 26rpx;
+    color: #9CA3AF;
 }
 
+/* 已选文件信息 */
 .file-info {
     display: flex;
     align-items: center;
-    padding: 0 30rpx;
+    padding: 0 24rpx;
     width: 100%;
     box-sizing: border-box;
 }
 
 .file-info image {
-    width: 60rpx;
-    height: 60rpx;
+    width: 56rpx;
+    height: 56rpx;
     margin-right: 20rpx;
+    flex-shrink: 0;
 }
 
 .file-info text {
-    font-size: 28rpx;
-    color: #333;
+    font-size: 26rpx;
+    color: #1A1A2E;
     flex: 1;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
 }
 
-/* 导入说明样式 */
+/* ---- 导入说明 ---- */
 .import-guide {
     display: flex;
     flex-direction: column;
+    gap: 8rpx;
 }
 
 .import-guide text {
-    font-size: 26rpx;
-    color: #666;
-    margin-bottom: 10rpx;
-    line-height: 1.5;
+    font-size: 24rpx;
+    color: #6B7280;
+    line-height: 1.6;
+    padding-left: 16rpx;
+    position: relative;
 }
 
-/* 单选框和复选框样式 */
+.import-guide text::before {
+    content: '·';
+    position: absolute;
+    left: 0;
+    color: @admin-primary;
+}
+
+/* ---- 单选/复选框 ---- */
 .format-group,
 .option-group {
     display: flex;
     flex-direction: column;
+    gap: 16rpx;
 }
 
 .format-item,
 .option-item {
     display: flex;
     align-items: center;
-    margin-bottom: 20rpx;
+    gap: 12rpx;
 }
 
 .format-item text,
 .option-item text {
-    font-size: 28rpx;
-    color: #333;
-    margin-left: 10rpx;
+    font-size: 26rpx;
+    color: #4B5563;
 }
 
-/* 按钮样式 */
+/* ---- 按钮组 ---- */
 .button-group {
     display: flex;
     flex-direction: column;
-    margin-bottom: 30rpx;
+    gap: 16rpx;
+    margin-bottom: 20rpx;
 }
 
 .primary-btn {
     display: flex;
     align-items: center;
     justify-content: center;
-    background: linear-gradient(to right, #3a7bd5, #00d2ff);
-    color: white;
-    border-radius: 45rpx;
-    font-size: 36rpx;
-    height: 90rpx;
-    line-height: 90rpx;
-    margin-bottom: 20rpx;
-    box-shadow: 0 6rpx 10rpx rgba(58, 123, 213, 0.2);
+    background: linear-gradient(135deg, @admin-dark 0%, @admin-primary 100%);
+    color: #FFFFFF;
+    border-radius: 999rpx;
+    font-size: 30rpx;
+    font-weight: 600;
+    height: 92rpx;
+    box-shadow: 0 8rpx 24rpx rgba(245, 166, 35, 0.30);
+    transition: opacity 0.2s, transform 0.1s;
+}
+
+.primary-btn:active {
+    opacity: 0.88;
+    transform: scale(0.98);
 }
 
 .primary-btn[disabled] {
-    background: linear-gradient(to right, #cccccc, #dddddd);
-    color: #999;
+    background: #D1D5DB;
+    color: #9CA3AF;
+    box-shadow: none;
 }
 
 .secondary-btn {
     display: flex;
     align-items: center;
     justify-content: center;
-    background-color: white;
-    color: #3a7bd5;
-    border: 2rpx solid #3a7bd5;
-    border-radius: 45rpx;
-    font-size: 36rpx;
-    height: 90rpx;
-    line-height: 90rpx;
+    background: #FFFFFF;
+    color: @admin-primary;
+    border: 2rpx solid @admin-primary;
+    border-radius: 999rpx;
+    font-size: 30rpx;
+    font-weight: 500;
+    height: 92rpx;
+    transition: background 0.2s;
 }
 
-/* 弹窗样式 */
+.secondary-btn:active {
+    background: @admin-bg;
+}
+
+/* ---- 弹窗 ---- */
 .modal {
     position: fixed;
     top: 0;
@@ -243,96 +299,110 @@ page {
     left: 0;
     right: 0;
     bottom: 0;
-    background-color: rgba(0, 0, 0, 0.5);
+    background: rgba(0, 0, 0, 0.45);
 }
 
 .modal-content {
     position: relative;
-    background-color: white;
-    border-radius: 15rpx;
-    width: 80%;
-    max-width: 600rpx;
+    background: #FFFFFF;
+    border-radius: 24rpx;
+    width: 85%;
+    max-width: 620rpx;
     z-index: 1001;
     overflow: hidden;
+    box-shadow: 0 24rpx 64rpx rgba(0, 0, 0, 0.12);
 }
 
 .modal-header {
-    padding: 30rpx;
+    padding: 28rpx 32rpx;
     text-align: center;
-    font-size: 32rpx;
-    font-weight: bold;
-    border-bottom: 1rpx solid #eee;
+    font-size: 30rpx;
+    font-weight: 600;
+    color: #1A1A2E;
+    border-bottom: 1rpx solid #F3F4F6;
 }
 
 .modal-body {
-    padding: 30rpx;
+    padding: 28rpx 32rpx;
 }
 
-/* 进度条样式 */
+/* 进度条 */
 .progress-container {
     position: relative;
-    margin: 30rpx 0;
+    margin: 20rpx 0 24rpx;
 }
 
 .progress-text {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
+    text-align: center;
     font-size: 24rpx;
-    color: #3a7bd5;
+    color: @admin-primary;
+    margin-top: 12rpx;
+    display: block;
 }
 
 .progress-status {
     text-align: center;
-    font-size: 28rpx;
-    color: #666;
-    margin-top: 20rpx;
+    font-size: 26rpx;
+    color: #6B7280;
+    margin-top: 10rpx;
 }
 
-/* 结果图标样式 */
+/* 结果图标 */
 .result-icon {
     display: flex;
     justify-content: center;
-    margin: 20rpx 0 30rpx;
+    margin: 16rpx 0 24rpx;
 }
 
 .result-icon image {
-    width: 120rpx;
-    height: 120rpx;
+    width: 110rpx;
+    height: 110rpx;
 }
 
 .result-message {
     text-align: center;
-    font-size: 30rpx;
-    color: #333;
-    margin-bottom: 20rpx;
+    font-size: 28rpx;
+    color: #1A1A2E;
+    font-weight: 600;
+    margin-bottom: 16rpx;
 }
 
 .result-details {
-    background-color: #f5f5f5;
-    padding: 20rpx;
-    border-radius: 8rpx;
-    font-size: 26rpx;
-    color: #666;
-    line-height: 1.5;
+    background: #F4F5F8;
+    padding: 18rpx 20rpx;
+    border-radius: 12rpx;
+    font-size: 24rpx;
+    color: #6B7280;
+    line-height: 1.6;
 }
 
 .modal-footer {
-    border-top: 1rpx solid #eee;
+    border-top: 1rpx solid #F3F4F6;
+    display: flex;
+    flex-direction: row;
 }
 
 .modal-footer button {
     margin: 0;
-    height: 90rpx;
-    line-height: 90rpx;
-    font-size: 30rpx;
+    height: 88rpx;
+    font-size: 28rpx;
     border-radius: 0;
-    background-color: #3a7bd5;
-    color: white;
 }
 
-/* 自定义选择器样式 */
+.modal-footer .cancel-btn {
+    flex: 1;
+    background: #F4F5F8;
+    color: #6B7280;
+}
+
+.modal-footer .confirm-btn {
+    flex: 1;
+    background: @admin-primary;
+    color: #FFFFFF;
+    font-weight: 600;
+}
+
+/* 自定义 Picker 弹窗 */
 .custom-picker-modal {
     z-index: 1100;
 }
@@ -340,44 +410,18 @@ page {
 .picker-modal-content {
     width: 90%;
     max-width: 650rpx;
+    border-radius: 24rpx;
+    overflow: hidden;
 }
 
 .picker-view-item {
     display: flex;
     justify-content: center;
-    align-items: center; //  垂直居中,不能用line-height,会导致显示在偏下方
-    height: 100rpx; // 必须设置 = indicator-style，不然出错
-    font-size: 36rpx;
-    color: #333;
+    align-items: center;
+    height: 100rpx;
+    font-size: 30rpx;
+    color: #1A1A2E;
 }
 
-.modal-footer {
-    display: flex;
-    flex-direction: row;
-}
+/* 页脚 */
 
-.modal-footer .cancel-btn {
-    flex: 1;
-    background-color: #f5f5f5;
-    color: #666;
-    border-radius: 0;
-    margin: 0;
-}
-
-.modal-footer .confirm-btn {
-    flex: 1;
-    background-color: #3a7bd5;
-    color: white;
-    border-radius: 0;
-    margin: 0;
-}
-
-.footer {
-    margin-top: 30rpx;
-    margin-bottom: 20rpx;
-    text-align: center;
-    width: 100%;
-    color: #999;
-    padding: 20rpx 0;
-    font-size: 24rpx;
-}

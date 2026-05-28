@@ -1,217 +1,238 @@
-/* pages/teacher-pending-process/teacher-pending-process.wxss */
+/* teacher-pending-process.css - 教师待办流程（翡翠绿主题） */
+
 page {
-    height: 100vh;
-    background: rgb(148, 226, 172);
+    
+    background: #F8F9FC;
+    font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Helvetica Neue',
+        'Microsoft YaHei', sans-serif;
 }
 
 .container {
-    padding: 20rpx;
-    background: transparent;
-    height: 90vh;
-}
-
-/* 筛选器 */
-.filter-section {
-    background: rgba(255, 255, 255, 0.9);
-    width: 600rpx;
-    border-radius: 20rpx;
-    margin-bottom: 20rpx;
-    padding: 20rpx;
-    box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.1);
-}
-
-.filter-tabs {
+    
     display: flex;
-    gap: 10rpx;
+    flex-direction: column;
+    background: #F8F9FC;
+    box-sizing: border-box;
+    overflow-y: auto;
+    padding-bottom: calc(40rpx + constant(safe-area-inset-bottom));
+    padding-bottom: calc(40rpx + env(safe-area-inset-bottom));
 }
 
-.filter-tab {
+/* 顶部筛选栏 */
+.filter-bar {
+    background: #FFFFFF;
+    padding: 16rpx 20rpx;
+    box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.05);
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.filter-scroll {
+    display: flex;
+    gap: 12rpx;
+    overflow-x: auto;
+    padding-bottom: 4rpx;
+}
+
+.filter-scroll::-webkit-scrollbar {
+    display: none;
+}
+
+.filter-tag {
+    flex-shrink: 0;
+    padding: 12rpx 24rpx;
+    border-radius: 999rpx;
+    font-size: 26rpx;
+    color: #6B7280;
+    background: #F4F5F8;
+    transition: all 0.2s;
+    white-space: nowrap;
+    font-weight: 500;
+}
+
+.filter-tag.active {
+    background: #10B981;
+    color: #FFFFFF;
+    box-shadow: 0 4rpx 12rpx rgba(16, 185, 129, 0.25);
+    font-weight: 600;
+}
+
+/* 内容列表区 */
+.content-area {
     flex: 1;
     padding: 20rpx;
-    text-align: center;
-    border-radius: 15rpx;
-    font-size: 26rpx;
-    color: #666;
-    background: #f8f9fa;
-    position: relative;
+    overflow-y: auto;
 }
 
-.filter-tab.active {
-    background: #39ddb4;
-    color: white;
-}
-
-.tab-badge {
-    position: absolute;
-    top: -5rpx;
-    right: -5rpx;
-    background: #ff4757;
-    color: white;
+/* 申请卡片 */
+.application-card {
+    background: #FFFFFF;
     border-radius: 20rpx;
-    padding: 2rpx 8rpx;
-    font-size: 18rpx;
-    min-width: 24rpx;
-    text-align: center;
+    margin-bottom: 16rpx;
+    box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.07);
+    overflow: hidden;
+    transition: box-shadow 0.2s;
 }
 
-.filter-tab.active .tab-badge {
-    background: #ff6b7a;
+.application-card:active {
+    box-shadow: 0 6rpx 24rpx rgba(0, 0, 0, 0.10);
 }
 
-/* 申请列表 */
-.application-list {
-    width: 700rpx;
-    margin-bottom: 30rpx;
-}
-
-.empty-state {
-    background: rgba(255, 255, 255, 0.9);
-    border-radius: 20rpx;
-    padding: 80rpx 40rpx;
-    text-align: center;
-    box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.1);
-}
-
-.empty-state image {
-    width: 120rpx;
-    height: 120rpx;
-    margin-bottom: 30rpx;
-    opacity: 0.5;
-}
-
-.empty-text {
-    font-size: 32rpx;
-    color: #666;
-    font-weight: bold;
-    display: block;
-    margin-bottom: 15rpx;
-}
-
-.empty-desc {
-    font-size: 26rpx;
-    color: #999;
-    display: block;
-}
-
-.application-item {
-    background: white;
-    border-radius: 20rpx;
-    margin-bottom: 20rpx;
-    padding: 30rpx;
-    box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.1);
-}
-
-.item-header {
+.card-header {
+    padding: 20rpx 24rpx 16rpx;
     display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 20rpx;
-}
-
-.status-badge {
-    padding: 8rpx 20rpx;
-    border-radius: 20rpx;
-    font-size: 22rpx;
-    font-weight: bold;
-}
-
-.status-badge.pending {
-    background: #fff3cd;
-    color: #856404;
-}
-
-.status-badge.approved {
-    background: #d4edda;
-    color: #155724;
-}
-
-.status-badge.rejected {
-    background: #f8d7da;
-    color: #721c24;
-}
-
-.submit-time {
-    font-size: 24rpx;
-    color: #999;
-}
-
-.item-content {
-    margin-bottom: 25rpx;
-}
-
-.content-row {
-    display: flex;
-    margin-bottom: 12rpx;
     align-items: flex-start;
+    justify-content: space-between;
+    border-bottom: 1rpx solid #F3F4F6;
 }
 
-.content-row:last-child {
+.card-title-row {
+    flex: 1;
+    min-width: 0;
+}
+
+.card-title {
+    font-size: 30rpx;
+    font-weight: 700;
+    color: #1A1A2E;
+    display: block;
+    margin-bottom: 6rpx;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+.card-time {
+    font-size: 22rpx;
+    color: #9CA3AF;
+    display: block;
+}
+
+/* 状态标签 */
+.status-badge {
+    flex-shrink: 0;
+    margin-left: 16rpx;
+    padding: 6rpx 18rpx;
+    border-radius: 999rpx;
+    font-size: 22rpx;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.status-badge.pending { background: #FEF3C7; color: #D97706; }
+.status-badge.approved { background: #D1FAE5; color: #059669; }
+.status-badge.rejected { background: #FEE2E2; color: #DC2626; }
+.status-badge.cancelled { background: #F3F4F6; color: #6B7280; }
+.status-badge.processing { background: #DBEAFE; color: #1D6FDB; }
+.status-badge.teacher-approved { background: #EDE9FE; color: #7C3AED; }
+
+/* 卡片信息区 */
+.card-body {
+    padding: 16rpx 24rpx;
+}
+
+.info-row {
+    display: flex;
+    align-items: flex-start;
+    margin-bottom: 10rpx;
+}
+
+.info-row:last-child {
     margin-bottom: 0;
 }
 
-.content-row .label {
-    width: 120rpx;
-    font-size: 26rpx;
-    color: #666;
-    font-weight: 500;
+.info-label {
+    width: 140rpx;
+    font-size: 24rpx;
+    color: #9CA3AF;
     flex-shrink: 0;
 }
 
-.content-row .value {
+.info-value {
     flex: 1;
-    font-size: 26rpx;
-    color: #333;
+    font-size: 24rpx;
+    color: #4B5563;
+    line-height: 1.5;
 }
 
-.content-row .value.remark {
-    color: #666;
-    font-style: italic;
-}
-
-.item-actions {
+/* 卡片操作区 */
+.card-actions {
+    padding: 14rpx 24rpx 20rpx;
     display: flex;
-    gap: 15rpx;
-    justify-content: flex-end;
+    gap: 12rpx;
+    flex-wrap: wrap;
+    border-top: 1rpx solid #F3F4F6;
 }
 
 .action-btn {
     padding: 12rpx 24rpx;
-    border-radius: 20rpx;
+    border-radius: 999rpx;
     font-size: 24rpx;
-    font-weight: bold;
-    border: none;
+    font-weight: 500;
+    transition: opacity 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .action-btn.approve {
-    background: #28a745;
-    color: white;
+    background: #D1FAE5;
+    color: #059669;
+    font-weight: 600;
 }
 
 .action-btn.reject {
-    background: #dc3545;
-    color: white;
+    background: #FEE2E2;
+    color: #DC2626;
 }
 
-.action-btn.detail {
-    background: #6c757d;
-    color: white;
+.action-btn.secondary {
+    background: #F4F5F8;
+    color: #6B7280;
+    border: 1rpx solid #E5E7EB;
 }
 
-.footer {
+.action-btn:active {
+    opacity: 0.80;
+}
+
+/* 空状态 */
+.empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 100rpx 40rpx;
+}
+
+.empty-icon {
+    font-size: 80rpx;
+    margin-bottom: 24rpx;
+    opacity: 0.4;
+}
+
+.empty-text {
+    font-size: 28rpx;
+    color: #C4C9D4;
+}
+
+/* 加载状态 */
+.loading-state {
     text-align: center;
-    padding: 40rpx 0;
-    color: rgb(102, 94, 94);
-    font-size: 24rpx;
+    padding: 40rpx;
+    color: #9CA3AF;
+    font-size: 26rpx;
 }
 
-/* 弹窗样式 */
+/* 弹窗 */
 .modal-overlay {
     position: fixed;
     top: 0;
     left: 0;
     right: 0;
     bottom: 0;
-    background: rgba(0, 0, 0, 0.5);
+    background: rgba(0, 0, 0, 0.45);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -219,166 +240,57 @@ page {
 }
 
 .modal-content {
-    background: white;
-    border-radius: 20rpx;
-    width: 650rpx;
-    max-width: 90vw;
-    max-height: 80vh;
+    background: #FFFFFF;
+    border-radius: 24rpx;
+    width: 88%;
+    max-width: 640rpx;
+    max-height: 85vh;
     overflow: hidden;
+    box-shadow: 0 24rpx 64rpx rgba(0, 0, 0, 0.12);
 }
 
 .modal-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 30rpx;
-    border-bottom: 1rpx solid #f0f0f0;
+    padding: 28rpx 32rpx;
+    border-bottom: 1rpx solid #F3F4F6;
 }
 
 .modal-title {
-    font-size: 32rpx;
-    font-weight: bold;
-    color: #333;
+    font-size: 30rpx;
+    font-weight: 600;
+    color: #1A1A2E;
 }
 
 .close-btn {
-    width: 60rpx;
-    height: 60rpx;
+    width: 56rpx;
+    height: 56rpx;
+    border-radius: 50%;
+    background: #F4F5F8;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 40rpx;
-    color: #999;
+    font-size: 32rpx;
+    color: #9CA3AF;
 }
 
 .modal-body {
-    padding: 30rpx;
-    max-height: 500rpx;
+    padding: 28rpx 32rpx;
+    max-height: 60vh;
     overflow-y: auto;
-}
-
-/* 审核弹窗 */
-.review-info {
-    background: #f8f9fa;
-    border-radius: 15rpx;
-    padding: 25rpx;
-    margin-bottom: 25rpx;
-}
-
-.info-item {
-    display: flex;
-    margin-bottom: 15rpx;
-}
-
-.info-item:last-child {
-    margin-bottom: 0;
-}
-
-.info-label {
-    width: 120rpx;
-    font-size: 26rpx;
-    color: #666;
-    font-weight: 500;
-}
-
-.info-value {
-    flex: 1;
-    font-size: 26rpx;
-    color: #333;
-}
-
-.review-reason {
-    margin-bottom: 20rpx;
-}
-
-.reason-label {
-    font-size: 28rpx;
-    color: #333;
-    font-weight: 500;
-    display: block;
-    margin-bottom: 15rpx;
-}
-
-.reason-input {
-    width: 100%;
-    min-height: 120rpx;
-    border: 2rpx solid #e0e0e0;
-    border-radius: 10rpx;
-    padding: 20rpx;
-    font-size: 26rpx;
-    box-sizing: border-box;
-}
-
-.char-count {
-    text-align: right;
-    font-size: 22rpx;
-    color: #999;
-    margin-top: 10rpx;
-}
-
-.modal-footer {
-    display: flex;
-    border-top: 1rpx solid #f0f0f0;
-}
-
-.cancel-btn,
-.confirm-btn {
-    flex: 1;
-    height: 88rpx;
-    border: none;
-    font-size: 28rpx;
-    font-weight: bold;
-}
-
-.cancel-btn {
-    background: #f5f5f5;
-    color: #666;
-}
-
-.confirm-btn {
-    color: white;
-}
-
-.confirm-btn.approve {
-    background: #28a745;
-}
-
-.confirm-btn.reject {
-    background: #dc3545;
-}
-
-/* 详情弹窗 */
-.detail-section {
-    margin-bottom: 30rpx;
-}
-
-.detail-section:last-child {
-    margin-bottom: 0;
-}
-
-.section-title {
-    font-size: 28rpx;
-    font-weight: bold;
-    color: #333;
-    margin-bottom: 20rpx;
-    padding-bottom: 10rpx;
-    border-bottom: 2rpx solid #f0f0f0;
 }
 
 .detail-item {
     display: flex;
-    margin-bottom: 15rpx;
     align-items: flex-start;
-}
-
-.detail-item:last-child {
-    margin-bottom: 0;
+    margin-bottom: 20rpx;
 }
 
 .detail-label {
-    width: 140rpx;
+    width: 160rpx;
     font-size: 26rpx;
-    color: #666;
+    color: #6B7280;
     font-weight: 500;
     flex-shrink: 0;
 }
@@ -386,25 +298,61 @@ page {
 .detail-value {
     flex: 1;
     font-size: 26rpx;
-    color: #333;
+    color: #1A1A2E;
+    line-height: 1.6;
 }
 
-.detail-value.status {
-    font-weight: bold;
+/* 拒绝原因输入 */
+.reject-textarea {
+    width: 100%;
+    min-height: 120rpx;
+    background: #F4F5F8;
+    border: 2rpx solid transparent;
+    border-radius: 12rpx;
+    padding: 16rpx 20rpx;
+    font-size: 28rpx;
+    color: #1A1A2E;
+    box-sizing: border-box;
+    transition: border-color 0.2s;
+    margin-top: 16rpx;
 }
 
-.detail-value.status.pending {
-    color: #856404;
+.reject-textarea:focus {
+    border-color: #10B981;
+    background: #F0FDF9;
 }
 
-.detail-value.status.approved {
-    color: #155724;
+.modal-footer {
+    display: flex;
+    gap: 16rpx;
+    padding: 20rpx 32rpx;
+    border-top: 1rpx solid #F3F4F6;
 }
 
-.detail-value.status.rejected {
-    color: #721c24;
+.cancel-btn,
+.confirm-btn {
+    flex: 1;
+    height: 88rpx;
+    border-radius: 12rpx;
+    border: none;
+    font-size: 28rpx;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
-.modal-footer .confirm-btn {
-    background: #3a7bd5;
+.cancel-btn {
+    background: #F4F5F8;
+    color: #6B7280;
+}
+
+.confirm-btn {
+    background: #10B981;
+    color: #FFFFFF;
+    font-weight: 600;
+}
+
+.confirm-btn.danger {
+    background: #EF4444;
 }

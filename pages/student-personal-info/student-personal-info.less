@@ -1,98 +1,111 @@
-/* pages/student-personal-info/student-personal-info.less */
+/* student-personal-info.less - 学生个人信息页（海蓝主题） */
+
+@student-primary: #3B82F6;
+@student-light: #DBEAFE;
+@student-bg: #F0F7FF;
+
 page {
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
-    background: linear-gradient(to bottom, #98e7f1, #d3c5c5);
+    
+    background: #F8F9FC;
+    font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Helvetica Neue',
+        'Microsoft YaHei', sans-serif;
 }
 
 .container {
-    flex: 1;
+    
     display: flex;
     flex-direction: column;
-    justify-content: space-between;
-    min-height: 0;
-    height: 100%;
-    background: none;
-    padding: 20rpx;
+    padding: 24rpx;
     box-sizing: border-box;
+    padding-bottom: calc(40rpx + constant(safe-area-inset-bottom));
+    padding-bottom: calc(40rpx + env(safe-area-inset-bottom));
 }
 
-/* 头像区域 */
+/* ---- 头像区域 ---- */
 .avatar-section {
     display: flex;
     flex-direction: column;
     align-items: center;
-    background: white;
-    border-radius: 20rpx;
-    padding: 40rpx;
-    margin-bottom: 30rpx;
-    box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.1);
+    background: #FFFFFF;
+    border-radius: 24rpx;
+    padding: 48rpx 40rpx 40rpx;
+    margin-bottom: 24rpx;
+    box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.07);
 }
 
 .avatar-container {
     position: relative;
-    margin-bottom: 20rpx;
+    margin-bottom: 24rpx;
 }
 
 .avatar {
     width: 160rpx;
     height: 160rpx;
-    border-radius: 80rpx;
-    background: #f5f5f5;
+    border-radius: 50%;
+    background: @student-light;
+    border: 4rpx solid #FFFFFF;
+    box-shadow: 0 4rpx 16rpx rgba(59, 130, 246, 0.20);
 }
 
 .edit-avatar {
     position: absolute;
     bottom: 0;
     right: 0;
-    width: 50rpx;
-    height: 50rpx;
-    background: #3a7bd5;
-    border-radius: 25rpx;
+    width: 52rpx;
+    height: 52rpx;
+    background: @student-primary;
+    border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
-    border: 3rpx solid white;
+    border: 3rpx solid #FFFFFF;
+    box-shadow: 0 2rpx 8rpx rgba(59, 130, 246, 0.30);
 }
 
 .edit-avatar image {
-    width: 24rpx;
-    height: 24rpx;
+    width: 26rpx;
+    height: 26rpx;
 }
 
 .username {
     font-size: 36rpx;
-    font-weight: bold;
-    color: #333;
+    font-weight: 700;
+    color: #1A1A2E;
+    letter-spacing: 1rpx;
 }
 
-/* 信息列表 */
+/* ---- 信息列表 ---- */
 .info-list {
-    width: 620rpx;
-    background: white;
-    border-radius: 20rpx;
-    margin-bottom: 30rpx;
-    margin-top: auto;
-    box-shadow: 0 4rpx 15rpx rgba(0, 0, 0, 0.08);
+    width: 100%;
+    background: #FFFFFF;
+    border-radius: 24rpx;
+    margin-bottom: 24rpx;
+    box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.07);
+    overflow: hidden;
 }
 
 .info-item {
     display: flex;
     align-items: center;
-    padding: 30rpx;
-    border-bottom: 1rpx solid #f0f0f0;
+    padding: 28rpx 32rpx;
+    border-bottom: 1rpx solid #F3F4F6;
+    transition: background 0.2s;
 }
 
 .info-item:last-child {
     border-bottom: none;
 }
 
+.info-item:active {
+    background: #F8F9FC;
+}
+
 .info-label {
     width: 160rpx;
-    font-size: 30rpx;
-    color: #666;
+    font-size: 28rpx;
+    color: #6B7280;
     font-weight: 500;
+    flex-shrink: 0;
 }
 
 .info-content {
@@ -100,77 +113,82 @@ page {
     display: flex;
     align-items: center;
     justify-content: space-between;
+    min-width: 0;
 }
 
 .info-value {
-    font-size: 30rpx;
-    color: #333;
+    font-size: 28rpx;
+    color: #1A1A2E;
+    font-weight: 500;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
 }
 
 .edit-icon {
-    width: 32rpx;
-    height: 32rpx;
-    opacity: 0.6;
+    width: 28rpx;
+    height: 28rpx;
+    opacity: 0.4;
+    flex-shrink: 0;
+    margin-left: 12rpx;
 }
 
-/* 操作按钮 */
+/* ---- 操作按钮 ---- */
 .action-buttons {
-    width: 650rpx;
     display: flex;
-    gap: 30rpx;
-    margin-bottom: 30rpx;
-    margin-top: auto;
-}
-
-.save-btn,
-.reset-btn {
-    width: 250rpx;
-    height: 88rpx;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 50rpx;
-    font-size: 32rpx;
-    font-weight: bold;
-    border: none;
+    gap: 20rpx;
+    margin-bottom: 24rpx;
 }
 
 .save-btn {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
-}
-
-.reset-btn {
-    background: white;
-    color: #666;
-    border: 2rpx solid #e0e0e0;
+    flex: 2;
+    height: 92rpx;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 999rpx;
+    font-size: 30rpx;
+    font-weight: 600;
+    border: none;
+    background: linear-gradient(135deg, #1D6FDB 0%, #3B82F6 100%);
+    color: #FFFFFF;
+    box-shadow: 0 8rpx 24rpx rgba(59, 130, 246, 0.30);
+    letter-spacing: 1rpx;
+    transition: opacity 0.2s, transform 0.1s;
 }
 
 .save-btn:active {
+    opacity: 0.88;
     transform: scale(0.98);
 }
 
+.reset-btn {
+    flex: 1;
+    height: 92rpx;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 999rpx;
+    font-size: 30rpx;
+    font-weight: 500;
+    border: 2rpx solid #E5E7EB;
+    background: #FFFFFF;
+    color: #6B7280;
+    transition: background 0.2s;
+}
+
 .reset-btn:active {
-    background: #f8f9fa;
+    background: #F4F5F8;
 }
 
-/* 页脚 */
-.footer {
-    text-align: center;
-    color: rgb(121, 115, 115);
-    padding: 20rpx 0;
-    margin-top: auto;
-    font-size: 24rpx;
-}
-
-/* 编辑弹窗 */
+/* ---- 编辑弹窗 ---- */
 .modal-overlay {
     position: fixed;
     top: 0;
     left: 0;
     right: 0;
     bottom: 0;
-    background: rgba(0, 0, 0, 0.5);
+    background: rgba(0, 0, 0, 0.45);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -178,73 +196,82 @@ page {
 }
 
 .modal-content {
-    background: white;
-    border-radius: 20rpx;
-    width: 600rpx;
+    background: #FFFFFF;
+    border-radius: 24rpx;
+    width: 88%;
+    max-width: 620rpx;
     max-height: 80vh;
     overflow: hidden;
+    box-shadow: 0 24rpx 64rpx rgba(0, 0, 0, 0.15);
 }
 
 .modal-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 30rpx;
-    border-bottom: 1rpx solid #f0f0f0;
+    padding: 28rpx 32rpx;
+    border-bottom: 1rpx solid #F3F4F6;
 }
 
 .modal-title {
-    font-size: 32rpx;
-    font-weight: bold;
-    color: #333;
+    font-size: 30rpx;
+    font-weight: 600;
+    color: #1A1A2E;
 }
 
 .close-btn {
-    width: 60rpx;
-    height: 60rpx;
+    width: 56rpx;
+    height: 56rpx;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 40rpx;
-    color: #999;
-    border-radius: 30rpx;
+    font-size: 36rpx;
+    color: #9CA3AF;
+    border-radius: 50%;
+    background: #F4F5F8;
+    transition: background 0.2s;
 }
 
 .close-btn:active {
-    background: #f0f0f0;
+    background: #E5E7EB;
 }
 
 .modal-body {
-    padding: 30rpx;
+    padding: 32rpx;
 }
 
 .edit-input {
     width: 100%;
-    height: 80rpx;
-    border: 2rpx solid #e0e0e0;
-    border-radius: 10rpx;
-    padding: 0 20rpx;
-    font-size: 30rpx;
+    height: 88rpx;
+    background: #F4F5F8;
+    border: 2rpx solid transparent;
+    border-radius: 12rpx;
+    padding: 0 24rpx;
+    font-size: 28rpx;
+    color: #1A1A2E;
     box-sizing: border-box;
+    transition: border-color 0.2s, background 0.2s;
 }
 
 .edit-input:focus {
-    border-color: #3a7bd5;
+    border-color: @student-primary;
+    background: @student-bg;
 }
 
 .picker-display {
-    height: 80rpx;
-    line-height: 80rpx;
-    border: 2rpx solid #e0e0e0;
-    border-radius: 10rpx;
-    padding: 0 20rpx;
-    font-size: 30rpx;
-    color: #333;
+    height: 88rpx;
+    background: #F4F5F8;
+    border-radius: 12rpx;
+    padding: 0 24rpx;
+    font-size: 28rpx;
+    color: #1A1A2E;
+    display: flex;
+    align-items: center;
 }
 
 .gender-options {
     display: flex;
-    gap: 20rpx;
+    gap: 16rpx;
 }
 
 .gender-option {
@@ -253,49 +280,54 @@ page {
     display: flex;
     align-items: center;
     justify-content: center;
-    border: 2rpx solid #e0e0e0;
-    border-radius: 10rpx;
-    font-size: 30rpx;
-    color: #666;
-    transition: all 0.3s ease;
+    border: 2rpx solid #E5E7EB;
+    border-radius: 12rpx;
+    font-size: 28rpx;
+    color: #6B7280;
+    background: #F4F5F8;
+    transition: all 0.2s;
 }
 
 .gender-option.active {
-    background: #3a7bd5;
-    color: white;
-    border-color: #3a7bd5;
+    background: @student-light;
+    color: @student-primary;
+    border-color: @student-primary;
+    font-weight: 600;
 }
 
 .modal-footer {
     display: flex;
-    gap: 20rpx;
-    padding: 30rpx;
-    border-top: 1rpx solid #f0f0f0;
-}
-
-.cancel-btn,
-.confirm-btn {
-    flex: 1;
-    height: 80rpx;
-    border-radius: 15rpx;
-    font-size: 30rpx;
-    border: none;
+    gap: 16rpx;
+    padding: 24rpx 32rpx;
+    border-top: 1rpx solid #F3F4F6;
 }
 
 .cancel-btn {
-    background: #f0f0f0;
-    color: #666;
+    flex: 1;
+    height: 80rpx;
+    border-radius: 12rpx;
+    font-size: 28rpx;
+    border: none;
+    background: #F4F5F8;
+    color: #6B7280;
+    font-weight: 500;
 }
 
 .confirm-btn {
-    background: #3a7bd5;
-    color: white;
+    flex: 1;
+    height: 80rpx;
+    border-radius: 12rpx;
+    font-size: 28rpx;
+    border: none;
+    background: @student-primary;
+    color: #FFFFFF;
+    font-weight: 600;
 }
 
 .cancel-btn:active {
-    background: #e0e0e0;
+    background: #E5E7EB;
 }
 
 .confirm-btn:active {
-    background: #2a6bc5;
+    opacity: 0.88;
 }

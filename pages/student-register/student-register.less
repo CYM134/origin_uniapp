@@ -1,214 +1,255 @@
-/* pages/student-register/student-register.less */
+/* student-register.less - 学生注册页（海蓝主题） */
+
+@student-primary: #3B82F6;
+@student-primary-dark: #1D6FDB;
+@student-gradient: linear-gradient(135deg, #1D6FDB 0%, #3B82F6 50%, #6366F1 100%);
+
 page {
-    height: 100vh;
-    display: flex;
-    flex-direction: column;
-    background-color: #4f7eff;
+    
+    background: linear-gradient(160deg, #1D4ED8 0%, #3B82F6 50%, #818CF8 100%);
+    font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Helvetica Neue',
+        'Microsoft YaHei', sans-serif;
 }
 
+/* ---- 容器 ---- */
 .container {
-    height: 100%;
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: space-between;
-    padding: 40rpx 0;
+    
+    padding: 0 40rpx;
     box-sizing: border-box;
+    padding-bottom: calc(48rpx + constant(safe-area-inset-bottom));
+    padding-bottom: calc(48rpx + env(safe-area-inset-bottom));
 }
 
+/* ---- Logo 区域 ---- */
 .logo-container {
     display: flex;
     flex-direction: column;
     align-items: center;
-    margin-top: 20rpx;
+    padding-top: 56rpx;
+    margin-bottom: 36rpx;
 }
 
 .logo {
-    width: 120rpx;
-    height: 120rpx;
+    width: 110rpx;
+    height: 110rpx;
     border-radius: 50%;
-    box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.1);
-    background-color: white;
-    padding: 10rpx;
+    background: rgba(255, 255, 255, 0.95);
+    padding: 12rpx;
+    box-sizing: border-box;
+    box-shadow: 0 8rpx 32rpx rgba(0, 0, 0, 0.12), 0 0 0 4rpx rgba(255, 255, 255, 0.3);
+    margin-bottom: 20rpx;
 }
 
 .title {
-    font-size: 32rpx;
-    font-weight: bold;
-    color: white;
-    margin-top: 15rpx;
-    text-shadow: 0 2rpx 4rpx rgba(0, 0, 0, 0.2);
+    font-size: 36rpx;
+    font-weight: 700;
+    color: #FFFFFF;
+    letter-spacing: 2rpx;
+    margin-bottom: 8rpx;
+    text-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.15);
 }
 
 .subtitle {
-    font-size: 32rpx;
-    color: rgba(59, 56, 56, 0.9);
-    margin-top: 8rpx;
+    font-size: 26rpx;
+    color: rgba(255, 255, 255, 0.80);
+    background: rgba(255, 255, 255, 0.18);
+    padding: 6rpx 20rpx;
+    border-radius: 999rpx;
+    border: 1rpx solid rgba(255, 255, 255, 0.3);
 }
 
+/* ---- 注册表单卡片 ---- */
 .register-form {
-    width: 85%;
-    max-width: 600rpx;
-    background-color: white;
-    border-radius: 20rpx;
-    padding: 40rpx 30rpx;
-    box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.1);
-    margin: 20rpx 0;
+    width: 100%;
+    max-width: 640rpx;
+    background: #FFFFFF;
+    border-radius: 32rpx;
+    padding: 44rpx 40rpx;
+    box-shadow: 0 16rpx 48rpx rgba(0, 0, 0, 0.12);
+    margin-bottom: 24rpx;
 }
 
+/* 输入组 */
 .input-group {
-    margin-bottom: 25rpx;
+    margin-bottom: 28rpx;
     position: relative;
 }
 
 .input-label {
+    display: block;
     font-size: 26rpx;
-    color: #333;
-    margin-bottom: 8rpx;
+    color: #4B5563;
+    margin-bottom: 10rpx;
     font-weight: 500;
 }
 
 .input {
     width: 100%;
-    height: 70rpx;
-    border: 1px solid #e0e0e0;
-    border-radius: 8rpx;
-    padding: 0 20rpx;
-    font-size: 26rpx;
+    height: 80rpx;
+    background: #F4F5F8;
+    border: 2rpx solid transparent;
+    border-radius: 12rpx;
+    padding: 0 24rpx;
+    padding-right: 72rpx;
+    font-size: 28rpx;
+    color: #1A1A2E;
     box-sizing: border-box;
-    padding-right: 60rpx;
+    transition: border-color 0.2s, background 0.2s;
 }
 
+.input:focus {
+    border-color: @student-primary;
+    background: #F0F7FF;
+}
+
+/* 密码眼睛 */
 .password-icon {
     position: absolute;
-    right: 20rpx;
-    top: 65%;
-    transform: translateY(-50%);
-    width: 35rpx;
-    height: 35rpx;
-    z-index: 2;
+    right: 18rpx;
+    bottom: 20rpx;
+    width: 42rpx;
+    height: 42rpx;
     display: flex;
     align-items: center;
     justify-content: center;
+    z-index: 2;
+    border-radius: 50%;
 }
 
 .password-icon image {
-    width: 100%;
-    height: 100%;
+    width: 30rpx;
+    height: 30rpx;
 }
 
+/* 性别选择 */
 .gender-group {
     display: flex;
-    gap: 20rpx;
+    gap: 16rpx;
 }
 
 .gender-option {
     flex: 1;
-    height: 70rpx;
-    border: 1px solid #e0e0e0;
-    border-radius: 8rpx;
+    height: 80rpx;
+    border: 2rpx solid #E5E7EB;
+    border-radius: 12rpx;
     display: flex;
     align-items: center;
     justify-content: center;
-    background-color: #f9f9f9;
-    transition: all 0.3s;
+    background: #F4F5F8;
+    font-size: 28rpx;
+    color: #6B7280;
+    transition: all 0.2s;
 }
 
 .gender-option.active {
-    background-color: #4f7eff;
-    border-color: #4f7eff;
-    color: white;
+    background: #DBEAFE;
+    border-color: @student-primary;
+    color: @student-primary;
+    font-weight: 600;
 }
 
+/* 自定义选择器触发器 */
 .picker-input {
     width: 100%;
-    height: 70rpx;
-    border: 1px solid #e0e0e0;
-    border-radius: 8rpx;
-    padding: 0 20rpx;
+    height: 80rpx;
+    background: #F4F5F8;
+    border: 2rpx solid transparent;
+    border-radius: 12rpx;
+    padding: 0 24rpx;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    background-color: white;
     box-sizing: border-box;
+    font-size: 28rpx;
+    color: #1A1A2E;
+    transition: border-color 0.2s;
 }
 
 .picker-input .placeholder {
-    color: #999;
+    color: #C4C9D4;
 }
 
 .arrow-icon {
-    width: 24rpx;
-    height: 24rpx;
+    width: 20rpx;
+    height: 20rpx;
+    opacity: 0.5;
+    flex-shrink: 0;
 }
 
+/* 协议勾选 */
 .agreement-section {
     display: flex;
-    align-items: center;
-    margin-bottom: 25rpx;
-    flex-wrap: wrap;
+    align-items: flex-start;
+    margin-bottom: 28rpx;
+    gap: 12rpx;
 }
 
 .agreement-text {
     font-size: 24rpx;
-    color: #666;
-    margin-left: 10rpx;
+    color: #6B7280;
+    line-height: 1.6;
 }
 
 .agreement-link {
     font-size: 24rpx;
-    color: #4f7eff;
-    text-decoration: underline;
-    margin-left: 5rpx;
+    color: @student-primary;
+    font-weight: 500;
 }
 
+/* 注册按钮 */
 .register-btn {
     width: 100%;
-    height: 80rpx;
-    background: linear-gradient(to right, #4f7eff, #3a7bd5);
-    color: white;
-    border-radius: 40rpx;
-    font-size: 30rpx;
-    font-weight: bold;
+    height: 92rpx;
+    background: @student-gradient;
+    color: #FFFFFF;
+    border-radius: 999rpx;
+    font-size: 32rpx;
+    font-weight: 600;
+    border: none;
     display: flex;
     align-items: center;
     justify-content: center;
-    box-shadow: 0 4rpx 10rpx rgba(0, 0, 0, 0.1);
-    border: none;
-    margin-bottom: 25rpx;
+    box-shadow: 0 8rpx 24rpx rgba(59, 130, 246, 0.30);
+    letter-spacing: 2rpx;
+    margin-bottom: 28rpx;
+    transition: opacity 0.2s, transform 0.1s;
 }
 
 .register-btn:active {
-    opacity: 0.9;
+    opacity: 0.88;
     transform: scale(0.98);
 }
 
+.register-btn[disabled] {
+    background: #D1D5DB;
+    color: #9CA3AF;
+    box-shadow: none;
+}
+
+/* 登录链接 */
 .login-section {
     text-align: center;
-    margin-top: 15rpx;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8rpx;
 }
 
 .login-text {
-    font-size: 24rpx;
-    color: #666;
+    font-size: 26rpx;
+    color: #9CA3AF;
 }
 
 .login-link {
-    font-size: 24rpx;
-    color: #4f7eff;
-    font-weight: bold;
-    margin-left: 8rpx;
-    text-decoration: underline;
+    font-size: 26rpx;
+    color: @student-primary;
+    font-weight: 600;
 }
 
-.footer {
-    margin-top: 30rpx;
-    color: rgba(255, 255, 255, 0.9);
-    text-align: center;
-    font-size: 24rpx;
-}
-
-/* picker-view弹窗样式 */
+/* ---- 弹窗 ---- */
 .modal {
     position: fixed;
     top: 0;
@@ -217,7 +258,7 @@ page {
     bottom: 0;
     z-index: 1000;
     display: flex;
-    align-items: center;
+    align-items: flex-end;
     justify-content: center;
 }
 
@@ -227,34 +268,35 @@ page {
     left: 0;
     right: 0;
     bottom: 0;
-    background-color: rgba(0, 0, 0, 0.5);
+    background: rgba(0, 0, 0, 0.45);
 }
 
 .modal-content {
     position: relative;
-    background-color: white;
-    border-radius: 15rpx;
-    width: 80%;
-    max-width: 600rpx;
+    background: #FFFFFF;
+    border-radius: 24rpx 24rpx 0 0;
+    width: 100%;
     z-index: 1001;
     overflow: hidden;
+    padding-bottom: constant(safe-area-inset-bottom);
+    padding-bottom: env(safe-area-inset-bottom);
 }
 
 .picker-modal-content {
-    width: 90%;
-    max-width: 650rpx;
+    max-height: 70vh;
 }
 
 .modal-header {
-    padding: 30rpx;
+    padding: 28rpx 32rpx;
     text-align: center;
-    font-size: 32rpx;
-    font-weight: bold;
-    border-bottom: 1rpx solid #eee;
+    font-size: 30rpx;
+    font-weight: 600;
+    color: #1A1A2E;
+    border-bottom: 1rpx solid #F3F4F6;
 }
 
 .modal-body {
-    padding: 30rpx;
+    padding: 16rpx 0;
 }
 
 .picker-view-item {
@@ -262,28 +304,33 @@ page {
     justify-content: center;
     align-items: center;
     height: 100rpx;
-    font-size: 32rpx;
-    color: #333;
+    font-size: 30rpx;
+    color: #1A1A2E;
 }
 
 .modal-footer {
     display: flex;
-    flex-direction: row;
-    border-top: 1rpx solid #eee;
+    border-top: 1rpx solid #F3F4F6;
 }
 
 .modal-footer .cancel-btn {
     flex: 1;
-    background-color: #f5f5f5;
-    color: #666;
+    background: #F4F5F8;
+    color: #6B7280;
     border-radius: 0;
     margin: 0;
+    height: 88rpx;
+    font-size: 28rpx;
 }
 
 .modal-footer .confirm-btn {
     flex: 1;
-    background-color: #3a7bd5;
-    color: white;
+    background: @student-primary;
+    color: #FFFFFF;
     border-radius: 0;
     margin: 0;
+    height: 88rpx;
+    font-size: 28rpx;
+    font-weight: 600;
 }
+

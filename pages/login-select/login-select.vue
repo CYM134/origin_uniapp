@@ -1,7 +1,7 @@
 <template>
-    <view>
+    <view class="page-wrapper">
         <!-- login-select.wxml -->
-        <navigation-bar title="实验室预约系统" :back="false" color="white" background="#3a7bd5"></navigation-bar>
+        <navigation-bar title="实验室预约系统" :back="false" color="#ffffff" background="#4F46E5"></navigation-bar>
         <view class="container">
             <view class="logo-container">
                 <image class="logo" src="/static/images/天空实验室.png" mode="aspectFit"></image>
