@@ -1,7 +1,6 @@
 ﻿<template>
     <view>
         <!-- admin-work.wxml -->
-        <navigation-bar title="实验室预约系统" :back="false" color="white" background="#3a7bd5"></navigation-bar>
         <view class="container">
             <view class="welcome">
                 <text>欢迎管理员：{{ username }}</text>

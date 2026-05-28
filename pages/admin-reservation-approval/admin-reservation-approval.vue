@@ -1,7 +1,7 @@
 <template>
     <view>
         <!-- admin-reservation-approval.wxml -->
-        <navigation-bar title="预约审批" :back="true" color="white" background="#3a7bd5"></navigation-bar>
+        <navigation-bar title="预约审批" :back="true" color="white" background="#F5A623"></navigation-bar>
 
         <view class="container">
             <!-- 筛选区域 -->

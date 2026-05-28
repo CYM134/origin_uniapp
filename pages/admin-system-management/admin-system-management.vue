@@ -1,7 +1,7 @@
 <template>
     <view>
         <!-- system-management.wxml -->
-        <navigation-bar title="系统管理" :back="true" color="white" background="#3a7bd5" />
+        <navigation-bar title="系统管理" :back="true" color="white" background="#F5A623" />
 
         <view class="container">
             <!-- 选项卡 -->
@@ -183,7 +183,7 @@
 
                     <view class="user-item" v-for="(item, index) in filteredUsers" :key="index">
                         <view class="user-avatar">
-                            <image :src="item.avatar || '/images/avatar/default.png'" mode="aspectFill"></image>
+                            <image :src="item.avatar || '/static/images/avatar/default.png'" mode="aspectFill"></image>
                         </view>
 
                         <view class="user-info">
@@ -438,7 +438,7 @@ const users = ref<any[]>([
     {
         id: 'admin001',
         name: '系统管理员',
-        //avatar: '/images/avatar/admin.png',
+        //avatar: '/static/images/avatar/admin.png',
         avatar: '/static/images/icons/管理员_角色管理.png',
         role: 'admin',
         roleName: '管理员',
@@ -448,7 +448,7 @@ const users = ref<any[]>([
     {
         id: 'T20230001',
         name: '张教授',
-        //avatar: '/images/avatar/teacher1.png',
+        //avatar: '/static/images/avatar/teacher1.png',
         avatar: '/static/images/icons/教师，领导中心.png',
         role: 'teacher',
         roleName: '教师',
@@ -476,7 +476,7 @@ const users = ref<any[]>([
     {
         id: 'S20230002',
         name: '赵同学',
-        //avatar: '/images/avatar/student2.png',
+        //avatar: '/static/images/avatar/student2.png',
         avatar: '/static/images/icons/学生.png',
         role: 'student',
         roleName: '学生',
@@ -875,7 +875,7 @@ const saveUser = () => {
         const newUser = {
             id: userForm.value.id,
             name: userForm.value.name,
-            avatar: '/images/avatar/default.png',
+            avatar: '/static/images/avatar/default.png',
             role: userForm.value.role,
             roleName,
             status: userForm.value.status,

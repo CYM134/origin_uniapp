@@ -1,7 +1,7 @@
 <template>
     <view>
         <!-- admin-approval-records.wxml -->
-        <navigation-bar title="审批记录" :back="true" color="white" background="#3a7bd5"></navigation-bar>
+        <navigation-bar title="审批记录" :back="true" color="white" background="#F5A623"></navigation-bar>
 
         <view class="container">
             <!-- 筛选区域 -->
@@ -110,7 +110,7 @@
                 </block>
 
                 <view class="empty-list" v-else>
-                    <image src="/images//icons/empty.png"></image>
+                    <image src="/static/images/icons/empty.png"></image>
                     <text>暂无审批记录</text>
                 </view>
             </view>

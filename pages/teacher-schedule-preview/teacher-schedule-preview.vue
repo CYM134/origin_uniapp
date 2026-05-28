@@ -1,7 +1,7 @@
 <template>
     <view>
         <!-- pages/teacher-schedule-preview/teacher-schedule-preview.wxml -->
-        <navigation-bar title="课表预览" :back="true" color="white" background="#3a7bd5"></navigation-bar>
+        <navigation-bar title="课表预览" :back="true" color="white" background="#10B981"></navigation-bar>
 
         <view class="container">
             <!-- 日期选择器 -->

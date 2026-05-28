@@ -6,74 +6,94 @@
 @admin-bg: #FFFBF0;
 
 page {
-    
     background: #F8F9FC;
     font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Helvetica Neue',
         'Microsoft YaHei', sans-serif;
 }
 
 .container {
-    
     display: flex;
     flex-direction: column;
     background: #F8F9FC;
     box-sizing: border-box;
     overflow-y: auto;
-    padding-bottom: calc(40rpx + constant(safe-area-inset-bottom));
-    padding-bottom: calc(40rpx + env(safe-area-inset-bottom));
+    padding-bottom: 0; /* 页脚在全局已使用弹性布局自适应排版，此处无需额外内边距 */
 }
 
 /* ---- 顶部欢迎 Banner ---- */
 .welcome {
-    background: linear-gradient(135deg, #E8921A 0%, #F5A623 60%, #FCD34D 100%);
-    padding: 40rpx 40rpx 64rpx;
+    background: linear-gradient(135deg, @admin-dark 0%, @admin-primary 60%, #FFB03B 100%);
+    padding: 56rpx 40rpx 56rpx;
     position: relative;
     overflow: hidden;
+    box-shadow: inset 0 -8rpx 16rpx rgba(0, 0, 0, 0.02);
 }
 
-/* 装饰圆圈 */
+/* 玻璃拟态装饰圆圈 */
 .welcome::before {
     content: '';
     position: absolute;
-    top: -40rpx;
-    right: -40rpx;
-    width: 200rpx;
-    height: 200rpx;
-    background: rgba(255, 255, 255, 0.12);
+    top: -60rpx;
+    right: -60rpx;
+    width: 260rpx;
+    height: 260rpx;
+    background: radial-gradient(circle, rgba(255, 255, 255, 0.22) 0%, rgba(255, 255, 255, 0.05) 80%);
     border-radius: 50%;
+    backdrop-filter: blur(5px);
+    z-index: 0;
 }
 
 .welcome::after {
     content: '';
     position: absolute;
-    bottom: -60rpx;
-    right: 80rpx;
-    width: 160rpx;
-    height: 160rpx;
-    background: rgba(255, 255, 255, 0.08);
+    bottom: -80rpx;
+    right: 120rpx;
+    width: 200rpx;
+    height: 200rpx;
+    background: radial-gradient(circle, rgba(255, 255, 255, 0.15) 0%, rgba(255, 255, 255, 0.02) 80%);
     border-radius: 50%;
+    backdrop-filter: blur(3px);
+    z-index: 0;
 }
 
 .welcome text {
-    font-size: 34rpx;
+    font-size: 36rpx;
     font-weight: 700;
     color: #FFFFFF;
-    letter-spacing: 1rpx;
-    text-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.1);
+    letter-spacing: 1.5rpx;
+    text-shadow: 0 4rpx 12rpx rgba(232, 146, 26, 0.25);
     position: relative;
     z-index: 1;
-    display: block;
+    display: flex;
+    align-items: center;
+}
+
+/* 超级管理员身份微标 */
+.welcome text::after {
+    content: '系统管理员';
+    font-size: 20rpx;
+    font-weight: 600;
+    color: @admin-dark;
+    background: rgba(255, 255, 255, 0.95);
+    padding: 6rpx 16rpx;
+    border-radius: 8rpx;
+    margin-left: 24rpx;
+    box-shadow: 0 4rpx 10rpx rgba(0, 0, 0, 0.05);
+    letter-spacing: 0;
+    backdrop-filter: blur(5px);
 }
 
 /* ---- 功能卡片容器（上提覆盖 Banner） ---- */
 .function-container {
     flex: 1;
-    margin: -28rpx 24rpx 0;
-    background: #FFFFFF;
-    border-radius: 24rpx 24rpx 0 0;
-    box-shadow: 0 -4rpx 24rpx rgba(0, 0, 0, 0.06);
-    padding: 16rpx 8rpx;
+    margin: 24rpx 28rpx 0;
+    background: transparent;
+    border-radius: 0;
+    box-shadow: none;
+    padding: 0 0 20rpx;
     min-height: 0;
+    z-index: 2;
+    position: relative;
 }
 
 /* 功能卡片 */
@@ -81,48 +101,65 @@ page {
     display: flex;
     flex-direction: row;
     align-items: center;
-    padding: 28rpx 32rpx;
-    margin: 8rpx 8rpx;
-    border-radius: 16rpx;
+    padding: 36rpx 32rpx;
+    margin-bottom: 12rpx;
+    border-radius: 24rpx;
     background: #FFFFFF;
-    border: 1rpx solid #F3F4F6;
-    transition: all 0.2s ease;
+    border: 1rpx solid rgba(229, 231, 235, 0.5);
+    box-shadow: 0 6rpx 18rpx rgba(245, 166, 35, 0.03), 0 2rpx 4rpx rgba(0, 0, 0, 0.01);
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
     position: relative;
     overflow: hidden;
 }
 
+/* 卡片右侧跳转箭头 */
 .function-card::after {
-    content: '›';
+    content: '';
     position: absolute;
-    right: 28rpx;
-    font-size: 36rpx;
-    color: #D1D5DB;
-    font-weight: 300;
+    right: 36rpx;
+    width: 14rpx;
+    height: 14rpx;
+    border-top: 3rpx solid #D1D5DB;
+    border-right: 3rpx solid #D1D5DB;
+    transform: rotate(45deg);
+    transition: border-color 0.2s;
 }
 
 .function-card:active {
-    background: @admin-bg;
-    border-color: @admin-light;
-    transform: scale(0.99);
+    transform: translateY(2rpx) scale(0.995);
+    background: #FFFDF9;
+    box-shadow: 0 2rpx 8rpx rgba(245, 166, 35, 0.01);
+    border-color: rgba(245, 166, 35, 0.2);
+}
+
+.function-card:active::after {
+    border-color: @admin-primary;
 }
 
 /* 功能图标容器 */
 .card-icon {
-    width: 88rpx;
-    height: 88rpx;
+    width: 96rpx;
+    height: 96rpx;
     border-radius: 22rpx;
-    background: @admin-light;
+    background: linear-gradient(135deg, #FEF3C7 0%, #FDE68A 100%);
     display: flex;
     align-items: center;
     justify-content: center;
     margin-right: 28rpx;
     flex-shrink: 0;
     overflow: hidden;
+    box-shadow: 0 4rpx 12rpx rgba(245, 166, 35, 0.1);
+    transition: all 0.25s;
 }
 
 .card-icon image {
     width: 52rpx;
     height: 52rpx;
+    transition: transform 0.25s ease;
+}
+
+.function-card:active .card-icon image {
+    transform: scale(1.1);
 }
 
 /* 卡片文字内容 */
@@ -131,14 +168,15 @@ page {
     display: flex;
     flex-direction: column;
     min-width: 0;
-    padding-right: 32rpx;
+    padding-right: 48rpx;
 }
 
 .card-title {
     font-size: 30rpx;
     font-weight: 600;
     color: #1A1A2E;
-    margin-bottom: 6rpx;
+    margin-bottom: 8rpx;
+    letter-spacing: 0.5rpx;
 }
 
 .card-desc {
@@ -150,3 +188,27 @@ page {
     text-overflow: ellipsis;
 }
 
+/* 特异化“退出登录”卡片 */
+.function-card:last-child {
+    border-color: rgba(239, 68, 68, 0.12);
+    box-shadow: 0 6rpx 18rpx rgba(239, 68, 68, 0.02);
+}
+
+.function-card:last-child .card-icon {
+    background: linear-gradient(135deg, #FEE2E2 0%, #FCA5A5 100%);
+    box-shadow: 0 4rpx 12rpx rgba(239, 68, 68, 0.08);
+}
+
+.function-card:last-child:active {
+    background: #FFF5F5;
+    border-color: rgba(239, 68, 68, 0.25);
+    box-shadow: 0 2rpx 8rpx rgba(239, 68, 68, 0.01);
+}
+
+.function-card:last-child::after {
+    border-color: #FCA5A5;
+}
+
+.function-card:last-child:active::after {
+    border-color: #EF4444;
+}

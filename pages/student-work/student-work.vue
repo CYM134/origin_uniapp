@@ -1,7 +1,7 @@
 <template>
     <view>
         <!-- pages/student-work/student-work.wxml -->
-        <navigation-bar title="实验室预约系统" :back="false" color="white" background="#3a7bd5"></navigation-bar>
+        <navigation-bar title="实验室预约系统" :back="false" color="white" background="#3B82F6"></navigation-bar>
 
         <view class="container">
             <!-- 欢迎信息 -->

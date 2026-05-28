@@ -37,20 +37,18 @@ uni-page-body > view {
     box-sizing: border-box;
     padding: 0;
     position: relative;
-    padding-bottom: calc(120rpx + env(safe-area-inset-bottom)); /* 为绝对定位的页脚预留足够空间 */
+    padding-bottom: 0; /* 取消绝对定位预留，使用流式页脚排版 */
 }
 
 /* ========================
    全局统一页脚
 ======================== */
 .footer {
-    position: absolute;
-    bottom: calc(40rpx + env(safe-area-inset-bottom));
-    left: 0;
-    right: 0;
+    margin-top: auto;  /* 弹性盒高度不足时自动吸底，超出时自然跟在内容后方 */
+    padding: 60rpx 0 calc(40rpx + env(safe-area-inset-bottom));
     text-align: center;
     width: 100%;
-    pointer-events: none; /* 避免挡住底部可能的点击 */
+    box-sizing: border-box;
 }
 
 .footer text {

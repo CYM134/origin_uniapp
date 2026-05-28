@@ -22,7 +22,7 @@
                     <!-- 明文模式 input -->
                     <input v-else class="input" placeholder="请输入密码" @input="onPasswordInput" :value="password" />
                     <view class="password-icon" @tap="togglePasswordVisibility" hover-class="none">
-                        <image :src="showPassword ? '/images/icons/eye-open.png' : '/images/icons/eye-close.png'" mode="aspectFit"></image>
+                        <image :src="showPassword ? '/static/images/icons/eye-open.png' : '/static/images/icons/eye-close.png'" mode="aspectFit"></image>
                     </view>
                 </view>
 

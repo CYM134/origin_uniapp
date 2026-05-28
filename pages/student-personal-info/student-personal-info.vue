@@ -1,7 +1,7 @@
 <template>
     <view>
         <!-- pages/student-personal-info/student-personal-info.wxml -->
-        <navigation-bar title="个人信息" :back="true" color="white" background="#3a7bd5"></navigation-bar>
+        <navigation-bar title="个人信息" :back="true" color="white" background="#3B82F6"></navigation-bar>
 
         <view class="container">
             <!-- 头像区域 -->

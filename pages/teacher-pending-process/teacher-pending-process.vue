@@ -1,7 +1,7 @@
 <template>
     <view>
         <!-- pages/teacher-pending-process/teacher-pending-process.wxml -->
-        <navigation-bar title="待办流程" :back="true" color="white" background="#3a7bd5"></navigation-bar>
+        <navigation-bar title="待办流程" :back="true" color="white" background="#10B981"></navigation-bar>
 
         <view class="container">
             <!-- 筛选器 -->

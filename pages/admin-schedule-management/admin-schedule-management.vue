@@ -1,7 +1,7 @@
 <template>
     <view>
         <!-- admin-schedule-management.wxml -->
-        <navigation-bar title="课表管理" :back="true" color="white" background="#3a7bd5"></navigation-bar>
+        <navigation-bar title="课表管理" :back="true" color="white" background="#F5A623"></navigation-bar>
 
         <view class="container">
             <!-- 导入导出选项卡 -->
@@ -126,7 +126,7 @@
                     <view class="modal-header">导入结果</view>
                     <view class="modal-body">
                         <view :class="'result-icon ' + (importSuccess ? 'success' : 'error')">
-                            <image :src="importSuccess ? '/images/icons/success.png' : '/images/icons/error.png'"></image>
+                            <image :src="importSuccess ? '/static/images/icons/success.png' : '/static/images/icons/error.png'"></image>
                         </view>
                         <view class="result-message">{{ resultMessage }}</view>
                         <view class="result-details" v-if="!importSuccess">

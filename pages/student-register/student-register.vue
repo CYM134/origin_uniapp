@@ -1,7 +1,7 @@
 <template>
     <view>
         <!-- pages/student-register/student-register.wxml -->
-        <navigation-bar title="学生注册" :back="true" color="white" background=" #4f7eff"></navigation-bar>
+        <navigation-bar title="学生注册" :back="true" color="white" background=" #3B82F6"></navigation-bar>
         <view class="container">
             <view class="logo-container">
                 <image class="logo" src="/static/images/天空实验室.png" mode="aspectFit"></image>
@@ -78,7 +78,7 @@
                     <input v-if="!showPassword" class="input" password placeholder="请设置登录密码" @input="onPasswordInput" :value="password" />
                     <input v-else class="input" placeholder="请设置登录密码" @input="onPasswordInput" :value="password" />
                     <view class="password-icon" @tap="togglePasswordVisibility" hover-class="none">
-                        <image :src="showPassword ? '/images/icons/eye-open.png' : '/images/icons/eye-close.png'" mode="aspectFit"></image>
+                        <image :src="showPassword ? '/static/images/icons/eye-open.png' : '/static/images/icons/eye-close.png'" mode="aspectFit"></image>
                     </view>
                 </view>
 
@@ -87,7 +87,7 @@
                     <input v-if="!showConfirmPassword" class="input" password placeholder="请再次输入密码" @input="onConfirmPasswordInput" :value="confirmPassword" />
                     <input v-else class="input" placeholder="请再次输入密码" @input="onConfirmPasswordInput" :value="confirmPassword" />
                     <view class="password-icon" @tap="toggleConfirmPasswordVisibility" hover-class="none">
-                        <image :src="showConfirmPassword ? '/images/icons/eye-open.png' : '/images/icons/eye-close.png'" mode="aspectFit"></image>
+                        <image :src="showConfirmPassword ? '/static/images/icons/eye-open.png' : '/static/images/icons/eye-close.png'" mode="aspectFit"></image>
                     </view>
                 </view>
 

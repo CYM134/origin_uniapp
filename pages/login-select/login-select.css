@@ -19,7 +19,7 @@ page {
     min-height: 0; /* 覆盖 app.less 避免被撑出页面导致隐藏 */
     padding: 0 40rpx;
     box-sizing: border-box;
-    padding-bottom: calc(100rpx + env(safe-area-inset-bottom)); /* 给底层绝对定位的页脚留出空间 */
+    padding-bottom: 0; /* 统一流式页脚排版，去除底层绝对定位的占位空间 */
 }
 
 /* ---- Logo 区域 ---- */

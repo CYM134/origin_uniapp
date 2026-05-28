@@ -1,7 +1,7 @@
 <template>
     <view>
         <!-- pages/student-completed-process/student-completed-process.wxml -->
-        <navigation-bar title="已办流程" :show-back="true" color="white" background="#3a7bd5" />
+        <navigation-bar title="已办流程" :show-back="true" color="white" background="#3B82F6" />
 
         <view class="container">
             <view class="main-content">

@@ -1,7 +1,7 @@
 <template>
     <view>
         <!-- pages/teacher-reservation-apply/teacher-reservation-apply.wxml -->
-        <navigation-bar title="预约申请" :back="true" color="white" background="#3a7bd5"></navigation-bar>
+        <navigation-bar title="预约申请" :back="true" color="white" background="#10B981"></navigation-bar>
 
         <view class="container">
             <!-- 申请表单 -->

@@ -1,7 +1,7 @@
 <template>
     <view>
         <!-- teacher-registration.wxml -->
-        <navigation-bar title="教师注册审核" :back="true" color="white" background="#3a7bd5"></navigation-bar>
+        <navigation-bar title="教师注册审核" :back="true" color="white" background="#F5A623"></navigation-bar>
 
         <view class="container">
             <!-- 选项卡 -->
@@ -29,7 +29,7 @@
                 <block v-if="filteredTeachers.length > 0">
                     <view class="teacher-item" @tap="showTeacherDetail" :data-id="item.id" v-for="(item, index) in filteredTeachers" :key="index">
                         <view class="teacher-avatar">
-                            <image :src="item.avatar || '/images/icons/teacher-icon.png'"></image>
+                            <image :src="item.avatar || '/static/images/icons/teacher-icon.png'"></image>
                         </view>
 
                         <view class="teacher-info">
@@ -70,7 +70,7 @@
 
                     <view class="modal-body">
                         <view class="detail-avatar">
-                            <image :src="currentTeacher.avatar || '/images/icons/empty.png'"></image>
+                            <image :src="currentTeacher.avatar || '/static/images/icons/empty.png'"></image>
                         </view>
 
                         <view class="detail-section">
@@ -223,14 +223,14 @@ const mockTeachers = ref<any[]>([
     {
         id: 'T20230001',
         name: '张教授',
-        // avatar: '/images/avatar/teacher1.png',  //这里放老师的照片，因为没有所以注释
+        // avatar: '/static/images/avatar/teacher1.png',  //这里放老师的照片，因为没有所以注释
         department: '计算机科学与技术学院',
         position: '教授',
         phone: '13800138001',
         email: 'zhang@university.edu',
-        idCardFront: '/images/icons/id-card-sample.png',
-        idCardBack: '/images/icons/id-card-sample.png',
-        teacherCardImage: '/images/teacher-card-sample.png',
+        idCardFront: '/static/images/icons/id-card-sample.png',
+        idCardBack: '/static/images/icons/id-card-sample.png',
+        teacherCardImage: '/static/images/teacher-card-sample.png',
         registerTime: '2023-09-01 10:23:45',
         status: 'pending',
         approvalTime: '',
@@ -239,14 +239,14 @@ const mockTeachers = ref<any[]>([
     {
         id: 'T20230002',
         name: '李副教授',
-        //avatar: '/images/avatar/teacher2.png',
+        //avatar: '/static/images/avatar/teacher2.png',
         department: '物理学院',
         position: '副教授',
         phone: '13900139002',
         email: 'li@university.edu',
-        idCardFront: '/images/id-card-sample.png',
-        idCardBack: '/images/id-card-sample.png',
-        teacherCardImage: '/images/teacher-card-sample.png',
+        idCardFront: '/static/images/id-card-sample.png',
+        idCardBack: '/static/images/id-card-sample.png',
+        teacherCardImage: '/static/images/teacher-card-sample.png',
         registerTime: '2023-09-02 14:35:22',
         status: 'approved',
         approvalTime: '2023-09-03 09:15:30',
@@ -255,14 +255,14 @@ const mockTeachers = ref<any[]>([
     {
         id: 'T20230003',
         name: '王讲师',
-        //avatar: '/images/avatar/teacher3.png',
+        //avatar: '/static/images/avatar/teacher3.png',
         department: '化学学院',
         position: '讲师',
         phone: '13700137003',
         email: 'wang@university.edu',
-        idCardFront: '/images/id-card-sample.png',
-        idCardBack: '/images/id-card-sample.png',
-        teacherCardImage: '/images/teacher-card-sample.png',
+        idCardFront: '/static/images/id-card-sample.png',
+        idCardBack: '/static/images/id-card-sample.png',
+        teacherCardImage: '/static/images/teacher-card-sample.png',
         registerTime: '2023-09-03 16:42:18',
         status: 'rejected',
         approvalTime: '2023-09-04 11:20:45',
@@ -271,14 +271,14 @@ const mockTeachers = ref<any[]>([
     {
         id: 'T20230004',
         name: '刘教授',
-        // avatar: '/images/avatar/teacher4.png',
+        // avatar: '/static/images/avatar/teacher4.png',
         department: '数学学院',
         position: '教授',
         phone: '13600136004',
         email: 'liu@university.edu',
-        idCardFront: '/images/id-card-sample.png',
-        idCardBack: '/images/id-card-sample.png',
-        teacherCardImage: '/images/teacher-card-sample.png',
+        idCardFront: '/static/images/id-card-sample.png',
+        idCardBack: '/static/images/id-card-sample.png',
+        teacherCardImage: '/static/images/teacher-card-sample.png',
         registerTime: '2023-09-04 09:18:33',
         status: 'pending',
         approvalTime: '',
@@ -287,14 +287,14 @@ const mockTeachers = ref<any[]>([
     {
         id: 'T20230005',
         name: '陈副教授',
-        //avatar: '/images/avatar/teacher5.png',
+        //avatar: '/static/images/avatar/teacher5.png',
         department: '外国语学院',
         position: '副教授',
         phone: '13500135005',
         email: 'chen@university.edu',
-        idCardFront: '/images/id-card-sample.png',
-        idCardBack: '/images/id-card-sample.png',
-        teacherCardImage: '/images/teacher-card-sample.png',
+        idCardFront: '/static/images/id-card-sample.png',
+        idCardBack: '/static/images/id-card-sample.png',
+        teacherCardImage: '/static/images/teacher-card-sample.png',
         registerTime: '2023-09-05 15:27:56',
         status: 'approved',
         approvalTime: '2023-09-06 10:05:12',

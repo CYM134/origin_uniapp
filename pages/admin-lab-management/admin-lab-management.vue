@@ -1,7 +1,7 @@
 <template>
     <view>
         <!-- admin-lab-management.wxml -->
-        <navigation-bar title="实验室信息管理" :back="true" color="white" background="#3a7bd5"></navigation-bar>
+        <navigation-bar title="实验室信息管理" :back="true" color="white" background="#F5A623"></navigation-bar>
         <view class="container">
             <view class="header">
                 <view class="search-box">
