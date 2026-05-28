@@ -1,7 +1,7 @@
 <template>
     <view>
         <!-- admin-login.wxml -->
-        <navigation-bar title="管理员登录" :back="true" color="white" background="#FFD54F"></navigation-bar>
+        <navigation-bar title="管理员登录" :back="true" color="white" background="#F5A623"></navigation-bar>
         <view class="container">
             <view class="logo-container">
                 <image class="logo" src="/static/images/天空实验室.png" mode="aspectFit"></image>

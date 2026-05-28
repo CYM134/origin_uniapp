@@ -1,7 +1,7 @@
 <template>
     <view>
         <!-- pages/teacher-login/teacher-login.wxml -->
-        <navigation-bar title="教师登录" :back="true" color="white" background="#32c072"></navigation-bar>
+        <navigation-bar title="教师登录" :back="true" color="white" background="#10B981"></navigation-bar>
         <view class="container">
             <view class="logo-container">
                 <image class="logo" src="/static/images/天空实验室.png" mode="aspectFit"></image>

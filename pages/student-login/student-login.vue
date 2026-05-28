@@ -1,7 +1,7 @@
 <template>
     <view>
         <!-- pages/student-login/student-login.wxml -->
-        <navigation-bar title="学生登录" :back="true" color="white" background=" #4f7eff"></navigation-bar>
+        <navigation-bar title="学生登录" :back="true" color="white" background="#3B82F6"></navigation-bar>
         <view class="container">
             <view class="logo-container">
                 <image class="logo" src="/static/images/天空实验室.png" mode="aspectFit"></image>
