@@ -600,16 +600,21 @@ const stopPropagation = (e: any) => {
 // 通过预约
 const approveReservation = (e: any) => {
     const id = e.currentTarget.dataset.id;
-    uni.showModal({
-        title: '确认通过',
-        content: '确定通过此预约申请吗？',
-        confirmColor: '#1890FF',
-        success: (res) => {
-            if (res.confirm) {
-                updateReservationStatus(id, '已通过');
+    // 关闭预约详情弹窗
+    showDetailModal.value = false;
+    
+    setTimeout(() => {
+        uni.showModal({
+            title: '确认通过',
+            content: '确定通过此预约申请吗？',
+            confirmColor: '#1890FF',
+            success: (res) => {
+                if (res.confirm) {
+                    updateReservationStatus(id, '已通过');
+                }
             }
-        }
-    });
+        });
+    }, 100);
 
     // 阻止事件冒泡
     e.stopPropagation();
