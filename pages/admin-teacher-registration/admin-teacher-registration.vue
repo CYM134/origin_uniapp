@@ -27,7 +27,7 @@
             <!-- 教师列表 -->
             <view class="teacher-list">
                 <block v-if="filteredTeachers.length > 0">
-                    <view class="teacher-item" @tap="showTeacherDetail" :data-id="item.id" v-for="(item, index) in filteredTeachers" :key="index">
+                    <view :class="'teacher-item status-' + item.status" @tap="showTeacherDetail" :data-id="item.id" v-for="(item, index) in filteredTeachers" :key="index">
                         <view class="teacher-avatar">
                             <image :src="item.avatar || '/static/images/icons/teacher-icon.png'"></image>
                         </view>

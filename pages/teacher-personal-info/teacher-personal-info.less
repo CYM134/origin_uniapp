@@ -1,24 +1,25 @@
 /* teacher-personal-info.less - 教师个人信息页（翡翠绿主题） */
 
 @teacher-primary: #10B981;
-@teacher-light: #D1FAE5;
-@teacher-bg: #F0FDF9;
+@teacher-dark: #059669;
+@teacher-light: #EFFDF5;
+@teacher-bg: #F8FAFC;
+@teacher-card-shadow: 0 0 24rpx rgba(15, 23, 42, 0.05);
 
 page {
-    
-    background: #F8F9FC;
+    background: @teacher-bg;
     font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Helvetica Neue',
         'Microsoft YaHei', sans-serif;
+    height: 100%;
 }
 
 .container {
-    
     display: flex;
     flex-direction: column;
     padding: 24rpx;
     box-sizing: border-box;
-    padding-bottom: calc(40rpx + constant(safe-area-inset-bottom));
-    padding-bottom: calc(40rpx + env(safe-area-inset-bottom));
+    min-height: calc(100vh - var(--status-bar-height) - 88rpx);
+    padding-bottom: 0;
 }
 
 /* ---- 头像区域 ---- */
@@ -27,69 +28,97 @@ page {
     flex-direction: column;
     align-items: center;
     background: #FFFFFF;
-    border-radius: 24rpx;
-    padding: 48rpx 40rpx 40rpx;
-    margin-bottom: 24rpx;
-    box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.07);
+    border-radius: 32rpx;
+    padding: 36rpx 32rpx 32rpx;
+    margin-bottom: 20rpx;
+    box-shadow: @teacher-card-shadow;
+    position: relative;
+    overflow: hidden;
+    
+    // 背景几何微光装饰
+    &::before {
+        content: '';
+        position: absolute;
+        top: -60rpx;
+        left: -60rpx;
+        width: 180rpx;
+        height: 180rpx;
+        background: radial-gradient(circle, rgba(16, 185, 129, 0.06) 0%, rgba(16, 185, 129, 0) 70%);
+        border-radius: 50%;
+        pointer-events: none;
+    }
 }
 
 .avatar-container {
     position: relative;
-    margin-bottom: 24rpx;
+    margin-bottom: 16rpx;
 }
 
 .avatar {
-    width: 160rpx;
-    height: 160rpx;
+    width: 140rpx;
+    height: 140rpx;
     border-radius: 50%;
-    background: @teacher-light;
-    border: 4rpx solid #FFFFFF;
-    box-shadow: 0 4rpx 16rpx rgba(16, 185, 129, 0.20);
+    background: #F1F5F9;
+    border: 6rpx solid #FFFFFF;
+    box-shadow: 0 6rpx 20rpx rgba(16, 185, 129, 0.12);
+    transition: all 0.3s;
 }
 
 .edit-avatar {
     position: absolute;
-    bottom: 0;
-    right: 0;
-    width: 52rpx;
-    height: 52rpx;
+    bottom: 0rpx;
+    right: 0rpx;
+    width: 48rpx;
+    height: 48rpx;
     background: @teacher-primary;
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
-    border: 3rpx solid #FFFFFF;
-    box-shadow: 0 2rpx 8rpx rgba(16, 185, 129, 0.30);
+    border: 4rpx solid #FFFFFF;
+    box-shadow: 0 4rpx 10rpx rgba(16, 185, 129, 0.25);
+    transition: transform 0.2s, background 0.2s;
+    
+    &::after {
+        border: none;
+    }
+    
+    &:active {
+        transform: scale(0.9);
+        background: @teacher-dark;
+    }
 }
 
 .edit-avatar image {
-    width: 26rpx;
-    height: 26rpx;
+    width: 24rpx;
+    height: 24rpx;
+    filter: brightness(0) invert(1);
 }
 
 .username {
-    font-size: 36rpx;
+    font-size: 34rpx;
     font-weight: 700;
-    color: #1A1A2E;
-    letter-spacing: 1rpx;
+    color: #1E293B;
+    letter-spacing: 1.5rpx;
+    margin-top: 8rpx;
 }
 
 /* ---- 信息列表 ---- */
 .info-list {
     width: 100%;
     background: #FFFFFF;
-    border-radius: 24rpx;
+    border-radius: 32rpx;
     margin-bottom: 24rpx;
-    box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.07);
+    box-shadow: @teacher-card-shadow;
     overflow: hidden;
 }
 
 .info-item {
     display: flex;
     align-items: center;
-    padding: 28rpx 32rpx;
-    border-bottom: 1rpx solid #F3F4F6;
-    transition: background 0.2s;
+    padding: 20rpx 32rpx;
+    border-bottom: 1rpx solid rgba(226, 232, 240, 0.6);
+    transition: background 0.25s ease;
 }
 
 .info-item:last-child {
@@ -97,14 +126,14 @@ page {
 }
 
 .info-item:active {
-    background: #F8F9FC;
+    background: #F8FAFC;
 }
 
 .info-label {
-    width: 160rpx;
+    width: 180rpx;
     font-size: 28rpx;
-    color: #6B7280;
-    font-weight: 500;
+    color: #64748B;
+    font-weight: 600;
     flex-shrink: 0;
 }
 
@@ -118,105 +147,126 @@ page {
 
 .info-value {
     font-size: 28rpx;
-    color: #1A1A2E;
-    font-weight: 500;
+    color: #1E293B;
+    font-weight: 600;
     overflow: hidden;
     white-space: nowrap;
     text-overflow: ellipsis;
 }
 
 .edit-icon {
-    width: 28rpx;
-    height: 28rpx;
-    opacity: 0.4;
+    width: 32rpx;
+    height: 32rpx;
+    opacity: 0.35;
     flex-shrink: 0;
-    margin-left: 12rpx;
+    margin-left: 16rpx;
+    padding: 10rpx;
+    transition: opacity 0.2s, transform 0.2s;
+    
+    &:active {
+        opacity: 0.8;
+        transform: scale(1.1);
+    }
 }
 
 /* ---- 操作按钮 ---- */
 .action-buttons {
     display: flex;
-    gap: 20rpx;
-    margin-bottom: 24rpx;
+    gap: 24rpx;
+    margin-bottom: 20rpx;
+    padding: 0 8rpx;
 }
 
 .save-btn {
-    flex: 2;
-    height: 92rpx;
+    flex: 1;
+    height: 88rpx;
     display: flex;
     align-items: center;
     justify-content: center;
-    border-radius: 999rpx;
-    font-size: 30rpx;
-    font-weight: 600;
+    border-radius: 20rpx;
+    font-size: 28rpx;
+    font-weight: 700;
     border: none;
-    background: linear-gradient(135deg, #059669 0%, #10B981 100%);
+    background: linear-gradient(135deg, @teacher-primary 0%, @teacher-dark 100%);
     color: #FFFFFF;
-    box-shadow: 0 8rpx 24rpx rgba(16, 185, 129, 0.30);
-    letter-spacing: 1rpx;
-    transition: opacity 0.2s, transform 0.1s;
+    box-shadow: 0 6rpx 20rpx rgba(16, 185, 129, 0.2);
+    letter-spacing: 1.5rpx;
+    transition: all 0.2s;
+    
+    &::after {
+        border: none;
+    }
 }
 
 .save-btn:active {
-    opacity: 0.88;
+    box-shadow: 0 2rpx 8rpx rgba(16, 185, 129, 0.12);
     transform: scale(0.98);
+    opacity: 0.95;
 }
 
 .reset-btn {
     flex: 1;
-    height: 92rpx;
+    height: 88rpx;
     display: flex;
     align-items: center;
     justify-content: center;
-    border-radius: 999rpx;
-    font-size: 30rpx;
-    font-weight: 500;
-    border: 2rpx solid #E5E7EB;
-    background: #FFFFFF;
-    color: #6B7280;
-    transition: background 0.2s;
+    border-radius: 20rpx;
+    font-size: 28rpx;
+    font-weight: 600;
+    border: none;
+    background: #F1F5F9;
+    color: #64748B;
+    transition: all 0.2s;
+    box-sizing: border-box;
+    
+    &::after {
+        border: none;
+    }
 }
 
 .reset-btn:active {
-    background: #F4F5F8;
+    background: #E2E8F0;
+    transform: scale(0.98);
 }
 
-/* ---- 编辑弹窗 ---- */
+/* ---- 编辑弹窗与密码弹窗 ---- */
 .modal-overlay {
     position: fixed;
     top: 0;
     left: 0;
     right: 0;
     bottom: 0;
-    background: rgba(0, 0, 0, 0.45);
+    background: rgba(15, 23, 42, 0.45);
+    backdrop-filter: blur(16rpx);
     display: flex;
     align-items: center;
     justify-content: center;
-    z-index: 1000;
+    z-index: 99;
+    animation: fadeIn 0.2s ease-out;
 }
 
 .modal-content {
     background: #FFFFFF;
-    border-radius: 24rpx;
+    border-radius: 36rpx;
     width: 88%;
     max-width: 620rpx;
-    max-height: 80vh;
+    box-shadow: 0 24rpx 60rpx rgba(15, 23, 42, 0.15);
     overflow: hidden;
-    box-shadow: 0 24rpx 64rpx rgba(0, 0, 0, 0.15);
+    animation: scaleUp 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 .modal-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 28rpx 32rpx;
-    border-bottom: 1rpx solid #F3F4F6;
+    padding: 36rpx 40rpx 28rpx;
+    border-bottom: 1rpx solid rgba(226, 232, 240, 0.6);
 }
 
 .modal-title {
-    font-size: 30rpx;
-    font-weight: 600;
-    color: #1A1A2E;
+    font-size: 32rpx;
+    font-weight: 700;
+    color: #1E293B;
 }
 
 .close-btn {
@@ -225,109 +275,179 @@ page {
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 36rpx;
-    color: #9CA3AF;
+    font-size: 40rpx;
+    color: #94A3B8;
     border-radius: 50%;
-    background: #F4F5F8;
-    transition: background 0.2s;
-}
-
-.close-btn:active {
-    background: #E5E7EB;
+    background: #F1F5F9;
+    transition: all 0.2s;
+    line-height: 1;
+    
+    &::after {
+        border: none;
+    }
+    
+    &:active {
+        background: #E2E8F0;
+        color: #475569;
+    }
 }
 
 .modal-body {
-    padding: 32rpx;
+    padding: 40rpx;
 }
 
 .edit-input {
     width: 100%;
-    height: 88rpx;
-    background: #F4F5F8;
+    height: 92rpx;
+    background: #F1F5F9;
     border: 2rpx solid transparent;
-    border-radius: 12rpx;
-    padding: 0 24rpx;
+    border-radius: 16rpx;
+    padding: 0 28rpx;
     font-size: 28rpx;
-    color: #1A1A2E;
+    color: #1E293B;
     box-sizing: border-box;
-    transition: border-color 0.2s, background 0.2s;
+    transition: all 0.2s;
 }
 
 .edit-input:focus {
     border-color: @teacher-primary;
-    background: @teacher-bg;
+    background: #FFFFFF;
+    box-shadow: 0 0 12rpx rgba(16, 185, 129, 0.15);
 }
 
 .picker-display {
-    height: 88rpx;
-    background: #F4F5F8;
-    border-radius: 12rpx;
-    padding: 0 24rpx;
+    height: 92rpx;
+    background: #F1F5F9;
+    border-radius: 16rpx;
+    padding: 0 28rpx;
     font-size: 28rpx;
-    color: #1A1A2E;
+    color: #1E293B;
     display: flex;
     align-items: center;
+    font-weight: 500;
+    border: 2rpx solid transparent;
+    transition: all 0.2s;
+    
+    &::after {
+        content: '';
+        display: inline-block;
+        width: 12rpx;
+        height: 12rpx;
+        border-right: 3rpx solid #94A3B8;
+        border-bottom: 3rpx solid #94A3B8;
+        transform: rotate(45deg);
+        margin-left: auto;
+    }
 }
 
 .gender-options {
     display: flex;
-    gap: 16rpx;
+    gap: 20rpx;
 }
 
 .gender-option {
     flex: 1;
-    height: 80rpx;
+    height: 92rpx;
     display: flex;
     align-items: center;
     justify-content: center;
-    border: 2rpx solid #E5E7EB;
-    border-radius: 12rpx;
+    border: 2rpx solid rgba(226, 232, 240, 0.8);
+    border-radius: 16rpx;
     font-size: 28rpx;
-    color: #6B7280;
-    background: #F4F5F8;
+    color: #64748B;
+    background: #F8FAFC;
     transition: all 0.2s;
+    font-weight: 600;
 }
 
 .gender-option.active {
     background: @teacher-light;
     color: @teacher-primary;
     border-color: @teacher-primary;
-    font-weight: 600;
+    box-shadow: 0 4rpx 12rpx rgba(16, 185, 129, 0.08);
 }
 
 .modal-footer {
     display: flex;
-    gap: 16rpx;
-    padding: 24rpx 32rpx;
-    border-top: 1rpx solid #F3F4F6;
+    gap: 20rpx;
+    padding: 24rpx 40rpx 36rpx;
+    border-top: 1rpx solid rgba(226, 232, 240, 0.6);
+}
+
+.cancel-btn,
+.confirm-btn {
+    flex: 1;
+    height: 88rpx;
+    border-radius: 20rpx;
+    font-size: 28rpx;
+    font-weight: 600;
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
 }
 
 .cancel-btn {
-    flex: 1;
-    height: 80rpx;
-    border-radius: 12rpx;
-    font-size: 28rpx;
-    border: none;
-    background: #F4F5F8;
-    color: #6B7280;
-    font-weight: 500;
+    background: #F1F5F9;
+    color: #64748B;
+    border: none !important;
+    border-width: 0 !important;
+    outline: none !important;
+    
+    &::after {
+        border: none !important;
+        border-width: 0 !important;
+    }
+    
+    &:active {
+        background: #E2E8F0;
+    }
 }
 
 .confirm-btn {
-    flex: 1;
-    height: 80rpx;
-    border-radius: 12rpx;
-    font-size: 28rpx;
-    border: none;
     background: @teacher-primary;
     color: #FFFFFF;
-    font-weight: 600;
+    box-shadow: 0 4rpx 12rpx rgba(16, 185, 129, 0.15);
+    
+    &::after {
+        border: none;
+    }
+    
+    &:active {
+        background: @teacher-dark;
+        box-shadow: none;
+    }
 }
 
-.cancel-btn:active {
-    background: #E5E7EB;
+/* ---- 动画效果 ---- */
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
 }
 
-.confirm-btn:active {
-    opacity: 0.88;
+@keyframes scaleUp {
+    from {
+        opacity: 0;
+        transform: scale(0.9);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+/* ---- 页脚 ---- */
+.footer {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 48rpx 0 44rpx;
+    margin-top: auto;
+    
+    text {
+        font-size: 22rpx;
+        color: #9CA3AF;
+        letter-spacing: 1rpx;
+    }
 }

@@ -596,6 +596,6 @@ const confirmReview = () => {
     }
 };
 </script>
-<style>
-@import './teacher-pending-process.css';
+<style lang="less">
+@import './teacher-pending-process.less';
 </style>

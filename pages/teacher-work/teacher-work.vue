@@ -1,7 +1,6 @@
 <template>
     <view>
         <!-- pages/teacher-work/teacher-work.wxml -->
-        <navigation-bar title="实验室预约系统" :back="false" color="white" background="#10B981"></navigation-bar>
 
         <view class="container">
             <!-- 欢迎信息 -->
@@ -323,6 +322,6 @@ const viewNotifications = () => {
     });
 };
 </script>
-<style>
-@import './teacher-work.css';
+<style lang="less">
+@import './teacher-work.less';
 </style>

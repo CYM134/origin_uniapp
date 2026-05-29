@@ -1121,6 +1121,6 @@ const confirmTypePicker = () => {
     validateForm();
 };
 </script>
-<style>
-@import './student-reservation-apply.css';
+<style lang="less">
+@import './student-reservation-apply.less';
 </style>

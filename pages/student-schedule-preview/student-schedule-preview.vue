@@ -11,13 +11,13 @@
                     <image class="arrow-icon" src="/static/images/icons/arrow-down.svg" mode="aspectFit"></image>
                 </view>
                 <view class="quick-dates">
-                    <view :class="'quick-date ' + (isToday ? 'active' : '')" @tap="selectToday">
+                    <view :class="'quick-date ' + (isToday && viewMode === 'day' ? 'active' : '')" @tap="selectToday">
                         <text>今天</text>
                     </view>
-                    <view :class="'quick-date ' + (isTomorrow ? 'active' : '')" @tap="selectTomorrow">
+                    <view :class="'quick-date ' + (isTomorrow && viewMode === 'day' ? 'active' : '')" @tap="selectTomorrow">
                         <text>明天</text>
                     </view>
-                    <view class="quick-date" @tap="selectThisWeek">
+                    <view :class="'quick-date ' + (viewMode === 'week' ? 'active' : '')" @tap="selectThisWeek">
                         <text>本周</text>
                     </view>
                 </view>

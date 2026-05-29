@@ -361,6 +361,6 @@ const goToLogin = () => {
     uni.navigateBack();
 };
 </script>
-<style>
-@import './teacher-register.css';
+<style lang="less">
+@import './teacher-register.less';
 </style>

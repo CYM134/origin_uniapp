@@ -64,24 +64,24 @@
 
                 <view class="setting-item">
                     <view class="setting-label">自动审批</view>
-                    <switch :checked="settings.autoApproval" @change="onAutoApprovalChange" color="#3a7bd5" />
+                    <switch :checked="settings.autoApproval" @change="onAutoApprovalChange" color="#F5A623" />
                 </view>
 
                 <view class="section-title">通知设置</view>
 
                 <view class="setting-item">
                     <view class="setting-label">预约通知</view>
-                    <switch :checked="settings.reservationNotification" @change="onReservationNotificationChange" color="#3a7bd5" />
+                    <switch :checked="settings.reservationNotification" @change="onReservationNotificationChange" color="#F5A623" />
                 </view>
 
                 <view class="setting-item">
                     <view class="setting-label">审批通知</view>
-                    <switch :checked="settings.approvalNotification" @change="onApprovalNotificationChange" color="#3a7bd5" />
+                    <switch :checked="settings.approvalNotification" @change="onApprovalNotificationChange" color="#F5A623" />
                 </view>
 
                 <view class="setting-item">
                     <view class="setting-label">提醒通知</view>
-                    <switch :checked="settings.reminderNotification" @change="onReminderNotificationChange" color="#3a7bd5" />
+                    <switch :checked="settings.reminderNotification" @change="onReminderNotificationChange" color="#F5A623" />
                 </view>
 
                 <view class="save-btn" @tap="saveSettings">保存设置</view>
@@ -181,7 +181,7 @@
                         <text>暂无用户数据</text>
                     </view>
 
-                    <view class="user-item" v-for="(item, index) in filteredUsers" :key="index">
+                    <view :class="'user-item user-status-' + item.status" v-for="(item, index) in filteredUsers" :key="index">
                         <view class="user-avatar">
                             <image :src="item.avatar || '/static/images/avatar/default.png'" mode="aspectFill"></image>
                         </view>

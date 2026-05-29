@@ -707,6 +707,6 @@ const confirmReprocess = () => {
     }
 };
 </script>
-<style>
-@import './teacher-completed-process.css';
+<style lang="less">
+@import './teacher-completed-process.less';
 </style>

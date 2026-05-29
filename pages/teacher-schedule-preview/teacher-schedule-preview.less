@@ -1,23 +1,24 @@
-/* student-schedule-preview.less - 学生课表预览（海蓝主题） */
+/* teacher-schedule-preview.less - 教师课表预览（翡翠绿主题） */
 
-@student-primary: #3B82F6;
-@student-dark: #1D6FDB;
-@student-light: #DBEAFE;
-@student-bg: #F8FAFC;
-@student-card-shadow: 0 0 24rpx rgba(0, 0, 0, 0.05);
+@teacher-primary: #10B981;
+@teacher-dark: #059669;
+@teacher-light: #EFFDF5;
+@teacher-bg: #F8FAFC;
+@teacher-card-shadow: 0 0 24rpx rgba(15, 23, 42, 0.05);
 
 page {
-    background: #F8FAFC;
+    background: @teacher-bg;
     font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Helvetica Neue',
         'Microsoft YaHei', sans-serif;
 }
 
 .container {
-    background: #F8FAFC;
+    background: @teacher-bg;
     padding: 24rpx;
     display: flex;
     flex-direction: column;
     box-sizing: border-box;
+    min-height: calc(100vh - var(--status-bar-height) - 88rpx);
     padding-bottom: 0;
 }
 
@@ -27,7 +28,7 @@ page {
     border-radius: 32rpx;
     padding: 28rpx;
     margin-bottom: 20rpx;
-    box-shadow: @student-card-shadow;
+    box-shadow: @teacher-card-shadow;
 }
 
 .date-picker {
@@ -41,7 +42,7 @@ page {
     transition: all 0.2s;
     
     &:active {
-        background: #EFF6FF;
+        background: @teacher-light;
     }
 }
 
@@ -84,9 +85,9 @@ page {
 }
 
 .quick-date.active {
-    background: linear-gradient(135deg, @student-primary 0%, @student-dark 100%);
+    background: linear-gradient(135deg, @teacher-primary 0%, @teacher-dark 100%);
     color: #FFFFFF;
-    box-shadow: 0 4rpx 12rpx rgba(59, 130, 246, 0.2);
+    box-shadow: 0 4rpx 12rpx rgba(16, 185, 129, 0.2);
 }
 
 .quick-date text {
@@ -99,7 +100,7 @@ page {
     border-radius: 32rpx;
     padding: 24rpx 28rpx;
     margin-bottom: 20rpx;
-    box-shadow: @student-card-shadow;
+    box-shadow: @teacher-card-shadow;
 }
 
 .filter-item {
@@ -133,8 +134,46 @@ page {
     transition: all 0.2s;
     
     &:active {
-        background: #EFF6FF;
+        background: @teacher-light;
     }
+}
+
+/* ---- 统计栏 ---- */
+.statistics {
+    display: flex;
+    background: #FFFFFF;
+    border-radius: 32rpx;
+    margin-bottom: 20rpx;
+    overflow: hidden;
+    box-shadow: @teacher-card-shadow;
+    border: 1rpx solid rgba(226, 232, 240, 0.8);
+    flex-shrink: 0;
+}
+
+.stat-item {
+    flex: 1;
+    padding: 24rpx 20rpx;
+    text-align: center;
+    border-right: 1rpx solid #F1F5F9;
+    
+    &:last-child {
+        border-right: none;
+    }
+}
+
+.stat-number {
+    font-size: 38rpx;
+    font-weight: 800;
+    color: @teacher-primary;
+    margin-bottom: 6rpx;
+    display: block;
+}
+
+.stat-label {
+    font-size: 22rpx;
+    color: #64748B;
+    font-weight: 600;
+    display: block;
 }
 
 /* ---- 课表内容区 ---- */
@@ -143,7 +182,7 @@ page {
     background: #FFFFFF;
     border-radius: 32rpx;
     overflow: hidden;
-    box-shadow: @student-card-shadow;
+    box-shadow: @teacher-card-shadow;
     margin-bottom: 24rpx;
 }
 
@@ -187,12 +226,12 @@ page {
     padding: 24rpx 24rpx 24rpx 28rpx;
     margin-bottom: 20rpx;
     border: 1rpx solid rgba(226, 232, 240, 0.8);
-    border-left: 8rpx solid @student-primary;
+    border-left: 8rpx solid @teacher-primary;
     box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.02);
     transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
     
     &:active {
-        box-shadow: 0 8rpx 20rpx rgba(59, 130, 246, 0.08);
+        box-shadow: 0 8rpx 20rpx rgba(16, 185, 129, 0.08);
         transform: scale(0.98);
         background: #F8FAFC;
     }
@@ -226,7 +265,7 @@ page {
 .start-time {
     font-size: 26rpx;
     font-weight: 700;
-    color: @student-primary;
+    color: @teacher-primary;
 }
 
 .end-time {
@@ -286,40 +325,14 @@ page {
     line-height: 1;
 }
 
-.course-status.available {
+.course-status.theory {
     background: #D1FAE5;
     color: #059669;
 }
 
-.course-status.full {
-    background: #FEE2E2;
-    color: #DC2626;
-}
-
-.course-status.ongoing {
-    background: #DBEAFE;
-    color: #1D6FDB;
-}
-
-/* 预约按钮 */
-.course-actions {
-    margin-top: 14rpx;
-}
-
-.reserve-btn {
-    background: @student-primary;
-    color: #FFFFFF;
-    padding: 12rpx 24rpx;
-    border-radius: 999rpx;
-    font-size: 24rpx;
-    font-weight: 600;
-    display: inline-block;
-    box-shadow: 0 4rpx 12rpx rgba(59, 130, 246, 0.25);
-    border: none;
-    
-    &::after {
-        border: none;
-    }
+.course-status.practice {
+    background: #FEF3C7;
+    color: #D97706;
 }
 
 /* ---- 空状态 ---- */
@@ -375,8 +388,8 @@ page {
     font-weight: 700;
     
     &:active {
-        background: @student-light;
-        color: @student-primary;
+        background: @teacher-light;
+        color: @teacher-primary;
     }
 }
 
@@ -467,13 +480,13 @@ page {
 }
 
 .week-course {
-    background: @student-primary;
+    background: @teacher-primary;
     color: #FFFFFF;
     padding: 8rpx;
     border-radius: 8rpx;
     font-size: 20rpx;
     margin-bottom: 4rpx;
-    box-shadow: 0 2rpx 6rpx rgba(59, 130, 246, 0.2);
+    box-shadow: 0 2rpx 6rpx rgba(16, 185, 129, 0.2);
     transition: all 0.2s;
     
     &:active {
@@ -481,12 +494,12 @@ page {
     }
 }
 
-.week-course.full {
-    background: #EF4444;
-    box-shadow: 0 2rpx 6rpx rgba(239, 68, 68, 0.2);
+.week-course.theory {
+    background: @teacher-primary;
+    box-shadow: 0 2rpx 6rpx rgba(16, 185, 129, 0.2);
 }
 
-.week-course.ongoing {
+.week-course.practice {
     background: #F59E0B;
     box-shadow: 0 2rpx 6rpx rgba(245, 158, 11, 0.2);
     color: #FFFFFF;
@@ -521,7 +534,7 @@ page {
     padding: 24rpx;
     background: #FFFFFF;
     border-radius: 28rpx;
-    box-shadow: @student-card-shadow;
+    box-shadow: @teacher-card-shadow;
     margin-bottom: 0;
 }
 
@@ -546,19 +559,19 @@ page {
 }
 
 .toggle-btn.active {
-    background: @student-primary;
+    background: @teacher-primary;
     color: #FFFFFF;
-    box-shadow: 0 4rpx 10rpx rgba(59, 130, 246, 0.2);
+    box-shadow: 0 4rpx 10rpx rgba(16, 185, 129, 0.2);
 }
 
 /* 操作按钮 */
 .action-btn {
-    background: linear-gradient(135deg, @student-primary 0%, @student-dark 100%);
+    background: linear-gradient(135deg, @teacher-primary 0%, @teacher-dark 100%);
     color: #FFFFFF;
     font-size: 28rpx;
     font-weight: 700;
     border-radius: 20rpx;
-    box-shadow: 0 6rpx 16rpx rgba(59, 130, 246, 0.25);
+    box-shadow: 0 6rpx 16rpx rgba(16, 185, 129, 0.25);
     padding: 18rpx 32rpx;
     display: flex;
     align-items: center;
@@ -761,16 +774,16 @@ page {
 }
 
 .confirm-btn {
-    background: @student-primary;
+    background: @teacher-primary;
     color: #FFFFFF;
-    box-shadow: 0 4rpx 12rpx rgba(59, 130, 246, 0.15);
+    box-shadow: 0 4rpx 12rpx rgba(16, 185, 129, 0.15);
     
     &::after {
         border: none;
     }
     
     &:active {
-        background: @student-dark;
+        background: @teacher-dark;
         box-shadow: none;
     }
 }
@@ -791,39 +804,9 @@ page {
     &::after {
         border: none;
     }
-}
-
-.reserve-btn {
-    width: 100%;
-    background: @student-primary;
-    color: #FFFFFF;
-    padding: 20rpx;
-    border-radius: 16rpx;
-    font-size: 28rpx;
-    font-weight: 600;
-    text-align: center;
-    display: block;
-    box-shadow: 0 4rpx 14rpx rgba(59, 130, 246, 0.25);
-    border: none;
     
-    &::after {
-        border: none;
-    }
-}
-
-.disabled-btn {
-    width: 100%;
-    background: #F1F5F9;
-    color: #94A3B8;
-    padding: 20rpx;
-    border-radius: 16rpx;
-    font-size: 28rpx;
-    text-align: center;
-    display: block;
-    border: none;
-    
-    &::after {
-        border: none;
+    &:active {
+        background: #475569;
     }
 }
 

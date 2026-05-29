@@ -11,7 +11,7 @@
                     <view class="custom-picker" @tap="showStatusPicker">
                         <view class="picker">
                             <text>{{ statusOptions[statusIndex] }}</text>
-                            <image class="arrow-icon" src="/static/images/icons/search-icon.png"></image>
+                            <image class="arrow-icon" src="/static/images/icons/arrow-down.png"></image>
                         </view>
                     </view>
                 </view>
@@ -21,22 +21,24 @@
                     <view class="custom-picker" @tap="showLabPicker">
                         <view class="picker">
                             <text>{{ labIndex === 0 ? '全部实验室' : labOptions[labIndex].name }}</text>
-                            <image class="arrow-icon" src="/static/images/icons/search-icon.png"></image>
+                            <image class="arrow-icon" src="/static/images/icons/arrow-down.png"></image>
                         </view>
                     </view>
                 </view>
 
-                <view class="filter-item">
+                <view class="filter-item date-range-item">
                     <view class="filter-label">日期范围</view>
-                    <view class="custom-picker" @tap="showStartDatePicker">
-                        <view class="date-picker">
-                            <text>{{ startDate || '开始日期' }}</text>
+                    <view class="date-pickers-row">
+                        <view class="custom-picker" @tap="showStartDatePicker">
+                            <view class="date-picker">
+                                <text>{{ startDate || '开始日期' }}</text>
+                            </view>
                         </view>
-                    </view>
-                    <text class="date-separator">至</text>
-                    <view class="custom-picker" @tap="showEndDatePicker">
-                        <view class="date-picker">
-                            <text>{{ endDate || '结束日期' }}</text>
+                        <text class="date-separator">至</text>
+                        <view class="custom-picker" @tap="showEndDatePicker">
+                            <view class="date-picker">
+                                <text>{{ endDate || '结束日期' }}</text>
+                            </view>
                         </view>
                     </view>
                 </view>
@@ -72,7 +74,7 @@
             <!-- 记录列表 -->
             <view class="records-list">
                 <block v-if="filteredRecords.length > 0">
-                    <view class="record-item" @tap="showRecordDetail" :data-id="item.id" v-for="(item, index) in filteredRecords" :key="index">
+                    <view :class="'record-item ' + (item.status === '已通过' ? 'status-approved' : 'status-rejected')" @tap="showRecordDetail" :data-id="item.id" v-for="(item, index) in filteredRecords" :key="index">
                         <view class="record-header">
                             <view class="record-id">{{ item.id }}</view>
                             <view :class="'record-status ' + (item.status === '已通过' ? 'approved' : 'rejected')">
