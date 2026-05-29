@@ -1,5 +1,5 @@
 <template>
-    <view>
+    <view class="page-wrapper">
         <!-- admin-schedule-management.wxml -->
         <navigation-bar title="课表管理" :back="true" color="white" background="#F5A623"></navigation-bar>
 

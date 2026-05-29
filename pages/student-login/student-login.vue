@@ -1,5 +1,5 @@
 <template>
-    <view>
+    <view class="page-wrapper">
         <!-- pages/student-login/student-login.wxml -->
         <navigation-bar title="学生登录" :back="true" color="white" background="#3B82F6"></navigation-bar>
         <view class="container">

@@ -80,6 +80,6 @@ const navigateToTeacher = () => {
     });
 };
 </script>
-<style>
-@import './login-select.css';
+<style lang="less">
+@import './login-select.less';
 </style>

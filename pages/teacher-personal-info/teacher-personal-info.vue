@@ -1,5 +1,5 @@
 <template>
-    <view>
+    <view class="page-wrapper">
         <!-- pages/teacher-personal-info/teacher-personal-info.wxml -->
         <navigation-bar title="个人信息" :back="true" color="white" background="#10B981"></navigation-bar>
 

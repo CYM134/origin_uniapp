@@ -1,5 +1,5 @@
 <template>
-    <view>
+    <view class="page-wrapper">
         <!-- pages/student-work/student-work.wxml -->
 
         <view class="container">

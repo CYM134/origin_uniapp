@@ -16,14 +16,29 @@ page {
     -webkit-text-size-adjust: 100%;
     box-sizing: border-box;
     height: 100%;
+    
+    /* 强力开启弹性盒子排布，使真机直接子容器能弹性拉伸充满 */
+    display: flex;
+    flex-direction: column;
+}
+
+/* 确保各平台的 page-body 和 Vue 根容器都充满页面高度 */
+uni-page-body,
+#app {
+    height: 100%;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
 }
 
 /* 强制外围根容器充满屏幕，开启纵向弹性盒排布，彻底消除额外的溢出高度堆叠 */
 page > view,
-uni-page-body > view {
+uni-page-body > view,
+.page-wrapper {
     display: flex;
     flex-direction: column;
-    min-height: 100vh;
+    flex: 1;
+    min-height: 100%;
 }
 
 /* ========================

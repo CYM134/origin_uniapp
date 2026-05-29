@@ -1,5 +1,5 @@
 <template>
-    <view>
+    <view class="page-wrapper">
         <!-- admin-approval-records.wxml -->
         <navigation-bar title="审批记录" :back="true" color="white" background="#F5A623"></navigation-bar>
 

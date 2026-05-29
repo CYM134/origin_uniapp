@@ -1,5 +1,5 @@
 <template>
-    <view>
+    <view class="page-wrapper">
         <!-- teacher-registration.wxml -->
         <navigation-bar title="教师注册审核" :back="true" color="white" background="#F5A623"></navigation-bar>
 

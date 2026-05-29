@@ -1,5 +1,5 @@
 <template>
-    <view>
+    <view class="page-wrapper">
         <!-- system-management.wxml -->
         <navigation-bar title="系统管理" :back="true" color="white" background="#F5A623" />
 

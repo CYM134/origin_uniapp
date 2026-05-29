@@ -1,5 +1,5 @@
 ﻿<template>
-    <view>
+    <view class="page-wrapper">
         <!-- admin-work.wxml -->
         <view class="container">
             <view class="welcome">

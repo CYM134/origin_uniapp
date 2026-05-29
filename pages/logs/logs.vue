@@ -1,5 +1,5 @@
 <template>
-    <view>
+    <view class="page-wrapper">
         <!-- logs.wxml -->
         <navigation-bar title="查看启动日志" :back="true" color="black" background="#FFF"></navigation-bar>
         <scroll-view class="scrollarea" scroll-y type="list">

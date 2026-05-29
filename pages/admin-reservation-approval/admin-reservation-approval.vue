@@ -1,5 +1,5 @@
 <template>
-    <view>
+    <view class="page-wrapper">
         <!-- admin-reservation-approval.wxml -->
         <navigation-bar title="预约审批" :back="true" color="white" background="#F5A623"></navigation-bar>
 

@@ -1,5 +1,5 @@
 <template>
-    <view>
+    <view class="page-wrapper">
         <!-- pages/teacher-completed-process/teacher-completed-process.wxml -->
         <navigation-bar title="已办流程" :back="true" color="white" background="#10B981"></navigation-bar>
 

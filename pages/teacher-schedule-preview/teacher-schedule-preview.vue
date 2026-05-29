@@ -1,5 +1,5 @@
 <template>
-    <view>
+    <view class="page-wrapper">
         <!-- pages/teacher-schedule-preview/teacher-schedule-preview.wxml -->
         <navigation-bar title="课表预览" :back="true" color="white" background="#10B981"></navigation-bar>
 

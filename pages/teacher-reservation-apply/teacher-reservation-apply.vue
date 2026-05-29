@@ -1,5 +1,5 @@
 <template>
-    <view>
+    <view class="page-wrapper">
         <!-- pages/teacher-reservation-apply/teacher-reservation-apply.wxml -->
         <navigation-bar title="预约申请" :back="true" color="white" background="#10B981"></navigation-bar>
 

@@ -1,5 +1,5 @@
 <template>
-    <view>
+    <view class="page-wrapper">
         <!-- admin-login.wxml -->
         <navigation-bar title="管理员登录" :back="true" color="white" background="#F5A623"></navigation-bar>
         <view class="container">

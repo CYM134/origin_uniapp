@@ -1,5 +1,5 @@
 <template>
-    <view>
+    <view class="page-wrapper">
         <!-- pages/teacher-login/teacher-login.wxml -->
         <navigation-bar title="教师登录" :back="true" color="white" background="#10B981"></navigation-bar>
         <view class="container">

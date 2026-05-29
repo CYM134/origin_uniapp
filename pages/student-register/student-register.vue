@@ -1,5 +1,5 @@
 <template>
-    <view>
+    <view class="page-wrapper">
         <!-- pages/student-register/student-register.wxml -->
         <navigation-bar title="学生注册" :back="true" color="white" background=" #3B82F6"></navigation-bar>
         <view class="container">

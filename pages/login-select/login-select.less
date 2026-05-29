@@ -1,4 +1,4 @@
-/* login-select.css - 身份选择页 */
+/* login-select.less - 身份选择页 */
 
 page {
     background: #FFFFFF;
@@ -7,7 +7,14 @@ page {
     height: 100%;
 }
 
-
+/* 最外层视图包装，强制充满屏幕高度以支持子容器 flex 伸展 */
+.page-wrapper {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    width: 100%;
+    box-sizing: border-box;
+}
 
 /* 全页容器 */
 .container {
@@ -19,7 +26,7 @@ page {
     min-height: 0; /* 覆盖 app.less 避免被撑出页面导致隐藏 */
     padding: 0 40rpx;
     box-sizing: border-box;
-    padding-bottom: 0; /* 统一流式页脚排版，去除底层绝对定位的占位空间 */
+    padding-bottom: 0; /* 统一流式页脚排版 */
 }
 
 /* ---- Logo 区域 ---- */
@@ -90,11 +97,11 @@ page {
     cursor: pointer;
     position: relative;
     overflow: hidden;
-}
-
-.identity-card:active {
-    transform: scale(0.97);
-    background: #F8F9FC;
+    
+    &:active {
+        transform: scale(0.97);
+        background: #F8F9FC;
+    }
 }
 
 /* 宽屏卡片纵向排列 */
@@ -164,4 +171,3 @@ page {
     color: #1A1A2E;
     letter-spacing: 1rpx;
 }
-

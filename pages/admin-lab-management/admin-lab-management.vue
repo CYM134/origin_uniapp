@@ -1,5 +1,5 @@
 <template>
-    <view>
+    <view class="page-wrapper">
         <!-- admin-lab-management.wxml -->
         <navigation-bar title="实验室信息管理" :back="true" color="white" background="#F5A623"></navigation-bar>
         <view class="container">
