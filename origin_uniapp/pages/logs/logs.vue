@@ -1,7 +1,12 @@
 <template>
     <view class="page-wrapper">
         <!-- logs.wxml -->
+        <!-- #ifdef MP-WEIXIN -->
+        <mp-weixin-page-header title="查看启动日志" color="#111111" background="#FFFFFF" />
+        <!-- #endif -->
+        <!-- #ifndef MP-WEIXIN -->
         <navigation-bar title="查看启动日志" :back="true" color="black" background="#FFF"></navigation-bar>
+        <!-- #endif -->
         <scroll-view class="scrollarea" scroll-y type="list">
             <block v-for="(log, index) in logs" :key="index">
                 <view class="log-item">{{ index + 1 }}. {{ log.date }}</view>

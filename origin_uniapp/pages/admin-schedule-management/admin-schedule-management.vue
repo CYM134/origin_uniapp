@@ -1,7 +1,12 @@
 <template>
     <view class="page-wrapper">
         <!-- admin-schedule-management.wxml -->
+        <!-- #ifdef MP-WEIXIN -->
+        <mp-weixin-page-header title="课表管理" color="white" background="#F5A623" />
+        <!-- #endif -->
+        <!-- #ifndef MP-WEIXIN -->
         <navigation-bar title="课表管理" :back="true" color="white" background="#F5A623"></navigation-bar>
+        <!-- #endif -->
 
         <view class="container">
             <!-- 导入导出选项卡 -->

@@ -1,7 +1,12 @@
 <template>
     <view class="page-wrapper">
         <!-- pages/student-register/student-register.wxml -->
+        <!-- #ifdef MP-WEIXIN -->
+        <mp-weixin-page-header title="学生注册" color="white" background="#3B82F6" />
+        <!-- #endif -->
+        <!-- #ifndef MP-WEIXIN -->
         <navigation-bar title="学生注册" :back="true" color="white" background=" #3B82F6"></navigation-bar>
+        <!-- #endif -->
         <view class="container">
             <view class="logo-container">
                 <image class="logo" src="/static/images/天空实验室.png" mode="aspectFit"></image>

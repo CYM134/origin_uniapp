@@ -1,7 +1,12 @@
 <template>
     <view class="page-wrapper">
         <!-- admin-lab-management.wxml -->
+        <!-- #ifdef MP-WEIXIN -->
+        <mp-weixin-page-header title="实验室信息管理" color="white" background="#F5A623" />
+        <!-- #endif -->
+        <!-- #ifndef MP-WEIXIN -->
         <navigation-bar title="实验室信息管理" :back="true" color="white" background="#F5A623"></navigation-bar>
+        <!-- #endif -->
         <view class="container">
             <view class="header">
                 <view class="search-box">

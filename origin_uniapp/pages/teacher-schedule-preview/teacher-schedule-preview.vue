@@ -1,7 +1,12 @@
 <template>
     <view class="page-wrapper">
         <!-- pages/teacher-schedule-preview/teacher-schedule-preview.wxml -->
+        <!-- #ifdef MP-WEIXIN -->
+        <mp-weixin-page-header title="课表预览" color="white" background="#10B981" />
+        <!-- #endif -->
+        <!-- #ifndef MP-WEIXIN -->
         <navigation-bar title="课表预览" :back="true" color="white" background="#10B981"></navigation-bar>
+        <!-- #endif -->
 
         <view class="container">
             <!-- 日期选择器 -->

@@ -1,7 +1,12 @@
 <template>
     <view class="page-wrapper">
         <!-- system-management.wxml -->
+        <!-- #ifdef MP-WEIXIN -->
+        <mp-weixin-page-header title="系统管理" color="white" background="#F5A623" />
+        <!-- #endif -->
+        <!-- #ifndef MP-WEIXIN -->
         <navigation-bar title="系统管理" :back="true" color="white" background="#F5A623" />
+        <!-- #endif -->
 
         <view class="container">
             <!-- 选项卡 -->

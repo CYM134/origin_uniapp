@@ -1,7 +1,6 @@
 <template>
     <view class="page-wrapper">
         <!-- pages/student-work/student-work.wxml -->
-
         <view class="container">
             <!-- 欢迎信息 -->
             <view class="welcome-section">

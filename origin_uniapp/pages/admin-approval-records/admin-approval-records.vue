@@ -1,7 +1,12 @@
 <template>
     <view class="page-wrapper">
         <!-- admin-approval-records.wxml -->
+        <!-- #ifdef MP-WEIXIN -->
+        <mp-weixin-page-header title="审批记录" color="white" background="#F5A623" />
+        <!-- #endif -->
+        <!-- #ifndef MP-WEIXIN -->
         <navigation-bar title="审批记录" :back="true" color="white" background="#F5A623"></navigation-bar>
+        <!-- #endif -->
 
         <view class="container">
             <!-- 筛选区域 -->

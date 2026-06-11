@@ -1,7 +1,12 @@
 <template>
     <view class="page-wrapper">
         <!-- admin-reservation-approval.wxml -->
+        <!-- #ifdef MP-WEIXIN -->
+        <mp-weixin-page-header title="预约审批" color="white" background="#F5A623" />
+        <!-- #endif -->
+        <!-- #ifndef MP-WEIXIN -->
         <navigation-bar title="预约审批" :back="true" color="white" background="#F5A623"></navigation-bar>
+        <!-- #endif -->
 
         <view class="container">
             <!-- 筛选区域 -->

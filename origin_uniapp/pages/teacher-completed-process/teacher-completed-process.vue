@@ -1,7 +1,12 @@
 <template>
     <view class="page-wrapper">
         <!-- pages/teacher-completed-process/teacher-completed-process.wxml -->
+        <!-- #ifdef MP-WEIXIN -->
+        <mp-weixin-page-header title="已办流程" color="white" background="#10B981" />
+        <!-- #endif -->
+        <!-- #ifndef MP-WEIXIN -->
         <navigation-bar title="已办流程" :back="true" color="white" background="#10B981"></navigation-bar>
+        <!-- #endif -->
 
         <view class="container">
             <!-- 筛选器 -->

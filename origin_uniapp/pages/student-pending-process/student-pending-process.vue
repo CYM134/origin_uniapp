@@ -1,7 +1,12 @@
 <template>
     <view class="page-wrapper">
         <!-- pages/student-pending-process/student-pending-process.wxml -->
+        <!-- #ifdef MP-WEIXIN -->
+        <mp-weixin-page-header title="待办流程" color="white" background="#3B82F6" />
+        <!-- #endif -->
+        <!-- #ifndef MP-WEIXIN -->
         <navigation-bar title="待办流程" :back="true" color="white" background="#3B82F6"></navigation-bar>
+        <!-- #endif -->
 
         <view class="container">
             <view class="main-content">

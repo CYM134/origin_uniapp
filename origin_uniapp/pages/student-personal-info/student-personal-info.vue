@@ -1,7 +1,12 @@
 <template>
     <view class="page-wrapper">
         <!-- pages/student-personal-info/student-personal-info.wxml -->
+        <!-- #ifdef MP-WEIXIN -->
+        <mp-weixin-page-header title="个人信息" color="white" background="#3B82F6" />
+        <!-- #endif -->
+        <!-- #ifndef MP-WEIXIN -->
         <navigation-bar title="个人信息" :back="true" color="white" background="#3B82F6"></navigation-bar>
+        <!-- #endif -->
 
         <view class="container">
             <!-- 头像区域 -->

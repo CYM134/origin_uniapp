@@ -1,7 +1,12 @@
 <template>
     <view class="page-wrapper">
         <!-- pages/teacher-register/teacher-register.wxml -->
+        <!-- #ifdef MP-WEIXIN -->
+        <mp-weixin-page-header title="教师注册" color="white" background="#10B981" />
+        <!-- #endif -->
+        <!-- #ifndef MP-WEIXIN -->
         <navigation-bar title="教师注册" :back="true" color="white" background="#10B981"></navigation-bar>
+        <!-- #endif -->
         <view class="container">
             <view class="logo-container">
                 <image class="logo" src="/static/images/天空实验室.png" mode="aspectFit"></image>

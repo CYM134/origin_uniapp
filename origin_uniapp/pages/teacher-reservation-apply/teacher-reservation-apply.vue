@@ -1,7 +1,12 @@
 <template>
     <view class="page-wrapper">
         <!-- pages/teacher-reservation-apply/teacher-reservation-apply.wxml -->
+        <!-- #ifdef MP-WEIXIN -->
+        <mp-weixin-page-header title="预约申请" color="white" background="#10B981" />
+        <!-- #endif -->
+        <!-- #ifndef MP-WEIXIN -->
         <navigation-bar title="预约申请" :back="true" color="white" background="#10B981"></navigation-bar>
+        <!-- #endif -->
 
         <view class="container">
             <!-- 申请表单 -->

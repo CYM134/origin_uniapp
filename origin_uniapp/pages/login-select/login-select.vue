@@ -1,28 +1,35 @@
 <template>
     <view class="page-wrapper">
         <!-- login-select.wxml -->
+        <!-- #ifdef MP-WEIXIN -->
+        <mp-weixin-page-header title="实验室预约系统" :back="false" color="#ffffff" background="#4F46E5" />
+        <!-- #endif -->
+        <!-- #ifndef MP-WEIXIN -->
         <navigation-bar title="实验室预约系统" :back="false" color="#ffffff" background="#4F46E5"></navigation-bar>
+        <!-- #endif -->
         <view class="container">
-            <view class="logo-container">
-                <image class="logo" src="/static/images/天空实验室.png" mode="aspectFit"></image>
-                <text class="title">实验室预约管理系统</text>
-                <text class="subtitle">请选择您的身份</text>
-            </view>
-
-            <view class="button-group">
-                <view class="identity-card admin-card" @tap="navigateToAdmin">
-                    <image class="card-icon" src="/static/images/icons/管理员_角色管理.png" mode="aspectFit"></image>
-                    <text class="card-title">我是管理员</text>
+            <view class="selection-content">
+                <view class="logo-container">
+                    <image class="logo" src="/static/images/天空实验室.png" mode="aspectFit"></image>
+                    <text class="title">实验室预约管理系统</text>
+                    <text class="subtitle">请选择您的身份</text>
                 </view>
 
-                <view class="identity-card student-card" @tap="navigateToStudent">
-                    <image class="card-icon" src="/static/images/icons/学生.png" mode="aspectFit"></image>
-                    <text class="card-title">我是学生</text>
-                </view>
+                <view class="button-group">
+                    <view class="identity-card admin-card" @tap="navigateToAdmin">
+                        <image class="card-icon" src="/static/images/icons/管理员_角色管理.png" mode="aspectFit"></image>
+                        <text class="card-title">我是管理员</text>
+                    </view>
 
-                <view class="identity-card teacher-card" @tap="navigateToTeacher">
-                    <image class="card-icon" src="/static/images/icons/教师，领导中心.png" mode="aspectFit"></image>
-                    <text class="card-title">我是教师</text>
+                    <view class="identity-card student-card" @tap="navigateToStudent">
+                        <image class="card-icon" src="/static/images/icons/学生.png" mode="aspectFit"></image>
+                        <text class="card-title">我是学生</text>
+                    </view>
+
+                    <view class="identity-card teacher-card" @tap="navigateToTeacher">
+                        <image class="card-icon" src="/static/images/icons/教师，领导中心.png" mode="aspectFit"></image>
+                        <text class="card-title">我是教师</text>
+                    </view>
                 </view>
             </view>
 
