@@ -104,6 +104,8 @@
 import { ref } from 'vue';
 import { onLoad, onShow, onPullDownRefresh } from '@dcloudio/uni-app';
 import navigationBar from '@/components/navigation-bar/navigation-bar.vue';
+import { fetchCurrentUser, logout as logoutAuth } from '@/api/auth';
+import { getStoredRole, getStoredUser, hasCompleteUserProfile } from '@/api/storage';
 // pages/student-work/student-work.ts
 
 const studentInfo = ref<any>({
@@ -122,14 +124,51 @@ const notificationCount = ref<number>(0); // 通知数量
  */
 const loadStudentInfo = () => {
     try {
-        const info = uni.getStorageSync('studentInfo');
+        const info = uni.getStorageSync('studentInfo') || getStoredUser();
         if (info) {
-            studentInfo.value = info;
+            studentInfo.value = {
+                ...studentInfo.value,
+                ...info,
+                name: info.name || info.realName || '',
+                studentId: info.studentId || info.accountNo || '',
+                phone: info.phone || ''
+            };
         }
     } catch (error) {
         console.log('CatchClause', error);
         console.log('CatchClause', error);
         console.error('加载学生信息失败:', error);
+    }
+};
+
+const syncCurrentStudent = async () => {
+    const storedRole = getStoredRole();
+    const storedUser = getStoredUser();
+    if (storedRole && storedRole !== 'student') {
+        uni.reLaunch({ url: '/pages/login-select/login-select' });
+        return;
+    }
+
+    if (hasCompleteUserProfile(storedUser)) {
+        return;
+    }
+
+    try {
+        const user: any = await fetchCurrentUser();
+        studentInfo.value = {
+            ...studentInfo.value,
+            name: user.realName || '',
+            studentId: user.accountNo || '',
+            gender: user.gender || '',
+            phone: user.phone || '',
+            email: user.email || '',
+            college: user.college || '',
+            major: user.major || '',
+            role: user.role,
+            status: user.status
+        };
+    } catch (error) {
+        console.error('同步学生信息失败:', error);
     }
 };
 
@@ -185,6 +224,9 @@ const loadNotificationCount = () => {
  */
 onLoad(() => {
     loadStudentInfo();
+    setTimeout(() => {
+        syncCurrentStudent();
+    }, 0);
     loadPendingCount();
     loadNotificationCount();
 });
@@ -193,6 +235,7 @@ onLoad(() => {
  * 生命周期函数--监听页面显示
  */
 onShow(() => {
+    loadStudentInfo();
     // 每次显示页面时刷新数据
     loadPendingCount();
     loadNotificationCount();
@@ -222,9 +265,7 @@ const logout = () => {
         success: (res) => {
             if (res.confirm) {
                 try {
-                    // 清除登录状态
-                    uni.removeStorageSync('isStudentLoggedIn');
-                    uni.removeStorageSync('studentInfo');
+                    logoutAuth();
                     uni.showToast({
                         title: '已退出登录',
                         icon: 'success'

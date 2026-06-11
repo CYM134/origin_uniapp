@@ -30,6 +30,7 @@
 		"src-types.d.ts",
 		"main.js",
 		"App.vue",
+		"api/**/*.js",
 		"pages/**/*.ts",
 		"pages/**/*.vue",
 		"components/**/*.ts",

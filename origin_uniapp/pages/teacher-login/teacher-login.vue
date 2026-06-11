@@ -54,6 +54,8 @@
 import { ref } from 'vue';
 import { onLoad } from '@dcloudio/uni-app';
 import navigationBar from '@/components/navigation-bar/navigation-bar.vue';
+import { loginByPassword } from '@/api/auth';
+import { saveAuthSession } from '@/api/storage';
 // pages/teacher-login/teacher-login.ts
 
 const username = ref<string>('');
@@ -97,7 +99,7 @@ const forgotPassword = () => {
     });
 };
 
-const login = () => {
+const login = async () => {
     const usernameVal = username.value;
     const passwordVal = password.value;
     const rememberVal = rememberPassword.value;
@@ -129,56 +131,43 @@ const login = () => {
         mask: true
     });
 
-    // 模拟登录验证
-    setTimeout(() => {
-        uni.hideLoading();
+    try {
+        const result: any = await loginByPassword({
+            accountNo: usernameVal.trim(),
+            password: passwordVal,
+            role: 'teacher'
+        });
 
-        // 检查已注册的教师账号
-        const registeredTeachers = uni.getStorageSync('registeredTeachers') || [];
-        const teacher = registeredTeachers.find((t: any) => t.teacherId === usernameVal && t.password === passwordVal);
-        if (teacher) {
-            if (rememberVal) {
-                uni.setStorageSync('teacherUsername', usernameVal);
-                uni.setStorageSync('teacherPassword', passwordVal);
-                uni.setStorageSync('teacherRememberPassword', true);
-            } else {
-                uni.removeStorageSync('teacherUsername');
-                uni.removeStorageSync('teacherPassword');
-                uni.removeStorageSync('teacherRememberPassword');
-            }
-
-            // 保存教师登录状态
-            uni.setStorageSync('isTeacherLoggedIn', true);
-            uni.setStorageSync('teacherInfo', {
-                teacherId: usernameVal,
-                name: teacher.name,
-                college: teacher.college,
-                department: teacher.department || '',
-                phone: teacher.phone,
-                gender: teacher.gender || '',
-                password: teacher.password,
-                loginTime: new Date().getTime()
-            });
-
-            // 先跳转到教师工作台，再显示登录成功提示
-            uni.reLaunch({
-                url: '/pages/teacher-work/teacher-work',
-                success: () => {
-                    setTimeout(() => {
-                        uni.showToast({
-                            title: '登录成功',
-                            icon: 'success'
-                        });
-                    }, 500);
-                }
-            });
+        if (rememberVal) {
+            uni.setStorageSync('teacherUsername', usernameVal);
+            uni.setStorageSync('teacherPassword', passwordVal);
+            uni.setStorageSync('teacherRememberPassword', true);
         } else {
-            uni.showToast({
-                title: '工号或密码错误',
-                icon: 'none'
-            });
+            uni.removeStorageSync('teacherUsername');
+            uni.removeStorageSync('teacherPassword');
+            uni.removeStorageSync('teacherRememberPassword');
         }
-    }, 1500);
+
+        saveAuthSession(result.accessToken, result.user);
+        uni.hideLoading();
+        uni.reLaunch({
+            url: '/pages/teacher-work/teacher-work',
+            success: () => {
+                setTimeout(() => {
+                    uni.showToast({
+                        title: '登录成功',
+                        icon: 'success'
+                    });
+                }, 500);
+            }
+        });
+    } catch (error: any) {
+        uni.hideLoading();
+        uni.showToast({
+            title: error?.data?.message || '登录失败',
+            icon: 'none'
+        });
+    }
 };
 
 const goToRegister = () => {

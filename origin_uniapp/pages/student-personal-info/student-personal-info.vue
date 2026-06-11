@@ -136,6 +136,8 @@
 import { ref } from 'vue';
 import { onLoad, onUnload } from '@dcloudio/uni-app';
 import navigationBar from '@/components/navigation-bar/navigation-bar.vue';
+import { fetchCurrentUser } from '@/api/auth';
+import { getAccessToken, getStoredRole, getStoredUser, hasCompleteUserProfile, saveAuthSession } from '@/api/storage';
 // pages/student-personal-info/student-personal-info.ts
 
 const studentInfo = ref<any>({
@@ -192,6 +194,9 @@ const formattedRegisterTime = ref('2024-01-01');
  */
 onLoad(() => {
     loadStudentInfo();
+    setTimeout(() => {
+        syncCurrentStudent();
+    }, 0);
 });
 
 /**
@@ -231,39 +236,27 @@ const formatRegisterTime = (registerTime: string) => {
  */
 const loadStudentInfo = () => {
     try {
-        let _studentInfo = uni.getStorageSync('studentInfo');
-        if (_studentInfo && _studentInfo.studentId) {
-            // 从注册学生列表中获取完整信息
-            const registeredStudents = uni.getStorageSync('registeredStudents') || [];
-            const found = registeredStudents.find((stu: any) => stu.studentId === _studentInfo.studentId);
-            if (found) {
-                // 使用注册时的完整信息，确保所有字段都正确
-                const completeInfo = {
-                    name: found.name || _studentInfo.name,
-                    studentId: found.studentId || _studentInfo.studentId,
-                    gender: found.gender || _studentInfo.gender,
-                    college: found.college || _studentInfo.college,
-                    major: found.major || _studentInfo.major,
-                    phone: found.phone || _studentInfo.phone,
-                    password: found.password || _studentInfo.password,
-                    registerTime: found.registerTime || _studentInfo.registerTime
-                };
+        const storedInfo = uni.getStorageSync('studentInfo') || getStoredUser();
+        if (storedInfo) {
+            const normalizedInfo = {
+                name: storedInfo.name || storedInfo.realName || '',
+                studentId: storedInfo.studentId || storedInfo.accountNo || '',
+                gender: storedInfo.gender || '',
+                college: storedInfo.college || '',
+                major: storedInfo.major || '',
+                phone: storedInfo.phone || '',
+                email: storedInfo.email || '',
+                registerTime: storedInfo.registerTime || '',
+                password: storedInfo.password || ''
+            };
 
-                // 更新本地存储的学生信息
-                uni.setStorageSync('studentInfo', completeInfo);
-                studentInfo.value = completeInfo;
-                originalInfo.value = JSON.parse(JSON.stringify(completeInfo));
-                formattedRegisterTime.value = formatRegisterTime(completeInfo.registerTime);
-            } else {
-                // 如果在注册列表中找不到，使用现有信息
-                studentInfo.value = _studentInfo;
-                originalInfo.value = JSON.parse(JSON.stringify(_studentInfo));
-                formattedRegisterTime.value = formatRegisterTime(_studentInfo.registerTime);
-            }
-        } else {
-            // 如果没有学生信息，设置默认值
-            formattedRegisterTime.value = '2024-01-01';
+            studentInfo.value = normalizedInfo;
+            originalInfo.value = JSON.parse(JSON.stringify(normalizedInfo));
+            formattedRegisterTime.value = formatRegisterTime(normalizedInfo.registerTime);
+            return;
         }
+
+        formattedRegisterTime.value = '2024-01-01';
     } catch (error) {
         console.log('CatchClause', error);
         console.log('CatchClause', error);
@@ -272,6 +265,47 @@ const loadStudentInfo = () => {
             title: '加载信息失败',
             icon: 'error'
         });
+    }
+};
+
+const syncCurrentStudent = async () => {
+    const storedRole = getStoredRole();
+    const storedUser = getStoredUser();
+    if (storedRole && storedRole !== 'student') {
+        uni.reLaunch({ url: '/pages/login-select/login-select' });
+        return;
+    }
+
+    if (hasCompleteUserProfile(storedUser)) {
+        return;
+    }
+
+    try {
+        const user: any = await fetchCurrentUser();
+        const latestInfo = {
+            ...studentInfo.value,
+            name: user.realName || '',
+            studentId: user.accountNo || '',
+            gender: user.gender || '',
+            phone: user.phone || '',
+            email: user.email || '',
+            college: user.college || '',
+            major: user.major || '',
+            role: user.role,
+            status: user.status
+        };
+
+        studentInfo.value = latestInfo;
+        originalInfo.value = JSON.parse(JSON.stringify(latestInfo));
+        const accessToken = getAccessToken();
+        if (accessToken) {
+            saveAuthSession(accessToken, {
+                ...user,
+                registerTime: latestInfo.registerTime
+            });
+        }
+    } catch (error) {
+        console.error('同步学生信息失败:', error);
     }
 };
 
@@ -457,21 +491,25 @@ const confirmEdit = () => {
  */
 const saveInfo = () => {
     try {
-        // 保存到本地存储
+        const accessToken = getAccessToken();
+        const storedUser = getStoredUser() || {};
         uni.setStorageSync('studentInfo', studentInfo.value);
-
-        // 更新注册学生列表中的信息
-        const registeredStudents = uni.getStorageSync('registeredStudents') || [];
-        const studentIndex = registeredStudents.findIndex((student: any) => student.studentId === studentInfo.value.studentId);
-        if (studentIndex !== -1) {
-            registeredStudents[studentIndex] = {
-                ...registeredStudents[studentIndex],
-                ...studentInfo.value
-            };
-            uni.setStorageSync('registeredStudents', registeredStudents);
+        uni.setStorageSync('currentUser', {
+            ...storedUser,
+            accountNo: studentInfo.value.studentId,
+            realName: studentInfo.value.name,
+            phone: studentInfo.value.phone,
+            email: studentInfo.value.email || storedUser.email || '',
+            gender: studentInfo.value.gender,
+            college: studentInfo.value.college,
+            major: studentInfo.value.major,
+            registerTime: studentInfo.value.registerTime
+        });
+        if (accessToken) {
+            saveAuthSession(accessToken, uni.getStorageSync('currentUser'));
         }
         uni.showToast({
-            title: '保存成功',
+            title: '已保存到本地缓存',
             icon: 'success'
         });
 
@@ -518,45 +556,10 @@ const onConfirmNewPasswordInput = (e: any) => {
 };
 
 const confirmPasswordChange = () => {
-    const _oldPassword = oldPassword.value;
-    const _newPassword = newPassword.value;
-    const _confirmNewPassword = confirmNewPassword.value;
-    if (!_oldPassword || !_newPassword || !_confirmNewPassword) {
-        uni.showToast({
-            title: '请填写完整',
-            icon: 'none'
-        });
-        return;
-    }
-    if (_oldPassword !== studentInfo.value.password) {
-        uni.showToast({
-            title: '原密码错误',
-            icon: 'none'
-        });
-        return;
-    }
-    if (_newPassword.length < 6) {
-        uni.showToast({
-            title: '新密码至少6位',
-            icon: 'none'
-        });
-        return;
-    }
-    if (_newPassword !== _confirmNewPassword) {
-        uni.showToast({
-            title: '两次新密码不一致',
-            icon: 'none'
-        });
-        return;
-    }
-    // 修改密码
-    studentInfo.value.password = _newPassword;
     showPasswordModal.value = false;
-    // 同步到本地存储
-    uni.setStorageSync('studentInfo', studentInfo.value);
     uni.showToast({
-        title: '密码修改成功',
-        icon: 'success'
+        title: '后端暂未提供修改密码接口',
+        icon: 'none'
     });
 };
 </script>

@@ -10,3 +10,8 @@ logs/
 *.log
 dist/
 build/
+target/
+.idea/
+.settings/
+.classpath
+.project

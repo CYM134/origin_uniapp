@@ -54,6 +54,8 @@
 import { ref } from 'vue';
 import { onLoad } from '@dcloudio/uni-app';
 import navigationBar from '@/components/navigation-bar/navigation-bar.vue';
+import { loginByPassword } from '@/api/auth';
+import { saveAuthSession } from '@/api/storage';
 // pages/student-login/student-login.ts
 
 const username = ref<string>('');
@@ -97,7 +99,7 @@ const forgotPassword = () => {
     });
 };
 
-const login = () => {
+const login = async () => {
     const usernameVal = username.value;
     const passwordVal = password.value;
     const rememberVal = rememberPassword.value;
@@ -116,8 +118,7 @@ const login = () => {
         return;
     }
 
-    // 简单的学号格式验证（假设学号为数字）
-    if (!/^\d+$/.test(usernameVal)) {
+    if (!/^[a-zA-Z0-9]+$/.test(usernameVal)) {
         uni.showToast({
             title: '学号格式不正确',
             icon: 'none'
@@ -129,56 +130,41 @@ const login = () => {
         mask: true
     });
 
-    // 模拟登录验证
-    setTimeout(() => {
-        uni.hideLoading();
+    try {
+        const result: any = await loginByPassword({
+            accountNo: usernameVal.trim(),
+            password: passwordVal,
+            role: 'student'
+        });
 
-        // 检查已注册的学生账号
-        const registeredStudents = uni.getStorageSync('registeredStudents') || [];
-        const student = registeredStudents.find((s: any) => s.studentId === usernameVal && s.password === passwordVal);
-        if (student) {
-            if (rememberVal) {
-                uni.setStorageSync('studentUsername', usernameVal);
-                uni.setStorageSync('studentPassword', passwordVal);
-                uni.setStorageSync('studentRememberPassword', true);
-            } else {
-                uni.removeStorageSync('studentUsername');
-                uni.removeStorageSync('studentPassword');
-                uni.removeStorageSync('studentRememberPassword');
-            }
-
-            // 保存学生登录状态
-            uni.setStorageSync('studentInfo', {
-                studentId: usernameVal,
-                name: student.name,
-                gender: student.gender,
-                college: student.college,
-                major: student.major,
-                phone: student.phone,
-                password: student.password,
-                registerTime: student.registerTime,
-                loginTime: new Date().getTime()
-            });
-
-            // 跳转到学生主页（这里需要根据实际情况修改）
-            setTimeout(() => {
-                uni.navigateTo({
-                    url: '../student-work/student-work',
-                    success: () => {
-                        uni.showToast({
-                            title: '登录成功',
-                            icon: 'success'
-                        });
-                    }
-                });
-            }, 1500);
+        if (rememberVal) {
+            uni.setStorageSync('studentUsername', usernameVal);
+            uni.setStorageSync('studentPassword', passwordVal);
+            uni.setStorageSync('studentRememberPassword', true);
         } else {
-            uni.showToast({
-                title: '学号或密码错误',
-                icon: 'none'
-            });
+            uni.removeStorageSync('studentUsername');
+            uni.removeStorageSync('studentPassword');
+            uni.removeStorageSync('studentRememberPassword');
         }
-    }, 1500);
+
+        saveAuthSession(result.accessToken, result.user);
+        uni.hideLoading();
+        uni.reLaunch({
+            url: '/pages/student-work/student-work',
+            success: () => {
+                uni.showToast({
+                    title: '登录成功',
+                    icon: 'success'
+                });
+            }
+        });
+    } catch (error: any) {
+        uni.hideLoading();
+        uni.showToast({
+            title: error?.data?.message || '登录失败',
+            icon: 'none'
+        });
+    }
 };
 
 const goToRegister = () => {

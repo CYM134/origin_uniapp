@@ -103,6 +103,8 @@
 import { ref } from 'vue';
 import { onLoad, onShow, onPullDownRefresh } from '@dcloudio/uni-app';
 import navigationBar from '@/components/navigation-bar/navigation-bar.vue';
+import { fetchCurrentUser, logout as logoutAuth } from '@/api/auth';
+import { getStoredRole, getStoredUser, hasCompleteUserProfile } from '@/api/storage';
 // pages/teacher-work/teacher-work.ts
 
 const teacherInfo = ref<any>({
@@ -121,14 +123,52 @@ const notificationCount = ref<number>(0); // 通知数量
  */
 const loadTeacherInfo = () => {
     try {
-        const info = uni.getStorageSync('teacherInfo');
+        const info = uni.getStorageSync('teacherInfo') || getStoredUser();
         if (info) {
-            teacherInfo.value = info;
+            teacherInfo.value = {
+                ...teacherInfo.value,
+                ...info,
+                name: info.name || info.realName || '',
+                teacherId: info.teacherId || info.accountNo || '',
+                phone: info.phone || ''
+            };
         }
     } catch (error) {
         console.log('CatchClause', error);
         console.log('CatchClause', error);
         console.error('加载教师信息失败:', error);
+    }
+};
+
+const syncCurrentTeacher = async () => {
+    const storedRole = getStoredRole();
+    const storedUser = getStoredUser();
+    if (storedRole && storedRole !== 'teacher') {
+        uni.reLaunch({ url: '/pages/login-select/login-select' });
+        return;
+    }
+
+    if (hasCompleteUserProfile(storedUser)) {
+        return;
+    }
+
+    try {
+        const user: any = await fetchCurrentUser();
+        teacherInfo.value = {
+            ...teacherInfo.value,
+            name: user.realName || '',
+            teacherId: user.accountNo || '',
+            gender: user.gender || '',
+            phone: user.phone || '',
+            email: user.email || '',
+            college: user.college || '',
+            department: user.department || '',
+            positionTitle: user.positionTitle || '',
+            role: user.role,
+            status: user.status
+        };
+    } catch (error) {
+        console.error('同步教师信息失败:', error);
     }
 };
 
@@ -176,6 +216,9 @@ const loadNotificationCount = () => {
  */
 onLoad(() => {
     loadTeacherInfo();
+    setTimeout(() => {
+        syncCurrentTeacher();
+    }, 0);
     loadPendingCount();
     loadNotificationCount();
 });
@@ -184,6 +227,7 @@ onLoad(() => {
  * 生命周期函数--监听页面显示
  */
 onShow(() => {
+    loadTeacherInfo();
     // 每次显示页面时刷新数据
     loadPendingCount();
     loadNotificationCount();
@@ -213,9 +257,7 @@ const logout = () => {
         success: (res) => {
             if (res.confirm) {
                 try {
-                    // 清除登录状态
-                    uni.removeStorageSync('isTeacherLoggedIn');
-                    uni.removeStorageSync('teacherInfo');
+                    logoutAuth();
                     uni.showToast({
                         title: '已退出登录',
                         icon: 'success'

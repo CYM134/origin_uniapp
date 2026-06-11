@@ -47,6 +47,8 @@
 import { ref } from 'vue';
 import { onLoad } from '@dcloudio/uni-app';
 import navigationBar from '@/components/navigation-bar/navigation-bar.vue';
+import { loginByPassword } from '@/api/auth';
+import { saveAuthSession } from '@/api/storage';
 
 const username = ref<string>('');
 const password = ref<string>('');
@@ -81,7 +83,7 @@ const togglePasswordVisibility = () => {
     showPassword.value = !showPassword.value;
 };
 
-const login = () => {
+const login = async () => {
     if (!username.value.trim()) {
         uni.showToast({
             title: '请输入账号',
@@ -102,10 +104,14 @@ const login = () => {
         title: '登录中...',
         mask: true
     });
-    
-    setTimeout(() => {
-        uni.hideLoading();
-        
+
+    try {
+        const result: any = await loginByPassword({
+            accountNo: username.value.trim(),
+            password: password.value,
+            role: 'admin'
+        });
+
         if (rememberPassword.value) {
             uni.setStorageSync('adminUsername', username.value);
             uni.setStorageSync('adminPassword', password.value);
@@ -115,9 +121,12 @@ const login = () => {
             uni.removeStorageSync('adminPassword');
             uni.removeStorageSync('adminRememberPassword');
         }
-        
-        uni.navigateTo({
-            url: '../admin-work/admin-work',
+
+        saveAuthSession(result.accessToken, result.user);
+        uni.hideLoading();
+
+        uni.reLaunch({
+            url: '/pages/admin-work/admin-work',
             success: () => {
                 uni.showToast({
                     title: '登录成功',
@@ -125,7 +134,13 @@ const login = () => {
                 });
             }
         });
-    }, 1500);
+    } catch (error: any) {
+        uni.hideLoading();
+        uni.showToast({
+            title: error?.data?.message || '登录失败',
+            icon: 'none'
+        });
+    }
 };
 </script>
 <style lang="less">

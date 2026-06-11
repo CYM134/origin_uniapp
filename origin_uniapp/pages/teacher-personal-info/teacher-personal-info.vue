@@ -136,6 +136,8 @@
 import { ref } from 'vue';
 import { onLoad, onUnload } from '@dcloudio/uni-app';
 import navigationBar from '@/components/navigation-bar/navigation-bar.vue';
+import { fetchCurrentUser } from '@/api/auth';
+import { getAccessToken, getStoredRole, getStoredUser, hasCompleteUserProfile, saveAuthSession } from '@/api/storage';
 // pages/teacher-personal-info/teacher-personal-info.ts
 
 const teacherInfo = ref<any>({
@@ -191,6 +193,9 @@ const confirmNewPassword = ref('');
  */
 onLoad(() => {
     loadTeacherInfo();
+    setTimeout(() => {
+        syncCurrentTeacher();
+    }, 0);
 });
 
 /**
@@ -209,18 +214,21 @@ onUnload(() => {
  */
 const loadTeacherInfo = () => {
     try {
-        let _teacherInfo = uni.getStorageSync('teacherInfo');
-        if (_teacherInfo) {
-            // 尝试补全 password 字段
-            if (!_teacherInfo.password && _teacherInfo.teacherId) {
-                const registeredTeachers = uni.getStorageSync('registeredTeachers') || [];
-                const found = registeredTeachers.find((teacher: any) => teacher.teacherId === _teacherInfo.teacherId);
-                if (found && found.password) {
-                    _teacherInfo.password = found.password;
-                }
-            }
-            teacherInfo.value = _teacherInfo;
-            originalInfo.value = JSON.parse(JSON.stringify(_teacherInfo));
+        const storedInfo = uni.getStorageSync('teacherInfo') || getStoredUser();
+        if (storedInfo) {
+            const normalizedInfo = {
+                name: storedInfo.name || storedInfo.realName || '',
+                teacherId: storedInfo.teacherId || storedInfo.accountNo || '',
+                gender: storedInfo.gender || '',
+                college: storedInfo.college || '',
+                department: storedInfo.department || '',
+                phone: storedInfo.phone || '',
+                email: storedInfo.email || '',
+                registerTime: storedInfo.registerTime || '',
+                password: storedInfo.password || ''
+            };
+            teacherInfo.value = normalizedInfo;
+            originalInfo.value = JSON.parse(JSON.stringify(normalizedInfo));
         }
     } catch (error) {
         console.log('CatchClause', error);
@@ -230,6 +238,48 @@ const loadTeacherInfo = () => {
             title: '加载信息失败',
             icon: 'error'
         });
+    }
+};
+
+const syncCurrentTeacher = async () => {
+    const storedRole = getStoredRole();
+    const storedUser = getStoredUser();
+    if (storedRole && storedRole !== 'teacher') {
+        uni.reLaunch({ url: '/pages/login-select/login-select' });
+        return;
+    }
+
+    if (hasCompleteUserProfile(storedUser)) {
+        return;
+    }
+
+    try {
+        const user: any = await fetchCurrentUser();
+        const latestInfo = {
+            ...teacherInfo.value,
+            name: user.realName || '',
+            teacherId: user.accountNo || '',
+            gender: user.gender || '',
+            phone: user.phone || '',
+            email: user.email || '',
+            college: user.college || '',
+            department: user.department || '',
+            positionTitle: user.positionTitle || '',
+            role: user.role,
+            status: user.status
+        };
+
+        teacherInfo.value = latestInfo;
+        originalInfo.value = JSON.parse(JSON.stringify(latestInfo));
+        const accessToken = getAccessToken();
+        if (accessToken) {
+            saveAuthSession(accessToken, {
+                ...user,
+                registerTime: latestInfo.registerTime
+            });
+        }
+    } catch (error) {
+        console.error('同步教师信息失败:', error);
     }
 };
 
@@ -415,21 +465,25 @@ const confirmEdit = () => {
  */
 const saveInfo = () => {
     try {
-        // 保存到本地存储
+        const accessToken = getAccessToken();
+        const storedUser = getStoredUser() || {};
         uni.setStorageSync('teacherInfo', teacherInfo.value);
-
-        // 更新注册教师列表中的信息
-        const registeredTeachers = uni.getStorageSync('registeredTeachers') || [];
-        const teacherIndex = registeredTeachers.findIndex((teacher: any) => teacher.teacherId === teacherInfo.value.teacherId);
-        if (teacherIndex !== -1) {
-            registeredTeachers[teacherIndex] = {
-                ...registeredTeachers[teacherIndex],
-                ...teacherInfo.value
-            };
-            uni.setStorageSync('registeredTeachers', registeredTeachers);
+        uni.setStorageSync('currentUser', {
+            ...storedUser,
+            accountNo: teacherInfo.value.teacherId,
+            realName: teacherInfo.value.name,
+            phone: teacherInfo.value.phone,
+            email: teacherInfo.value.email || storedUser.email || '',
+            gender: teacherInfo.value.gender,
+            college: teacherInfo.value.college,
+            department: teacherInfo.value.department,
+            registerTime: teacherInfo.value.registerTime
+        });
+        if (accessToken) {
+            saveAuthSession(accessToken, uni.getStorageSync('currentUser'));
         }
         uni.showToast({
-            title: '保存成功',
+            title: '已保存到本地缓存',
             icon: 'success'
         });
 
@@ -476,45 +530,10 @@ const onConfirmNewPasswordInput = (e: any) => {
 };
 
 const confirmPasswordChange = () => {
-    const _oldPassword = oldPassword.value;
-    const _newPassword = newPassword.value;
-    const _confirmNewPassword = confirmNewPassword.value;
-    if (!_oldPassword || !_newPassword || !_confirmNewPassword) {
-        uni.showToast({
-            title: '请填写完整',
-            icon: 'none'
-        });
-        return;
-    }
-    if (_oldPassword !== teacherInfo.value.password) {
-        uni.showToast({
-            title: '原密码错误',
-            icon: 'none'
-        });
-        return;
-    }
-    if (_newPassword.length < 6) {
-        uni.showToast({
-            title: '新密码至少6位',
-            icon: 'none'
-        });
-        return;
-    }
-    if (_newPassword !== _confirmNewPassword) {
-        uni.showToast({
-            title: '两次新密码不一致',
-            icon: 'none'
-        });
-        return;
-    }
-    // 修改密码
-    teacherInfo.value.password = _newPassword;
     showPasswordModal.value = false;
-    // 同步到本地存储
-    uni.setStorageSync('teacherInfo', teacherInfo.value);
     uni.showToast({
-        title: '密码修改成功',
-        icon: 'success'
+        title: '后端暂未提供修改密码接口',
+        icon: 'none'
     });
 };
 </script>

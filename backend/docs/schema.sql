@@ -1,95 +1,94 @@
--- Lab reservation management system schema.
--- Target: MySQL 8.0+, InnoDB, utf8mb4.
--- This file is intentionally non-destructive: it does not DROP existing tables.
+-- 实验室预约管理系统数据库结构。
+-- 适用环境：数据库 8.0 及以上、事务型存储引擎、四字节字符集。
+-- 本文件为非破坏性脚本：不会删除已有表。
+-- 默认仅创建表结构，不执行 CREATE DATABASE / USE。
+-- 执行前请先手动选择目标库，例如：
+--   mysql -u <user> -p <existing_db> < schema.sql
+-- 如需首次建库，请使用具备相应权限的管理员账号单独执行：
+--   CREATE DATABASE lab_reservation DEFAULT CHARACTER SET utf8mb4 DEFAULT COLLATE utf8mb4_0900_ai_ci;
 
 SET NAMES utf8mb4;
 SET time_zone = '+08:00';
 SET sql_mode = 'STRICT_TRANS_TABLES,NO_ZERO_DATE,NO_ZERO_IN_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION';
 
-CREATE DATABASE IF NOT EXISTS lab_reservation
-  DEFAULT CHARACTER SET utf8mb4
-  DEFAULT COLLATE utf8mb4_0900_ai_ci;
-
-USE lab_reservation;
-
 CREATE TABLE IF NOT EXISTS sys_users (
-  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT 'Internal user primary key',
-  account_no VARCHAR(64) NOT NULL COMMENT 'Login account: student number, teacher number, or admin account',
-  role ENUM('admin','teacher','student') NOT NULL COMMENT 'User role',
-  password_hash VARCHAR(255) NOT NULL COMMENT 'Hashed password, never store plaintext password',
-  real_name VARCHAR(50) NOT NULL COMMENT 'Real display name',
-  gender ENUM('male','female','unknown') NOT NULL DEFAULT 'unknown' COMMENT 'Gender',
-  phone VARCHAR(20) DEFAULT NULL COMMENT 'Mobile phone number',
-  email VARCHAR(120) DEFAULT NULL COMMENT 'Email address',
-  avatar_url VARCHAR(500) DEFAULT NULL COMMENT 'Avatar image URL',
-  status ENUM('active','disabled','deleted','pending') NOT NULL DEFAULT 'active' COMMENT 'Account status',
-  last_login_at DATETIME(3) DEFAULT NULL COMMENT 'Last login time',
-  login_count INT UNSIGNED NOT NULL DEFAULT 0 COMMENT 'Total successful login count',
-  agreed_terms_at DATETIME(3) DEFAULT NULL COMMENT 'Time when user accepted terms',
-  created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) COMMENT 'Created time',
-  updated_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3) COMMENT 'Updated time',
-  deleted_at DATETIME(3) DEFAULT NULL COMMENT 'Soft delete time',
+  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '用户内部主键',
+  account_no VARCHAR(64) NOT NULL COMMENT '登录账号：学号、教师工号或管理员账号',
+  role ENUM('admin','teacher','student') NOT NULL COMMENT '用户角色',
+  password_hash VARCHAR(255) NOT NULL COMMENT '加密后的密码，禁止存储明文密码',
+  real_name VARCHAR(50) NOT NULL COMMENT '真实姓名',
+  gender ENUM('male','female','unknown') NOT NULL DEFAULT 'unknown' COMMENT '性别',
+  phone VARCHAR(20) DEFAULT NULL COMMENT '手机号码',
+  email VARCHAR(120) DEFAULT NULL COMMENT '邮箱地址',
+  avatar_url VARCHAR(500) DEFAULT NULL COMMENT '头像地址',
+  status ENUM('active','disabled','deleted','pending') NOT NULL DEFAULT 'active' COMMENT '账号状态',
+  last_login_at DATETIME(3) DEFAULT NULL COMMENT '最近登录时间',
+  login_count INT UNSIGNED NOT NULL DEFAULT 0 COMMENT '成功登录总次数',
+  agreed_terms_at DATETIME(3) DEFAULT NULL COMMENT '用户同意条款时间',
+  created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) COMMENT '创建时间',
+  updated_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3) COMMENT '更新时间',
+  deleted_at DATETIME(3) DEFAULT NULL COMMENT '软删除时间',
   PRIMARY KEY (id),
   UNIQUE KEY uk_role_account (role, account_no),
   KEY idx_role_status (role, status),
   KEY idx_phone (phone)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='Unified user account table';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='统一用户账号表';
 
 CREATE TABLE IF NOT EXISTS student_profiles (
-  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT 'Student profile primary key',
-  user_id BIGINT UNSIGNED NOT NULL COMMENT 'Linked sys_users.id',
-  student_no VARCHAR(64) NOT NULL COMMENT 'Student number',
-  college VARCHAR(100) NOT NULL COMMENT 'College name',
-  major VARCHAR(100) NOT NULL COMMENT 'Grade and major text',
-  created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) COMMENT 'Created time',
-  updated_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3) COMMENT 'Updated time',
+  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '学生资料主键',
+  user_id BIGINT UNSIGNED NOT NULL COMMENT '关联用户表主键',
+  student_no VARCHAR(64) NOT NULL COMMENT '学号',
+  college VARCHAR(100) NOT NULL COMMENT '学院名称',
+  major VARCHAR(100) NOT NULL COMMENT '年级与专业文本',
+  created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) COMMENT '创建时间',
+  updated_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3) COMMENT '更新时间',
   PRIMARY KEY (id),
   UNIQUE KEY uk_user_id (user_id),
   UNIQUE KEY uk_student_no (student_no),
   CONSTRAINT fk_student_profiles_user
     FOREIGN KEY (user_id) REFERENCES sys_users (id)
     ON UPDATE CASCADE ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='Student extended profile';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='学生扩展资料表';
 
 CREATE TABLE IF NOT EXISTS teacher_profiles (
-  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT 'Teacher profile primary key',
-  user_id BIGINT UNSIGNED NOT NULL COMMENT 'Linked sys_users.id',
-  teacher_no VARCHAR(64) NOT NULL COMMENT 'Teacher employee number',
-  college VARCHAR(100) NOT NULL COMMENT 'College name',
-  department VARCHAR(100) DEFAULT NULL COMMENT 'Department name',
-  position_title VARCHAR(50) DEFAULT NULL COMMENT 'Position or academic title',
-  created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) COMMENT 'Created time',
-  updated_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3) COMMENT 'Updated time',
+  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '教师资料主键',
+  user_id BIGINT UNSIGNED NOT NULL COMMENT '关联用户表主键',
+  teacher_no VARCHAR(64) NOT NULL COMMENT '教师工号',
+  college VARCHAR(100) NOT NULL COMMENT '学院名称',
+  department VARCHAR(100) DEFAULT NULL COMMENT '系部名称',
+  position_title VARCHAR(50) DEFAULT NULL COMMENT '职务或职称',
+  created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) COMMENT '创建时间',
+  updated_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3) COMMENT '更新时间',
   PRIMARY KEY (id),
   UNIQUE KEY uk_user_id (user_id),
   UNIQUE KEY uk_teacher_no (teacher_no),
   CONSTRAINT fk_teacher_profiles_user
     FOREIGN KEY (user_id) REFERENCES sys_users (id)
     ON UPDATE CASCADE ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='Teacher extended profile';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='教师扩展资料表';
 
 CREATE TABLE IF NOT EXISTS teacher_registration_applications (
-  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT 'Teacher registration application primary key',
-  application_no VARCHAR(64) NOT NULL COMMENT 'Business application number',
-  teacher_no VARCHAR(64) NOT NULL COMMENT 'Teacher employee number',
-  real_name VARCHAR(50) NOT NULL COMMENT 'Teacher real name',
-  gender ENUM('male','female','unknown') NOT NULL DEFAULT 'unknown' COMMENT 'Gender',
-  college VARCHAR(100) DEFAULT NULL COMMENT 'College name',
-  department VARCHAR(100) DEFAULT NULL COMMENT 'Department name',
-  position_title VARCHAR(50) DEFAULT NULL COMMENT 'Position or academic title',
-  phone VARCHAR(20) NOT NULL COMMENT 'Contact phone',
-  email VARCHAR(120) DEFAULT NULL COMMENT 'Email address',
-  password_hash VARCHAR(255) NOT NULL COMMENT 'Hashed registration password',
-  id_card_front_url VARCHAR(500) DEFAULT NULL COMMENT 'ID card or document front image URL',
-  id_card_back_url VARCHAR(500) DEFAULT NULL COMMENT 'ID card or document back image URL',
-  teacher_card_image_url VARCHAR(500) DEFAULT NULL COMMENT 'Teacher certificate image URL',
-  status ENUM('pending','approved','rejected') NOT NULL DEFAULT 'pending' COMMENT 'Review status',
-  reject_reason VARCHAR(500) DEFAULT NULL COMMENT 'Reject reason',
-  reviewer_user_id BIGINT UNSIGNED DEFAULT NULL COMMENT 'Admin reviewer user id',
-  applied_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) COMMENT 'Submitted time',
-  reviewed_at DATETIME(3) DEFAULT NULL COMMENT 'Reviewed time',
-  created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) COMMENT 'Created time',
-  updated_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3) COMMENT 'Updated time',
+  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '教师注册申请主键',
+  application_no VARCHAR(64) NOT NULL COMMENT '业务申请编号',
+  teacher_no VARCHAR(64) NOT NULL COMMENT '教师工号',
+  real_name VARCHAR(50) NOT NULL COMMENT '教师真实姓名',
+  gender ENUM('male','female','unknown') NOT NULL DEFAULT 'unknown' COMMENT '性别',
+  college VARCHAR(100) DEFAULT NULL COMMENT '学院名称',
+  department VARCHAR(100) DEFAULT NULL COMMENT '系部名称',
+  position_title VARCHAR(50) DEFAULT NULL COMMENT '职务或职称',
+  phone VARCHAR(20) NOT NULL COMMENT '联系电话',
+  email VARCHAR(120) DEFAULT NULL COMMENT '邮箱地址',
+  password_hash VARCHAR(255) NOT NULL COMMENT '加密后的注册密码',
+  id_card_front_url VARCHAR(500) DEFAULT NULL COMMENT '身份证或证明材料正面图片地址',
+  id_card_back_url VARCHAR(500) DEFAULT NULL COMMENT '身份证或证明材料背面图片地址',
+  teacher_card_image_url VARCHAR(500) DEFAULT NULL COMMENT '教师证件图片地址',
+  status ENUM('pending','approved','rejected') NOT NULL DEFAULT 'pending' COMMENT '审核状态',
+  reject_reason VARCHAR(500) DEFAULT NULL COMMENT '驳回原因',
+  reviewer_user_id BIGINT UNSIGNED DEFAULT NULL COMMENT '管理员审核人用户标识',
+  applied_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) COMMENT '提交时间',
+  reviewed_at DATETIME(3) DEFAULT NULL COMMENT '审核时间',
+  created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) COMMENT '创建时间',
+  updated_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3) COMMENT '更新时间',
   PRIMARY KEY (id),
   UNIQUE KEY uk_application_no (application_no),
   KEY idx_status_applied (status, applied_at),
@@ -98,22 +97,22 @@ CREATE TABLE IF NOT EXISTS teacher_registration_applications (
   CONSTRAINT fk_teacher_registration_reviewer
     FOREIGN KEY (reviewer_user_id) REFERENCES sys_users (id)
     ON UPDATE CASCADE ON DELETE SET NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='Teacher registration review applications';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='教师注册审核申请表';
 
 CREATE TABLE IF NOT EXISTS laboratories (
-  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT 'Laboratory primary key',
-  lab_code VARCHAR(64) NOT NULL COMMENT 'Business laboratory code',
-  name VARCHAR(100) NOT NULL COMMENT 'Laboratory name',
-  location VARCHAR(200) NOT NULL COMMENT 'Laboratory location',
-  capacity INT UNSIGNED NOT NULL DEFAULT 0 COMMENT 'Maximum capacity',
-  equipment TEXT COMMENT 'Equipment description',
-  image_url VARCHAR(500) DEFAULT NULL COMMENT 'Preview image URL',
-  status ENUM('active','maintenance','disabled','deleted') NOT NULL DEFAULT 'active' COMMENT 'Laboratory status',
-  created_by BIGINT UNSIGNED DEFAULT NULL COMMENT 'Creator admin user id',
-  updated_by BIGINT UNSIGNED DEFAULT NULL COMMENT 'Last updater admin user id',
-  created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) COMMENT 'Created time',
-  updated_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3) COMMENT 'Updated time',
-  deleted_at DATETIME(3) DEFAULT NULL COMMENT 'Soft delete time',
+  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '实验室主键',
+  lab_code VARCHAR(64) NOT NULL COMMENT '实验室业务编码',
+  name VARCHAR(100) NOT NULL COMMENT '实验室名称',
+  location VARCHAR(200) NOT NULL COMMENT '实验室位置',
+  capacity INT UNSIGNED NOT NULL DEFAULT 0 COMMENT '最大容量',
+  equipment TEXT COMMENT '设备说明',
+  image_url VARCHAR(500) DEFAULT NULL COMMENT '预览图片地址',
+  status ENUM('active','maintenance','disabled','deleted') NOT NULL DEFAULT 'active' COMMENT '实验室状态',
+  created_by BIGINT UNSIGNED DEFAULT NULL COMMENT '创建人管理员用户标识',
+  updated_by BIGINT UNSIGNED DEFAULT NULL COMMENT '最后更新人管理员用户标识',
+  created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) COMMENT '创建时间',
+  updated_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3) COMMENT '更新时间',
+  deleted_at DATETIME(3) DEFAULT NULL COMMENT '软删除时间',
   PRIMARY KEY (id),
   UNIQUE KEY uk_lab_code (lab_code),
   KEY idx_status (status),
@@ -126,41 +125,41 @@ CREATE TABLE IF NOT EXISTS laboratories (
   CONSTRAINT fk_laboratories_updated_by
     FOREIGN KEY (updated_by) REFERENCES sys_users (id)
     ON UPDATE CASCADE ON DELETE SET NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='Laboratory basic information';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='实验室基础信息表';
 
 CREATE TABLE IF NOT EXISTS academic_semesters (
-  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT 'Semester primary key',
-  semester_code VARCHAR(64) NOT NULL COMMENT 'Semester code, e.g. 2025-2026-1',
-  semester_name VARCHAR(100) NOT NULL COMMENT 'Semester display name',
-  academic_year VARCHAR(20) NOT NULL COMMENT 'Academic year, e.g. 2025-2026',
-  term_no TINYINT UNSIGNED NOT NULL COMMENT 'Term number, usually 1 or 2',
-  start_date DATE DEFAULT NULL COMMENT 'Semester start date',
-  end_date DATE DEFAULT NULL COMMENT 'Semester end date',
-  status ENUM('active','inactive') NOT NULL DEFAULT 'inactive' COMMENT 'Semester status',
-  created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) COMMENT 'Created time',
-  updated_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3) COMMENT 'Updated time',
+  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '学期主键',
+  semester_code VARCHAR(64) NOT NULL COMMENT '学期编码，例如 2025-2026-1',
+  semester_name VARCHAR(100) NOT NULL COMMENT '学期显示名称',
+  academic_year VARCHAR(20) NOT NULL COMMENT '学年，例如 2025-2026',
+  term_no TINYINT UNSIGNED NOT NULL COMMENT '学期序号，通常为 1 或 2',
+  start_date DATE DEFAULT NULL COMMENT '学期开始日期',
+  end_date DATE DEFAULT NULL COMMENT '学期结束日期',
+  status ENUM('active','inactive') NOT NULL DEFAULT 'inactive' COMMENT '学期状态',
+  created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) COMMENT '创建时间',
+  updated_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3) COMMENT '更新时间',
   PRIMARY KEY (id),
   UNIQUE KEY uk_semester_code (semester_code),
   KEY idx_status (status)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='Academic semesters';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='学年学期表';
 
 CREATE TABLE IF NOT EXISTS schedule_import_batches (
-  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT 'Schedule import batch primary key',
-  batch_no VARCHAR(64) NOT NULL COMMENT 'Import batch number',
-  semester_id BIGINT UNSIGNED NOT NULL COMMENT 'Linked academic_semesters.id',
-  file_name VARCHAR(255) NOT NULL COMMENT 'Uploaded file name',
-  file_size_bytes BIGINT UNSIGNED DEFAULT NULL COMMENT 'Uploaded file size in bytes',
-  file_path VARCHAR(500) DEFAULT NULL COMMENT 'Stored file path',
-  status ENUM('pending','parsing','validating','saving','success','failed') NOT NULL DEFAULT 'pending' COMMENT 'Import status',
-  progress TINYINT UNSIGNED NOT NULL DEFAULT 0 COMMENT 'Import progress percentage',
-  success_count INT UNSIGNED NOT NULL DEFAULT 0 COMMENT 'Successful row count',
-  failure_count INT UNSIGNED NOT NULL DEFAULT 0 COMMENT 'Failed row count',
-  error_details TEXT COMMENT 'Import error details',
-  imported_by BIGINT UNSIGNED NOT NULL COMMENT 'Admin user who imports schedule',
-  started_at DATETIME(3) DEFAULT NULL COMMENT 'Import start time',
-  finished_at DATETIME(3) DEFAULT NULL COMMENT 'Import finish time',
-  created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) COMMENT 'Created time',
-  updated_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3) COMMENT 'Updated time',
+  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '课表导入批次主键',
+  batch_no VARCHAR(64) NOT NULL COMMENT '导入批次编号',
+  semester_id BIGINT UNSIGNED NOT NULL COMMENT '关联学期表主键',
+  file_name VARCHAR(255) NOT NULL COMMENT '上传文件名',
+  file_size_bytes BIGINT UNSIGNED DEFAULT NULL COMMENT '上传文件大小，单位字节',
+  file_path VARCHAR(500) DEFAULT NULL COMMENT '存储文件路径',
+  status ENUM('pending','parsing','validating','saving','success','failed') NOT NULL DEFAULT 'pending' COMMENT '导入状态',
+  progress TINYINT UNSIGNED NOT NULL DEFAULT 0 COMMENT '导入进度百分比',
+  success_count INT UNSIGNED NOT NULL DEFAULT 0 COMMENT '成功行数',
+  failure_count INT UNSIGNED NOT NULL DEFAULT 0 COMMENT '失败行数',
+  error_details TEXT COMMENT '导入错误详情',
+  imported_by BIGINT UNSIGNED NOT NULL COMMENT '执行课表导入的管理员用户标识',
+  started_at DATETIME(3) DEFAULT NULL COMMENT '导入开始时间',
+  finished_at DATETIME(3) DEFAULT NULL COMMENT '导入结束时间',
+  created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) COMMENT '创建时间',
+  updated_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3) COMMENT '更新时间',
   PRIMARY KEY (id),
   UNIQUE KEY uk_batch_no (batch_no),
   KEY idx_semester_status (semester_id, status),
@@ -173,22 +172,22 @@ CREATE TABLE IF NOT EXISTS schedule_import_batches (
     FOREIGN KEY (imported_by) REFERENCES sys_users (id)
     ON UPDATE CASCADE ON DELETE RESTRICT,
   CONSTRAINT chk_schedule_import_progress CHECK (progress <= 100)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='Schedule import batch records';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='课表导入批次记录表';
 
 CREATE TABLE IF NOT EXISTS schedule_export_tasks (
-  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT 'Schedule export task primary key',
-  task_no VARCHAR(64) NOT NULL COMMENT 'Export task number',
-  semester_id BIGINT UNSIGNED NOT NULL COMMENT 'Linked academic_semesters.id',
-  export_format ENUM('excel','pdf') NOT NULL COMMENT 'Export file format',
-  include_rooms TINYINT(1) NOT NULL DEFAULT 1 COMMENT 'Whether exported data includes rooms',
-  include_teachers TINYINT(1) NOT NULL DEFAULT 1 COMMENT 'Whether exported data includes teachers',
-  include_students TINYINT(1) NOT NULL DEFAULT 0 COMMENT 'Whether exported data includes students',
-  file_url VARCHAR(500) DEFAULT NULL COMMENT 'Generated file URL',
-  status ENUM('pending','processing','success','failed') NOT NULL DEFAULT 'pending' COMMENT 'Export task status',
-  error_message TEXT COMMENT 'Export failure message',
-  created_by BIGINT UNSIGNED NOT NULL COMMENT 'Admin user who created export task',
-  created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) COMMENT 'Created time',
-  finished_at DATETIME(3) DEFAULT NULL COMMENT 'Task finish time',
+  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '课表导出任务主键',
+  task_no VARCHAR(64) NOT NULL COMMENT '导出任务编号',
+  semester_id BIGINT UNSIGNED NOT NULL COMMENT '关联学期表主键',
+  export_format ENUM('excel','pdf') NOT NULL COMMENT '导出文件格式',
+  include_rooms TINYINT(1) NOT NULL DEFAULT 1 COMMENT '导出数据是否包含教室',
+  include_teachers TINYINT(1) NOT NULL DEFAULT 1 COMMENT '导出数据是否包含教师',
+  include_students TINYINT(1) NOT NULL DEFAULT 0 COMMENT '导出数据是否包含学生',
+  file_url VARCHAR(500) DEFAULT NULL COMMENT '生成文件地址',
+  status ENUM('pending','processing','success','failed') NOT NULL DEFAULT 'pending' COMMENT '导出任务状态',
+  error_message TEXT COMMENT '导出失败信息',
+  created_by BIGINT UNSIGNED NOT NULL COMMENT '创建导出任务的管理员用户标识',
+  created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) COMMENT '创建时间',
+  finished_at DATETIME(3) DEFAULT NULL COMMENT '任务完成时间',
   PRIMARY KEY (id),
   UNIQUE KEY uk_task_no (task_no),
   KEY idx_semester_created (semester_id, created_at),
@@ -199,33 +198,33 @@ CREATE TABLE IF NOT EXISTS schedule_export_tasks (
   CONSTRAINT fk_schedule_export_created_by
     FOREIGN KEY (created_by) REFERENCES sys_users (id)
     ON UPDATE CASCADE ON DELETE RESTRICT
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='Schedule export task records';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='课表导出任务记录表';
 
 CREATE TABLE IF NOT EXISTS course_schedules (
-  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT 'Course schedule primary key',
-  schedule_no VARCHAR(64) NOT NULL COMMENT 'Business schedule number',
-  semester_id BIGINT UNSIGNED NOT NULL COMMENT 'Linked academic_semesters.id',
-  lab_id BIGINT UNSIGNED NOT NULL COMMENT 'Linked laboratories.id',
-  teacher_user_id BIGINT UNSIGNED DEFAULT NULL COMMENT 'Linked teacher sys_users.id',
-  teacher_name_snapshot VARCHAR(50) DEFAULT NULL COMMENT 'Teacher name snapshot',
-  course_name VARCHAR(150) NOT NULL COMMENT 'Course name',
-  course_type VARCHAR(50) DEFAULT NULL COMMENT 'Course type',
-  schedule_date DATE NOT NULL COMMENT 'Course date',
-  weekday TINYINT UNSIGNED DEFAULT NULL COMMENT 'Weekday from 1 to 7',
-  start_time TIME NOT NULL COMMENT 'Start time',
-  end_time TIME NOT NULL COMMENT 'End time',
-  time_slot_label VARCHAR(50) DEFAULT NULL COMMENT 'Display time slot label',
-  planned_student_count INT UNSIGNED NOT NULL DEFAULT 0 COMMENT 'Planned student count',
-  current_student_count INT UNSIGNED NOT NULL DEFAULT 0 COMMENT 'Current student count',
-  max_student_count INT UNSIGNED NOT NULL DEFAULT 0 COMMENT 'Maximum student count',
-  status ENUM('scheduled','available','full','ongoing','cancelled') NOT NULL DEFAULT 'scheduled' COMMENT 'Schedule status',
-  can_reserve TINYINT(1) NOT NULL DEFAULT 0 COMMENT 'Whether reservation is allowed from this schedule',
-  description TEXT COMMENT 'Course description',
-  remark TEXT COMMENT 'Remark',
-  source_batch_id BIGINT UNSIGNED DEFAULT NULL COMMENT 'Source import batch id',
-  created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) COMMENT 'Created time',
-  updated_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3) COMMENT 'Updated time',
-  deleted_at DATETIME(3) DEFAULT NULL COMMENT 'Soft delete time',
+  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '课程课表主键',
+  schedule_no VARCHAR(64) NOT NULL COMMENT '课表业务编号',
+  semester_id BIGINT UNSIGNED NOT NULL COMMENT '关联学期表主键',
+  lab_id BIGINT UNSIGNED NOT NULL COMMENT '关联实验室表主键',
+  teacher_user_id BIGINT UNSIGNED DEFAULT NULL COMMENT '关联教师用户表主键',
+  teacher_name_snapshot VARCHAR(50) DEFAULT NULL COMMENT '教师姓名快照',
+  course_name VARCHAR(150) NOT NULL COMMENT '课程名称',
+  course_type VARCHAR(50) DEFAULT NULL COMMENT '课程类型',
+  schedule_date DATE NOT NULL COMMENT '上课日期',
+  weekday TINYINT UNSIGNED DEFAULT NULL COMMENT '星期序号，1 到 7',
+  start_time TIME NOT NULL COMMENT '开始时间',
+  end_time TIME NOT NULL COMMENT '结束时间',
+  time_slot_label VARCHAR(50) DEFAULT NULL COMMENT '显示用时间段标签',
+  planned_student_count INT UNSIGNED NOT NULL DEFAULT 0 COMMENT '计划学生人数',
+  current_student_count INT UNSIGNED NOT NULL DEFAULT 0 COMMENT '当前学生人数',
+  max_student_count INT UNSIGNED NOT NULL DEFAULT 0 COMMENT '最大学生人数',
+  status ENUM('scheduled','available','full','ongoing','cancelled') NOT NULL DEFAULT 'scheduled' COMMENT '课表状态',
+  can_reserve TINYINT(1) NOT NULL DEFAULT 0 COMMENT '是否允许基于该课表预约',
+  description TEXT COMMENT '课程说明',
+  remark TEXT COMMENT '备注',
+  source_batch_id BIGINT UNSIGNED DEFAULT NULL COMMENT '来源导入批次标识',
+  created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) COMMENT '创建时间',
+  updated_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3) COMMENT '更新时间',
+  deleted_at DATETIME(3) DEFAULT NULL COMMENT '软删除时间',
   PRIMARY KEY (id),
   UNIQUE KEY uk_schedule_no (schedule_no),
   KEY idx_date_lab (schedule_date, lab_id),
@@ -246,53 +245,53 @@ CREATE TABLE IF NOT EXISTS course_schedules (
     ON UPDATE CASCADE ON DELETE SET NULL,
   CONSTRAINT chk_course_schedules_weekday CHECK (weekday IS NULL OR weekday BETWEEN 1 AND 7),
   CONSTRAINT chk_course_schedules_time CHECK (end_time > start_time)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='Laboratory course schedules';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='实验室课程课表';
 
 CREATE TABLE IF NOT EXISTS reservation_applications (
-  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT 'Reservation application primary key',
-  application_no VARCHAR(64) NOT NULL COMMENT 'Business reservation application number',
-  applicant_user_id BIGINT UNSIGNED NOT NULL COMMENT 'Applicant user id',
-  applicant_role ENUM('student','teacher') NOT NULL COMMENT 'Applicant role',
-  applicant_no VARCHAR(64) NOT NULL COMMENT 'Applicant account number snapshot',
-  applicant_name VARCHAR(50) NOT NULL COMMENT 'Applicant name snapshot',
-  applicant_phone VARCHAR(20) DEFAULT NULL COMMENT 'Applicant phone snapshot',
-  lab_id BIGINT UNSIGNED NOT NULL COMMENT 'Linked laboratories.id',
-  lab_name_snapshot VARCHAR(100) NOT NULL COMMENT 'Laboratory name snapshot',
-  schedule_id BIGINT UNSIGNED DEFAULT NULL COMMENT 'Linked course_schedules.id when reservation is schedule based',
-  reserve_date DATE NOT NULL COMMENT 'Reservation date',
-  start_time TIME NOT NULL COMMENT 'Reservation start time',
-  end_time TIME NOT NULL COMMENT 'Reservation end time',
-  time_slot_label VARCHAR(50) DEFAULT NULL COMMENT 'Display time slot label',
-  participant_count INT UNSIGNED NOT NULL DEFAULT 1 COMMENT 'Participant count',
-  application_type VARCHAR(50) DEFAULT NULL COMMENT 'Student reservation type code',
-  application_type_name VARCHAR(50) DEFAULT NULL COMMENT 'Student reservation type name',
-  title VARCHAR(150) DEFAULT NULL COMMENT 'Student reservation subject',
-  purpose TEXT COMMENT 'Usage purpose',
-  instructor_name VARCHAR(50) DEFAULT NULL COMMENT 'Instructor or responsible teacher name',
-  requirements TEXT COMMENT 'Special requirements',
-  emergency_contact_name VARCHAR(50) DEFAULT NULL COMMENT 'Emergency contact name',
-  emergency_contact_phone VARCHAR(20) DEFAULT NULL COMMENT 'Emergency contact phone',
-  course_name VARCHAR(150) DEFAULT NULL COMMENT 'Teacher reservation course name',
-  course_type VARCHAR(50) DEFAULT NULL COMMENT 'Teacher reservation course type',
-  remark TEXT COMMENT 'Remark',
-  status ENUM('draft','pending','teacher_approved','approved','rejected','cancelled','completed') NOT NULL DEFAULT 'draft' COMMENT 'Current workflow status',
-  is_completed TINYINT(1) NOT NULL DEFAULT 0 COMMENT 'Whether usage has completed',
-  submitted_at DATETIME(3) DEFAULT NULL COMMENT 'Application submit time',
-  teacher_review_user_id BIGINT UNSIGNED DEFAULT NULL COMMENT 'Teacher reviewer user id',
-  teacher_review_name VARCHAR(50) DEFAULT NULL COMMENT 'Teacher reviewer name snapshot',
-  teacher_review_at DATETIME(3) DEFAULT NULL COMMENT 'Teacher review time',
-  teacher_review_comment VARCHAR(500) DEFAULT NULL COMMENT 'Teacher review comment',
-  admin_review_user_id BIGINT UNSIGNED DEFAULT NULL COMMENT 'Admin reviewer user id',
-  admin_review_name VARCHAR(50) DEFAULT NULL COMMENT 'Admin reviewer name snapshot',
-  admin_review_at DATETIME(3) DEFAULT NULL COMMENT 'Admin review time',
-  admin_review_comment VARCHAR(500) DEFAULT NULL COMMENT 'Admin review comment',
-  reject_reason VARCHAR(500) DEFAULT NULL COMMENT 'Latest reject reason',
-  cancelled_at DATETIME(3) DEFAULT NULL COMMENT 'Cancelled time',
-  completed_at DATETIME(3) DEFAULT NULL COMMENT 'Completed time',
-  source_application_id BIGINT UNSIGNED DEFAULT NULL COMMENT 'Original application id for reapply or modify',
-  created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) COMMENT 'Created time',
-  updated_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3) COMMENT 'Updated time',
-  deleted_at DATETIME(3) DEFAULT NULL COMMENT 'Soft delete time',
+  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '预约申请主键',
+  application_no VARCHAR(64) NOT NULL COMMENT '预约申请业务编号',
+  applicant_user_id BIGINT UNSIGNED NOT NULL COMMENT '申请人用户标识',
+  applicant_role ENUM('student','teacher') NOT NULL COMMENT '申请人角色',
+  applicant_no VARCHAR(64) NOT NULL COMMENT '申请人账号快照',
+  applicant_name VARCHAR(50) NOT NULL COMMENT '申请人姓名快照',
+  applicant_phone VARCHAR(20) DEFAULT NULL COMMENT '申请人手机号快照',
+  lab_id BIGINT UNSIGNED NOT NULL COMMENT '关联实验室表主键',
+  lab_name_snapshot VARCHAR(100) NOT NULL COMMENT '实验室名称快照',
+  schedule_id BIGINT UNSIGNED DEFAULT NULL COMMENT '基于课表预约时关联课程课表主键',
+  reserve_date DATE NOT NULL COMMENT '预约日期',
+  start_time TIME NOT NULL COMMENT '预约开始时间',
+  end_time TIME NOT NULL COMMENT '预约结束时间',
+  time_slot_label VARCHAR(50) DEFAULT NULL COMMENT '显示用时间段标签',
+  participant_count INT UNSIGNED NOT NULL DEFAULT 1 COMMENT '参与人数',
+  application_type VARCHAR(50) DEFAULT NULL COMMENT '学生预约类型编码',
+  application_type_name VARCHAR(50) DEFAULT NULL COMMENT '学生预约类型名称',
+  title VARCHAR(150) DEFAULT NULL COMMENT '学生预约主题',
+  purpose TEXT COMMENT '使用目的',
+  instructor_name VARCHAR(50) DEFAULT NULL COMMENT '指导教师或负责教师姓名',
+  requirements TEXT COMMENT '特殊需求',
+  emergency_contact_name VARCHAR(50) DEFAULT NULL COMMENT '紧急联系人姓名',
+  emergency_contact_phone VARCHAR(20) DEFAULT NULL COMMENT '紧急联系人电话',
+  course_name VARCHAR(150) DEFAULT NULL COMMENT '教师预约课程名称',
+  course_type VARCHAR(50) DEFAULT NULL COMMENT '教师预约课程类型',
+  remark TEXT COMMENT '备注',
+  status ENUM('draft','pending','teacher_approved','approved','rejected','cancelled','completed') NOT NULL DEFAULT 'draft' COMMENT '当前流程状态',
+  is_completed TINYINT(1) NOT NULL DEFAULT 0 COMMENT '是否已使用完成',
+  submitted_at DATETIME(3) DEFAULT NULL COMMENT '申请提交时间',
+  teacher_review_user_id BIGINT UNSIGNED DEFAULT NULL COMMENT '教师审核人用户标识',
+  teacher_review_name VARCHAR(50) DEFAULT NULL COMMENT '教师审核人姓名快照',
+  teacher_review_at DATETIME(3) DEFAULT NULL COMMENT '教师审核时间',
+  teacher_review_comment VARCHAR(500) DEFAULT NULL COMMENT '教师审核意见',
+  admin_review_user_id BIGINT UNSIGNED DEFAULT NULL COMMENT '管理员审核人用户标识',
+  admin_review_name VARCHAR(50) DEFAULT NULL COMMENT '管理员审核人姓名快照',
+  admin_review_at DATETIME(3) DEFAULT NULL COMMENT '管理员审核时间',
+  admin_review_comment VARCHAR(500) DEFAULT NULL COMMENT '管理员审核意见',
+  reject_reason VARCHAR(500) DEFAULT NULL COMMENT '最近一次驳回原因',
+  cancelled_at DATETIME(3) DEFAULT NULL COMMENT '取消时间',
+  completed_at DATETIME(3) DEFAULT NULL COMMENT '完成时间',
+  source_application_id BIGINT UNSIGNED DEFAULT NULL COMMENT '重新申请或修改来源申请标识',
+  created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) COMMENT '创建时间',
+  updated_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3) COMMENT '更新时间',
+  deleted_at DATETIME(3) DEFAULT NULL COMMENT '软删除时间',
   PRIMARY KEY (id),
   UNIQUE KEY uk_application_no (application_no),
   KEY idx_applicant_status (applicant_user_id, status),
@@ -322,19 +321,19 @@ CREATE TABLE IF NOT EXISTS reservation_applications (
     ON UPDATE CASCADE ON DELETE SET NULL,
   CONSTRAINT chk_reservation_time CHECK (end_time > start_time),
   CONSTRAINT chk_reservation_participant_count CHECK (participant_count > 0)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='Unified student and teacher reservation applications';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='学生与教师统一预约申请表';
 
 CREATE TABLE IF NOT EXISTS reservation_approval_logs (
-  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT 'Reservation approval log primary key',
-  application_id BIGINT UNSIGNED NOT NULL COMMENT 'Linked reservation_applications.id',
-  stage ENUM('teacher','admin','system') NOT NULL COMMENT 'Workflow stage',
-  action ENUM('submit','approve','reject','cancel','complete','reprocess') NOT NULL COMMENT 'Workflow action',
-  from_status VARCHAR(32) DEFAULT NULL COMMENT 'Previous status',
-  to_status VARCHAR(32) NOT NULL COMMENT 'New status',
-  reviewer_user_id BIGINT UNSIGNED DEFAULT NULL COMMENT 'Operator user id; NULL for system actions',
-  reviewer_name_snapshot VARCHAR(50) DEFAULT NULL COMMENT 'Operator name snapshot',
-  comment VARCHAR(500) DEFAULT NULL COMMENT 'Review comment or operation reason',
-  created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) COMMENT 'Operation time',
+  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '预约审批日志主键',
+  application_id BIGINT UNSIGNED NOT NULL COMMENT '关联预约申请表主键',
+  stage ENUM('teacher','admin','system') NOT NULL COMMENT '流程阶段',
+  action ENUM('submit','approve','reject','cancel','complete','reprocess') NOT NULL COMMENT '流程动作',
+  from_status VARCHAR(32) DEFAULT NULL COMMENT '原状态',
+  to_status VARCHAR(32) NOT NULL COMMENT '新状态',
+  reviewer_user_id BIGINT UNSIGNED DEFAULT NULL COMMENT '操作人用户标识；系统动作时为空',
+  reviewer_name_snapshot VARCHAR(50) DEFAULT NULL COMMENT '操作人姓名快照',
+  comment VARCHAR(500) DEFAULT NULL COMMENT '审核意见或操作原因',
+  created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) COMMENT '操作时间',
   PRIMARY KEY (id),
   KEY idx_application_created (application_id, created_at),
   KEY idx_reviewer_created (reviewer_user_id, created_at),
@@ -344,17 +343,17 @@ CREATE TABLE IF NOT EXISTS reservation_approval_logs (
   CONSTRAINT fk_reservation_approval_logs_reviewer
     FOREIGN KEY (reviewer_user_id) REFERENCES sys_users (id)
     ON UPDATE CASCADE ON DELETE SET NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='Reservation workflow approval logs';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='预约流程审批日志表';
 
 CREATE TABLE IF NOT EXISTS reservation_attachments (
-  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT 'Reservation attachment primary key',
-  application_id BIGINT UNSIGNED NOT NULL COMMENT 'Linked reservation_applications.id',
-  file_name VARCHAR(255) NOT NULL COMMENT 'Original file name',
-  file_url VARCHAR(500) NOT NULL COMMENT 'File URL or object storage key',
-  file_type VARCHAR(80) DEFAULT NULL COMMENT 'MIME type or extension',
-  file_size_bytes BIGINT UNSIGNED DEFAULT NULL COMMENT 'File size in bytes',
-  uploaded_by BIGINT UNSIGNED DEFAULT NULL COMMENT 'Uploader user id',
-  created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) COMMENT 'Upload time',
+  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '预约附件主键',
+  application_id BIGINT UNSIGNED NOT NULL COMMENT '关联预约申请表主键',
+  file_name VARCHAR(255) NOT NULL COMMENT '原始文件名',
+  file_url VARCHAR(500) NOT NULL COMMENT '文件地址或对象存储键',
+  file_type VARCHAR(80) DEFAULT NULL COMMENT '媒体类型或扩展名',
+  file_size_bytes BIGINT UNSIGNED DEFAULT NULL COMMENT '文件大小，单位字节',
+  uploaded_by BIGINT UNSIGNED DEFAULT NULL COMMENT '上传人用户标识',
+  created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) COMMENT '上传时间',
   PRIMARY KEY (id),
   KEY idx_application (application_id),
   KEY idx_uploaded_by (uploaded_by),
@@ -364,21 +363,21 @@ CREATE TABLE IF NOT EXISTS reservation_attachments (
   CONSTRAINT fk_reservation_attachments_uploaded_by
     FOREIGN KEY (uploaded_by) REFERENCES sys_users (id)
     ON UPDATE CASCADE ON DELETE SET NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='Reservation attachment files';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='预约附件文件表';
 
 CREATE TABLE IF NOT EXISTS notifications (
-  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT 'Notification primary key',
-  notification_no VARCHAR(64) NOT NULL COMMENT 'Business notification number',
-  recipient_user_id BIGINT UNSIGNED NOT NULL COMMENT 'Recipient user id',
-  recipient_role ENUM('student','teacher','admin') NOT NULL COMMENT 'Recipient role',
-  recipient_account_no VARCHAR(64) NOT NULL COMMENT 'Recipient account number snapshot',
-  title VARCHAR(150) NOT NULL COMMENT 'Notification title',
-  content TEXT NOT NULL COMMENT 'Notification content',
-  type ENUM('info','success','warning','error') NOT NULL DEFAULT 'info' COMMENT 'Notification type',
-  related_application_id BIGINT UNSIGNED DEFAULT NULL COMMENT 'Related reservation application id',
-  is_read TINYINT(1) NOT NULL DEFAULT 0 COMMENT 'Whether notification has been read',
-  read_at DATETIME(3) DEFAULT NULL COMMENT 'Read time',
-  created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) COMMENT 'Created time',
+  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '通知主键',
+  notification_no VARCHAR(64) NOT NULL COMMENT '通知业务编号',
+  recipient_user_id BIGINT UNSIGNED NOT NULL COMMENT '接收人用户标识',
+  recipient_role ENUM('student','teacher','admin') NOT NULL COMMENT '接收人角色',
+  recipient_account_no VARCHAR(64) NOT NULL COMMENT '接收人账号快照',
+  title VARCHAR(150) NOT NULL COMMENT '通知标题',
+  content TEXT NOT NULL COMMENT '通知内容',
+  type ENUM('info','success','warning','error') NOT NULL DEFAULT 'info' COMMENT '通知类型',
+  related_application_id BIGINT UNSIGNED DEFAULT NULL COMMENT '关联预约申请标识',
+  is_read TINYINT(1) NOT NULL DEFAULT 0 COMMENT '通知是否已读',
+  read_at DATETIME(3) DEFAULT NULL COMMENT '阅读时间',
+  created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) COMMENT '创建时间',
   PRIMARY KEY (id),
   UNIQUE KEY uk_notification_no (notification_no),
   KEY idx_recipient_read (recipient_user_id, is_read, created_at),
@@ -389,46 +388,46 @@ CREATE TABLE IF NOT EXISTS notifications (
   CONSTRAINT fk_notifications_application
     FOREIGN KEY (related_application_id) REFERENCES reservation_applications (id)
     ON UPDATE CASCADE ON DELETE SET NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='User notifications';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='用户通知表';
 
 CREATE TABLE IF NOT EXISTS system_settings (
-  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT 'System settings primary key',
-  system_name VARCHAR(100) NOT NULL COMMENT 'System display name',
-  school_name VARCHAR(100) NOT NULL COMMENT 'School display name',
-  logo_url VARCHAR(500) DEFAULT NULL COMMENT 'System logo URL',
-  reservation_start_time TIME NOT NULL COMMENT 'Daily reservation start time',
-  reservation_end_time TIME NOT NULL COMMENT 'Daily reservation end time',
-  advance_days INT UNSIGNED NOT NULL DEFAULT 3 COMMENT 'How many days in advance reservation is allowed',
-  auto_approval TINYINT(1) NOT NULL DEFAULT 0 COMMENT 'Whether auto approval is enabled',
-  reservation_notification_enabled TINYINT(1) NOT NULL DEFAULT 1 COMMENT 'Whether reservation notification is enabled',
-  approval_notification_enabled TINYINT(1) NOT NULL DEFAULT 1 COMMENT 'Whether approval notification is enabled',
-  reminder_notification_enabled TINYINT(1) NOT NULL DEFAULT 1 COMMENT 'Whether reminder notification is enabled',
-  updated_by BIGINT UNSIGNED DEFAULT NULL COMMENT 'Last updater admin user id',
-  created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) COMMENT 'Created time',
-  updated_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3) COMMENT 'Updated time',
+  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '系统设置主键',
+  system_name VARCHAR(100) NOT NULL COMMENT '系统显示名称',
+  school_name VARCHAR(100) NOT NULL COMMENT '学校显示名称',
+  logo_url VARCHAR(500) DEFAULT NULL COMMENT '系统标识图片地址',
+  reservation_start_time TIME NOT NULL COMMENT '每日预约开始时间',
+  reservation_end_time TIME NOT NULL COMMENT '每日预约结束时间',
+  advance_days INT UNSIGNED NOT NULL DEFAULT 3 COMMENT '允许提前预约的天数',
+  auto_approval TINYINT(1) NOT NULL DEFAULT 0 COMMENT '是否启用自动审批',
+  reservation_notification_enabled TINYINT(1) NOT NULL DEFAULT 1 COMMENT '是否启用预约通知',
+  approval_notification_enabled TINYINT(1) NOT NULL DEFAULT 1 COMMENT '是否启用审批通知',
+  reminder_notification_enabled TINYINT(1) NOT NULL DEFAULT 1 COMMENT '是否启用提醒通知',
+  updated_by BIGINT UNSIGNED DEFAULT NULL COMMENT '最后更新人管理员用户标识',
+  created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) COMMENT '创建时间',
+  updated_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3) COMMENT '更新时间',
   PRIMARY KEY (id),
   KEY idx_updated_by (updated_by),
   CONSTRAINT fk_system_settings_updated_by
     FOREIGN KEY (updated_by) REFERENCES sys_users (id)
     ON UPDATE CASCADE ON DELETE SET NULL,
   CONSTRAINT chk_system_settings_time CHECK (reservation_end_time > reservation_start_time)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='System-wide settings';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='全局系统设置表';
 
 CREATE TABLE IF NOT EXISTS data_backup_records (
-  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT 'Data backup record primary key',
-  backup_no VARCHAR(64) NOT NULL COMMENT 'Backup business number',
-  backup_type ENUM('labs','schedules','reservations','users','all') NOT NULL COMMENT 'Backup data type',
-  backup_name VARCHAR(150) NOT NULL COMMENT 'Backup display name',
-  file_url VARCHAR(500) DEFAULT NULL COMMENT 'Backup file URL',
-  file_size_bytes BIGINT UNSIGNED DEFAULT NULL COMMENT 'Backup file size in bytes',
-  display_size VARCHAR(50) DEFAULT NULL COMMENT 'Display size text',
-  status ENUM('processing','success','failed','deleted') NOT NULL DEFAULT 'processing' COMMENT 'Backup status',
-  progress TINYINT UNSIGNED NOT NULL DEFAULT 0 COMMENT 'Backup progress percentage',
-  created_by BIGINT UNSIGNED NOT NULL COMMENT 'Admin user who created backup',
-  started_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) COMMENT 'Backup start time',
-  completed_at DATETIME(3) DEFAULT NULL COMMENT 'Backup complete time',
-  restored_at DATETIME(3) DEFAULT NULL COMMENT 'Last restore time',
-  deleted_at DATETIME(3) DEFAULT NULL COMMENT 'Deleted time',
+  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '数据备份记录主键',
+  backup_no VARCHAR(64) NOT NULL COMMENT '备份业务编号',
+  backup_type ENUM('labs','schedules','reservations','users','all') NOT NULL COMMENT '备份数据类型',
+  backup_name VARCHAR(150) NOT NULL COMMENT '备份显示名称',
+  file_url VARCHAR(500) DEFAULT NULL COMMENT '备份文件地址',
+  file_size_bytes BIGINT UNSIGNED DEFAULT NULL COMMENT '备份文件大小，单位字节',
+  display_size VARCHAR(50) DEFAULT NULL COMMENT '显示用文件大小文本',
+  status ENUM('processing','success','failed','deleted') NOT NULL DEFAULT 'processing' COMMENT '备份状态',
+  progress TINYINT UNSIGNED NOT NULL DEFAULT 0 COMMENT '备份进度百分比',
+  created_by BIGINT UNSIGNED NOT NULL COMMENT '创建备份的管理员用户标识',
+  started_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) COMMENT '备份开始时间',
+  completed_at DATETIME(3) DEFAULT NULL COMMENT '备份完成时间',
+  restored_at DATETIME(3) DEFAULT NULL COMMENT '最近恢复时间',
+  deleted_at DATETIME(3) DEFAULT NULL COMMENT '删除时间',
   PRIMARY KEY (id),
   UNIQUE KEY uk_backup_no (backup_no),
   KEY idx_type_status (backup_type, status),
@@ -438,20 +437,20 @@ CREATE TABLE IF NOT EXISTS data_backup_records (
     FOREIGN KEY (created_by) REFERENCES sys_users (id)
     ON UPDATE CASCADE ON DELETE RESTRICT,
   CONSTRAINT chk_data_backup_progress CHECK (progress <= 100)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='Data backup records';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='数据备份记录表';
 
 CREATE TABLE IF NOT EXISTS audit_logs (
-  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT 'Audit log primary key',
-  user_id BIGINT UNSIGNED DEFAULT NULL COMMENT 'Operator user id',
-  role ENUM('admin','teacher','student','anonymous') NOT NULL COMMENT 'Operator role',
-  module VARCHAR(50) NOT NULL COMMENT 'Business module name',
-  action VARCHAR(50) NOT NULL COMMENT 'Action name',
-  target_type VARCHAR(50) DEFAULT NULL COMMENT 'Target entity type',
-  target_id BIGINT UNSIGNED DEFAULT NULL COMMENT 'Target entity id',
-  detail JSON COMMENT 'Action details in JSON',
-  ip_address VARCHAR(64) DEFAULT NULL COMMENT 'Client IP address',
-  user_agent VARCHAR(500) DEFAULT NULL COMMENT 'Client user agent',
-  created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) COMMENT 'Log time',
+  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '审计日志主键',
+  user_id BIGINT UNSIGNED DEFAULT NULL COMMENT '操作人用户标识',
+  role ENUM('admin','teacher','student','anonymous') NOT NULL COMMENT '操作人角色',
+  module VARCHAR(50) NOT NULL COMMENT '业务模块名称',
+  action VARCHAR(50) NOT NULL COMMENT '动作名称',
+  target_type VARCHAR(50) DEFAULT NULL COMMENT '目标实体类型',
+  target_id BIGINT UNSIGNED DEFAULT NULL COMMENT '目标实体标识',
+  detail JSON COMMENT '结构化操作详情',
+  ip_address VARCHAR(64) DEFAULT NULL COMMENT '客户端网络地址',
+  user_agent VARCHAR(500) DEFAULT NULL COMMENT '客户端代理信息',
+  created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3) COMMENT '日志时间',
   PRIMARY KEY (id),
   KEY idx_user_created (user_id, created_at),
   KEY idx_module_action_created (module, action, created_at),
@@ -459,40 +458,18 @@ CREATE TABLE IF NOT EXISTS audit_logs (
   CONSTRAINT fk_audit_logs_user
     FOREIGN KEY (user_id) REFERENCES sys_users (id)
     ON UPDATE CASCADE ON DELETE SET NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='System audit logs';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='系统审计日志表';
 
--- Optional default settings. Run only once after creating the schema if needed.
--- INSERT INTO system_settings (
---   system_name,
---   school_name,
---   logo_url,
---   reservation_start_time,
---   reservation_end_time,
---   advance_days,
---   auto_approval,
---   reservation_notification_enabled,
---   approval_notification_enabled,
---   reminder_notification_enabled
--- ) VALUES (
---   'Lab Reservation Management System',
---   'SCNU',
---   '/static/images/lab.png',
---   '08:30:00',
---   '22:00:00',
---   3,
---   0,
---   1,
---   1,
---   1
--- );
+-- 可选默认配置说明：下方模拟数据已包含一条系统设置记录。
+-- 如需单独初始化系统设置，请按系统设置表结构插入一条记录。
 
 -- ---------------------------------------------------------------------------
--- Mock seed data
+-- 模拟种子数据
 -- ---------------------------------------------------------------------------
--- These rows are for local development and UI/API testing.
--- INSERT IGNORE makes the seed mostly repeatable and avoids overwriting real data.
--- Password hashes below are placeholders. Replace them with real bcrypt/argon2 hashes
--- before enabling login against this database.
+-- 以下数据用于本地开发以及界面和接口测试。
+-- 使用忽略重复插入的方式使种子数据可重复执行，并避免覆盖真实数据。
+-- 以下密码哈希为占位值。在启用本数据库登录前，
+-- 请替换为真实密码哈希算法生成的哈希值。
 
 INSERT IGNORE INTO sys_users (
   id, account_no, role, password_hash, real_name, gender, phone, email, avatar_url,

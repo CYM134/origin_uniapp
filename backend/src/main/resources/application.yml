@@ -1,0 +1,22 @@
+spring:
+  application:
+    name: lab-reservation-backend
+  datasource:
+    url: ${DB_URL:jdbc:mysql://mysql6.sqlpub.com:3311/company_level?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true}
+    username: ${DB_USERNAME:super_admin666}
+    password: ${DB_PASSWORD:03cCT9fozmtt7BcT}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  jackson:
+    time-zone: Asia/Shanghai
+
+server:
+  port: ${SERVER_PORT:8080}
+
+security:
+  jwt:
+    secret: ${JWT_SECRET:CompanyLevelTrainingJwtSecretKeyForHs2562026Secure}
+    expiration-seconds: ${JWT_EXPIRATION_SECONDS:720000}
+
+logging:
+  level:
+    root: INFO

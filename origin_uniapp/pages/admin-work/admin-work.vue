@@ -93,16 +93,43 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref } from 'vue';
+import { onLoad } from '@dcloudio/uni-app';
 import navigationBar from '@/components/navigation-bar/navigation-bar.vue';
+import { fetchCurrentUser, logout as logoutAuth } from '@/api/auth';
+import { getStoredRole, getStoredUser, hasCompleteUserProfile } from '@/api/storage';
 
 const username = ref('管理员');
 
-onMounted(() => {
-    const savedUsername = uni.getStorageSync('adminUsername');
-    if (savedUsername) {
-        username.value = savedUsername;
+const loadCurrentAdmin = async () => {
+    const storedRole = getStoredRole();
+    const storedUser: any = getStoredUser();
+
+    if (storedRole && storedRole !== 'admin') {
+        uni.reLaunch({ url: '/pages/login-select/login-select' });
+        return;
     }
+
+    if (storedUser?.realName) {
+        username.value = storedUser.realName;
+    } else if (storedUser?.accountNo) {
+        username.value = storedUser.accountNo;
+    }
+
+    if (!hasCompleteUserProfile(storedUser)) {
+        try {
+            const user: any = await fetchCurrentUser();
+            username.value = user.realName || user.accountNo || '管理员';
+        } catch (error) {
+            console.error('加载管理员信息失败', error);
+        }
+    }
+};
+
+onLoad(() => {
+    setTimeout(() => {
+        loadCurrentAdmin();
+    }, 0);
 });
 
 const navigateToLabManagement = () => {
@@ -166,8 +193,7 @@ const logout = () => {
         success: (res) => {
             if (res.confirm) {
                 try {
-                    uni.removeStorageSync('isStudentLoggedIn');
-                    uni.removeStorageSync('studentInfo');
+                    logoutAuth();
                     uni.showToast({ title: '已退出登录', icon: 'success' });
                     uni.reLaunch({ url: '/pages/login-select/login-select' });
                 } catch (error) {
