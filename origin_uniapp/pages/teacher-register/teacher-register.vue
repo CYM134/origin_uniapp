@@ -88,8 +88,23 @@
                 </view>
 
                 <view class="input-group">
+                    <view class="input-label">系部</view>
+                    <input class="input" type="text" placeholder="请输入系部" @input="onDepartmentInput" :value="department" />
+                </view>
+
+                <view class="input-group">
+                    <view class="input-label">职称</view>
+                    <input class="input" type="text" placeholder="请输入职称" @input="onPositionTitleInput" :value="positionTitle" />
+                </view>
+
+                <view class="input-group">
                     <view class="input-label">手机号</view>
                     <input class="input" type="number" placeholder="请输入手机号" @input="onPhoneInput" :value="phone" />
+                </view>
+
+                <view class="input-group">
+                    <view class="input-label">邮箱</view>
+                    <input class="input" type="text" placeholder="请输入邮箱（选填）" @input="onEmailInput" :value="email" />
                 </view>
 
                 <view class="agreement-section">
@@ -116,6 +131,7 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import navigationBar from '@/components/navigation-bar/navigation-bar.vue';
+import { registerTeacher, checkTeacherExists } from '@/api/teacher';
 // pages/teacher-register/teacher-register.ts
 
 const teacherId = ref<string>('');
@@ -125,6 +141,9 @@ const confirmPassword = ref<string>('');
 const genderIndex = ref<number>(-1);
 const genderOptions = ref<string[]>(['男', '女']);
 const college = ref<string>('');
+const department = ref<string>('');
+const positionTitle = ref<string>('');
+const email = ref<string>('');
 const phone = ref<string>('');
 const showPassword = ref<boolean>(false);
 const showConfirmPassword = ref<boolean>(false);
@@ -178,6 +197,18 @@ const onCollegeInput = (e: any) => {
     college.value = e.detail.value;
 };
 
+const onDepartmentInput = (e: any) => {
+    department.value = e.detail.value;
+};
+
+const onPositionTitleInput = (e: any) => {
+    positionTitle.value = e.detail.value;
+};
+
+const onEmailInput = (e: any) => {
+    email.value = e.detail.value;
+};
+
 const onPhoneInput = (e: any) => {
     phone.value = e.detail.value;
 };
@@ -227,13 +258,16 @@ const showTerms = () => {
     });
 };
 
-const register = () => {
+const register = async () => {
     const teacherIdVal = teacherId.value;
     const nameVal = name.value;
     const passwordVal = password.value;
     const confirmPasswordVal = confirmPassword.value;
     const genderVal = gender.value;
     const collegeIndexVal = collegeIndex.value;
+    const departmentVal = department.value;
+    const positionTitleVal = positionTitle.value;
+    const emailVal = email.value;
     const phoneVal = phone.value;
 
     // 表单验证
@@ -295,6 +329,20 @@ const register = () => {
         });
         return;
     }
+    if (!departmentVal.trim()) {
+        uni.showToast({
+            title: '请输入系部',
+            icon: 'none'
+        });
+        return;
+    }
+    if (!positionTitleVal.trim()) {
+        uni.showToast({
+            title: '请输入职称',
+            icon: 'none'
+        });
+        return;
+    }
     if (!phoneVal.trim()) {
         uni.showToast({
             title: '请输入手机号',
@@ -311,6 +359,14 @@ const register = () => {
         });
         return;
     }
+    // 邮箱选填，填写时校验格式
+    if (emailVal.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailVal.trim())) {
+        uni.showToast({
+            title: '邮箱格式不正确',
+            icon: 'none'
+        });
+        return;
+    }
     if (!agreeTerms.value) {
         uni.showToast({
             title: '请同意用户协议',
@@ -323,14 +379,11 @@ const register = () => {
         mask: true
     });
 
-    // 模拟注册过程
-    setTimeout(() => {
-        uni.hideLoading();
-
+    try {
         // 检查工号是否已存在
-        const registeredTeachers = uni.getStorageSync('registeredTeachers') || [];
-        const existingTeacher = registeredTeachers.find((t: any) => t.teacherId === teacherIdVal);
-        if (existingTeacher) {
+        const existsRes: any = await checkTeacherExists(teacherIdVal);
+        if (existsRes && existsRes.exists) {
+            uni.hideLoading();
             uni.showToast({
                 title: '该工号已被注册',
                 icon: 'none'
@@ -338,28 +391,36 @@ const register = () => {
             return;
         }
 
-        // 保存新教师信息
-        const newTeacher = {
+        // 提交注册（gender 传 'male'/'female'）
+        const res: any = await registerTeacher({
             teacherId: teacherIdVal,
             name: nameVal,
-            password: passwordVal,
-            gender: genderVal === 'male' ? '男' : '女',
+            gender: genderVal,
             college: colleges.value[collegeIndexVal],
+            department: departmentVal,
+            positionTitle: positionTitleVal,
             phone: phoneVal,
-            registerTime: new Date().getTime()
-        };
-        registeredTeachers.push(newTeacher);
-        uni.setStorageSync('registeredTeachers', registeredTeachers);
+            email: emailVal,
+            password: passwordVal
+        });
+
+        uni.hideLoading();
         uni.showModal({
-            title: '注册成功',
-            content: '您的账号已成功注册，现在可以使用工号和密码登录了。',
+            title: '提交成功',
+            content: res?.message || '您的注册申请已提交，请等待管理员审核通过后再登录。',
             showCancel: false,
-            confirmText: '去登录',
+            confirmText: '我知道了',
             success: () => {
                 uni.navigateBack();
             }
         });
-    }, 1500);
+    } catch (err: any) {
+        uni.hideLoading();
+        uni.showToast({
+            title: err?.data?.message || '注册失败',
+            icon: 'none'
+        });
+    }
 };
 
 const goToLogin = () => {

@@ -334,6 +334,7 @@
 import { ref } from 'vue';
 import { onMounted } from 'vue';
 import navigationBar from '@/components/navigation-bar/navigation-bar.vue';
+import { getApprovalRecords, getApprovalStats, getReservationDetail, getLabs } from '@/api/admin';
 // admin-approval-records.ts
 
 // 筛选选项
@@ -345,18 +346,6 @@ const labOptions = ref<any[]>([
     {
         id: '0',
         name: '全部实验室'
-    },
-    {
-        id: '1',
-        name: '国际课程实验室'
-    },
-    {
-        id: '2',
-        name: 'IBC实验中心'
-    },
-    {
-        id: '3',
-        name: '互联网+新商科实验室'
     }
 ]);
 
@@ -400,100 +389,7 @@ const stats = ref<any>({
 });
 
 // 记录列表
-const records = ref<any[]>([
-    {
-        id: 'R20230001',
-        applicant: '张三',
-        applicantType: '教师',
-        contact: '13800138000',
-        labId: '1',
-        labName: '互联网+新商科实验室',
-        date: '2023-11-15',
-        timeSlot: '08:00-10:00',
-        purpose: '网络协议分析实验，需要使用实验室的路由器和交换机设备进行数据包捕获和分析。',
-        status: '已通过',
-        applyTime: '2023-11-10 14:30:25',
-        approvalTime: '2023-11-11 09:15:36',
-        attachments: [
-            {
-                name: '实验计划.docx',
-                url: 'https://example.com/plan.docx'
-            }
-        ]
-    },
-    {
-        id: 'R20230002',
-        applicant: '李四',
-        applicantType: '学生',
-        contact: '13900139000',
-        labId: '2',
-        labName: '国际课程实验室',
-        date: '2023-11-16',
-        timeSlot: '14:00-16:00',
-        purpose: '课程设计小组讨论，需要使用数据库进行项目开发讨论事宜。',
-        status: '已通过',
-        applyTime: '2023-11-09 10:15:36',
-        approvalTime: '2023-11-10 09:20:15'
-    },
-    {
-        id: 'R20230003',
-        applicant: '王五',
-        applicantType: '教师',
-        contact: '13700137000',
-        labId: '3',
-        labName: '互联网+新商科实验室',
-        date: '2023-11-17',
-        timeSlot: '10:00-12:00',
-        purpose: '深度学习模型训练，需要使用GPU工作站进行大规模数据处理。',
-        status: '已拒绝',
-        applyTime: '2023-11-11 16:45:12',
-        approvalTime: '2023-11-12 11:30:45',
-        rejectReason: '该时段实验室已被其他教师预约使用。而且该实验室没有算力。'
-    },
-    {
-        id: 'R20230004',
-        applicant: '赵六',
-        applicantType: '学生',
-        contact: '13600136000',
-        labId: '1',
-        labName: '国际课程实验室',
-        date: '2023-11-18',
-        timeSlot: '16:00-18:00',
-        purpose: '毕业设计实验，需要搭建小型网络环境进行测试。',
-        status: '已通过',
-        applyTime: '2023-11-12 09:10:28',
-        approvalTime: '2023-11-13 14:25:36'
-    },
-    {
-        id: 'R20230005',
-        applicant: '钱七',
-        applicantType: '教师',
-        contact: '13500135000',
-        labId: '2',
-        labName: '互联网+新商科实验室',
-        date: '2023-11-19',
-        timeSlot: '08:00-10:00',
-        purpose: '数据库性能优化实验，需要使用实验室的服务器进行测试。',
-        status: '已拒绝',
-        applyTime: '2023-11-13 11:20:45',
-        approvalTime: '2023-11-14 10:15:30',
-        rejectReason: '申请信息不完整，请补充实验详细计划。'
-    },
-    {
-        id: 'R20230006',
-        applicant: '孙八',
-        applicantType: '学生',
-        contact: '13400134000',
-        labId: '3',
-        labName: '互联网+新商科实验室',
-        date: '2023-11-20',
-        timeSlot: '14:00-16:00',
-        purpose: '机器学习算法实现，需要使用实验室的GPU工作站。',
-        status: '已通过',
-        applyTime: '2023-11-14 15:30:20',
-        approvalTime: '2023-11-15 09:45:12'
-    }
-]);
+const records = ref<any[]>([]);
 
 const filteredRecords = ref<any[]>([]);
 
@@ -512,11 +408,66 @@ const name = ref<string>('');
 
 onMounted(() => {
     // 处理小程序 attached 生命周期
-    // 初始化过滤后的记录列表和统计信息
-    filterAndCountRecords();
     // 初始化日期选择器数据
     initDatePickerData();
+    // 加载实验室选项、审批记录与统计
+    loadLabOptions();
+    loadStats();
+    loadRecords();
 });
+
+// 加载实验室选项（前补"全部实验室"项）
+const loadLabOptions = async () => {
+    try {
+        const list = await getLabs();
+        const labs = (Array.isArray(list) ? list : []).map((item: any) => ({
+            id: item.id,
+            name: item.name
+        }));
+        labOptions.value = [{ id: '0', name: '全部实验室' }, ...labs];
+    } catch (err: any) {
+        uni.showToast({ title: err?.data?.message || '加载失败', icon: 'none' });
+        labOptions.value = [{ id: '0', name: '全部实验室' }];
+    }
+};
+
+// 加载统计信息
+const loadStats = async () => {
+    try {
+        const data = await getApprovalStats();
+        stats.value = {
+            total: data?.total ?? 0,
+            approved: data?.approved ?? 0,
+            rejected: data?.rejected ?? 0
+        };
+    } catch (err: any) {
+        uni.showToast({ title: err?.data?.message || '加载失败', icon: 'none' });
+        stats.value = { total: 0, approved: 0, rejected: 0 };
+    }
+};
+
+// 加载审批记录（已是 approved/rejected）
+const loadRecords = async () => {
+    try {
+        const list = await getApprovalRecords();
+        // 适配模板所需字段形状，status 使用中文 statusText 以匹配模板比较
+        records.value = (Array.isArray(list) ? list : []).map((item: any) => ({
+            ...item,
+            applicant: item.applicant ?? item.applicantName ?? '',
+            applicantType: item.applicantType ?? '',
+            contact: item.contact ?? item.phone ?? item.applicantPhone ?? '',
+            status: item.statusText ?? item.status,
+            approvalTime: item.approvalTime ?? item.adminReviewTime ?? '',
+            applyTime: item.applyTime ?? item.submitTime ?? '',
+            rejectReason: item.rejectReason ?? item.adminReviewComment ?? ''
+        }));
+        filterAndCountRecords();
+    } catch (err: any) {
+        uni.showToast({ title: err?.data?.message || '加载失败', icon: 'none' });
+        records.value = [];
+        filterAndCountRecords();
+    }
+};
 
 // 初始化日期选择器数据
 const initDatePickerData = () => {
@@ -761,7 +712,7 @@ const filterAndCountRecords = () => {
     // 按实验室筛选
     if (labIndex.value > 0) {
         const labId = labOptions.value[labIndex.value].id;
-        filtered = filtered.filter((item) => item.labId === labId);
+        filtered = filtered.filter((item) => item.labId == labId);
     }
 
     // 按日期范围筛选
@@ -779,27 +730,24 @@ const filterAndCountRecords = () => {
     if (searchKeyword.value) {
         const keyword = searchKeyword.value.toLowerCase();
         filtered = filtered.filter((item) => {
-            return item.applicant.toLowerCase().includes(keyword) || item.id.toLowerCase().includes(keyword);
+            return (
+                String(item.applicant || '')
+                    .toLowerCase()
+                    .includes(keyword) ||
+                String(item.id || '')
+                    .toLowerCase()
+                    .includes(keyword)
+            );
         });
     }
-
-    // 计算统计信息
-    const total = filtered.length;
-    const approved = filtered.filter((item) => item.status === '已通过').length;
-    const rejected = filtered.filter((item) => item.status === '已拒绝').length;
 
     // 应用分页
     const paged = filtered.slice(0, currentPage.value * pageSize.value);
     const hasMore = paged.length < filtered.length;
 
-    // 更新数据
+    // 更新数据（统计信息来自 getApprovalStats，不在此覆盖）
     filteredRecords.value = paged;
     hasMoreRecords.value = hasMore;
-    stats.value = {
-        total,
-        approved,
-        rejected
-    };
 };
 
 // 加载更多记录
@@ -818,12 +766,33 @@ const loadMoreRecords = () => {
 };
 
 // 显示记录详情
-const showRecordDetail = (e: any) => {
+const showRecordDetail = async (e: any) => {
     const id = e.currentTarget.dataset.id;
-    const record = records.value.find((item) => item.id === id);
-    if (record) {
-        showDetailModal.value = true;
-        currentRecord.value = record;
+    const record = records.value.find((item) => item.id == id);
+    if (!record) {
+        return;
+    }
+    // 先用列表数据兜底展示
+    currentRecord.value = record;
+    showDetailModal.value = true;
+    try {
+        const detail = await getReservationDetail(id);
+        if (detail) {
+            // 适配模板所需字段形状，status 使用中文 statusText 以匹配模板比较
+            currentRecord.value = {
+                ...record,
+                ...detail,
+                applicant: detail.applicant ?? detail.applicantName ?? record.applicant ?? '',
+                applicantType: detail.applicantType ?? record.applicantType ?? '',
+                contact: detail.contact ?? detail.phone ?? detail.applicantPhone ?? record.contact ?? '',
+                status: detail.statusText ?? record.status,
+                approvalTime: detail.approvalTime ?? detail.adminReviewTime ?? record.approvalTime ?? '',
+                applyTime: detail.applyTime ?? detail.submitTime ?? record.applyTime ?? '',
+                rejectReason: detail.rejectReason ?? detail.adminReviewComment ?? record.rejectReason ?? ''
+            };
+        }
+    } catch (err: any) {
+        uni.showToast({ title: err?.data?.message || '加载失败', icon: 'none' });
     }
 };
 

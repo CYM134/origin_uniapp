@@ -164,33 +164,11 @@
 import { ref } from 'vue';
 import { onMounted } from 'vue';
 import navigationBar from '@/components/navigation-bar/navigation-bar.vue';
+import { getLabs, createLab, updateLab, deleteLab as deleteLabApi } from '@/api/admin';
 // admin-lab-management.ts
 
-// 实验室列表
-const labs = ref<any[]>([
-    // 示例数据
-    {
-        id: '1',
-        name: '国际课程实验室',
-        location: '综合楼-东A301',
-        equipment: '可移动组合桌椅60套，纳米投影书写墙，话筒2支，服务器2台',
-        image: '/static/images/东A301.png'
-    },
-    {
-        id: '2',
-        name: 'IBC实验中心',
-        location: '综合楼-西A302',
-        equipment: '开放公共自习室，可容纳百人，打印机投影仪各类设施齐全',
-        image: '/static/images/西A302.jpg'
-    },
-    {
-        id: '3',
-        name: '互联网+新商科实验室',
-        location: '综合楼-西A303',
-        equipment: '80个智能工位，配备翻盖式电脑，seewo 2台',
-        image: '/static/images/西A303.png'
-    }
-]);
+// 实验室列表（数据来源改为后端接口）
+const labs = ref<any[]>([]);
 const filteredLabs = ref<any[]>([]);
 const searchKeyword = ref<string>('');
 // 弹窗控制
@@ -217,20 +195,42 @@ const showDeletePasswordModal = ref<boolean>(false);
 const adminPassword = ref<string>('');
 const labIdToDelete = ref<string>('');
 
+// 从后端加载实验室列表
+const loadLabs = async () => {
+    try {
+        const list = await getLabs(searchKeyword.value);
+        const arr = Array.isArray(list) ? list : [];
+        // 适配为模板需要的字段形状（保留模板字段名）
+        labs.value = arr.map((item: any) => ({
+            id: item.id,
+            name: item.name,
+            location: item.location,
+            equipment: item.equipment,
+            image: item.image,
+            capacity: item.capacity ?? item.maxStudents
+        }));
+    } catch (err: any) {
+        labs.value = [];
+        uni.showToast({ title: err?.data?.message || '加载失败', icon: 'none' });
+    }
+    // 后端已按 keyword 过滤，直接同步到展示列表
+    filteredLabs.value = labs.value;
+};
+
 onMounted(() => {
     // 处理小程序 attached 生命周期
-    // 初始化过滤后的实验室列表
-    filteredLabs.value = labs.value;
+    // 初始化实验室列表
+    loadLabs();
 });
 
-// 搜索实验室
+// 搜索实验室（走后端关键词过滤）
 const onSearchInput = (e: any) => {
     const keyword = e.detail.value.trim();
     searchKeyword.value = keyword;
-    filterLabs();
+    loadLabs();
 };
 
-// 根据关键词过滤实验室
+// 根据关键词过滤实验室（本地兜底过滤，保留以兼容调用方）
 const filterLabs = () => {
     const labsVal = labs.value;
     const keyword = searchKeyword.value;
@@ -260,7 +260,7 @@ const showAddLabModal = () => {
 // 显示编辑实验室弹窗
 const showEditLabModal = (e: any) => {
     const id = e.currentTarget.dataset.id;
-    const lab = labs.value.find((item) => item.id === id);
+    const lab = labs.value.find((item) => String(item.id) === String(id));
     if (lab) {
         showModal.value = true;
         isEditing.value = true;
@@ -281,7 +281,7 @@ const hideModal = () => {
 // 显示实验室详情
 const showLabDetail = (e: any) => {
     const id = e.currentTarget.dataset.id;
-    const lab = labs.value.find((item) => item.id === id);
+    const lab = labs.value.find((item) => String(item.id) === String(id));
     if (lab) {
         showDetailModal.value = true;
         detailLab.value = {
@@ -322,11 +322,10 @@ const chooseImage = () => {
     });
 };
 
-// 保存实验室信息
-const saveLabInfo = () => {
+// 保存实验室信息（新增走 createLab，编辑走 updateLab）
+const saveLabInfo = async () => {
     const currentLabVal = currentLab.value;
     const isEditingVal = isEditing.value;
-    const labsVal = labs.value;
 
     // 表单验证
     if (!currentLabVal.name.trim()) {
@@ -344,40 +343,35 @@ const saveLabInfo = () => {
         return;
     }
 
-    // 克隆当前实验室列表
-    const newLabs = [...labsVal];
-    if (isEditingVal) {
-        // 编辑现有实验室
-        const index = newLabs.findIndex((item) => item.id === currentLabVal.id);
-        if (index !== -1) {
-            newLabs[index] = {
-                ...currentLabVal
-            };
+    // 组装提交字段：name, location, equipment, image, capacity
+    const payload: any = {
+        name: currentLabVal.name,
+        location: currentLabVal.location,
+        equipment: currentLabVal.equipment,
+        image: currentLabVal.image,
+        capacity: currentLabVal.capacity
+    };
+
+    try {
+        if (isEditingVal) {
+            await updateLab(currentLabVal.id, payload);
+        } else {
+            await createLab(payload);
         }
-    } else {
-        // 添加新实验室
-        const newId = String(Date.now());
-        newLabs.push({
-            ...currentLabVal,
-            id: newId
+        showModal.value = false;
+        // 重新从后端拉取列表
+        await loadLabs();
+        // 显示成功提示
+        uni.showToast({
+            title: isEditingVal ? '编辑成功' : '添加成功',
+            icon: 'success'
+        });
+    } catch (err: any) {
+        uni.showToast({
+            title: err?.data?.message || (isEditingVal ? '编辑失败' : '添加失败'),
+            icon: 'none'
         });
     }
-
-    // 更新数据
-    labs.value = newLabs;
-    filteredLabs.value = newLabs;
-    showModal.value = false;
-
-    // 如果有搜索关键词，重新过滤
-    if (searchKeyword.value) {
-        filterLabs();
-    }
-
-    // 显示成功提示
-    uni.showToast({
-        title: isEditingVal ? '编辑成功' : '添加成功',
-        icon: 'success'
-    });
 };
 
 // 显示删除确认
@@ -423,7 +417,7 @@ const confirmDeleteWithPassword = () => {
     const adminPasswordVal = adminPassword.value;
     const labIdToDeleteVal = labIdToDelete.value;
 
-    // 验证密码不能为空
+    // 验证密码不能为空（密码弹窗仅作交互确认，真正的鉴权由后端登录态完成）
     if (!adminPasswordVal.trim()) {
         uni.showToast({
             title: '请输入管理员密码',
@@ -432,41 +426,29 @@ const confirmDeleteWithPassword = () => {
         return;
     }
 
-    // 验证管理员密码是否正确
-    // 这里应该与存储的管理员密码进行比对，这里使用模拟数据
-    // 实际应用中应该从服务器验证或从本地存储获取加密后的密码进行比对
-    const storedPassword = uni.getStorageSync('adminPassword') || 'admin123';
-    if (adminPasswordVal !== storedPassword) {
-        uni.showToast({
-            title: '密码错误',
-            icon: 'none'
-        });
-        return;
-    }
-
-    // 密码正确，执行删除操作
+    // 执行删除操作（后端按登录态鉴权）
     deleteLab(labIdToDeleteVal);
 };
 
-// 删除实验室
-const deleteLab = (id: string) => {
-    const labsVal = labs.value;
-    const newLabs = labsVal.filter((item) => item.id !== id);
-    labs.value = newLabs;
-    filteredLabs.value = newLabs;
-    showDeletePasswordModal.value = false;
-    adminPassword.value = '';
-
-    // 如果有搜索关键词，重新过滤
-    if (searchKeyword.value) {
-        filterLabs();
+// 删除实验室（调后端 deleteLab，后端按登录态鉴权）
+const deleteLab = async (id: string) => {
+    try {
+        await deleteLabApi(id);
+        showDeletePasswordModal.value = false;
+        adminPassword.value = '';
+        // 重新从后端拉取列表
+        await loadLabs();
+        // 显示成功提示
+        uni.showToast({
+            title: '删除成功',
+            icon: 'success'
+        });
+    } catch (err: any) {
+        uni.showToast({
+            title: err?.data?.message || '删除失败',
+            icon: 'none'
+        });
     }
-
-    // 显示成功提示
-    uni.showToast({
-        title: '删除成功',
-        icon: 'success'
-    });
 };
 </script>
 <style lang="less">

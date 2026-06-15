@@ -216,6 +216,22 @@
                                 <text class="value description error">{{ selectedApplication.rejectReason }}</text>
                             </view>
                         </view>
+
+                        <!-- 审批流水 -->
+                        <view v-if="selectedApplication.approvalLogs && selectedApplication.approvalLogs.length > 0" class="approval-flow">
+                            <text class="approval-flow-title">审批流水</text>
+                            <view class="approval-log-item" v-for="(log, logIndex) in selectedApplication.approvalLogs" :key="logIndex">
+                                <view class="approval-log-head">
+                                    <text class="approval-log-action">{{ log.action }}</text>
+                                    <text class="approval-log-time">{{ log.createTime }}</text>
+                                </view>
+                                <view class="approval-log-meta">
+                                    <text v-if="log.reviewerName" class="approval-log-reviewer">{{ log.reviewerName }}</text>
+                                    <text v-if="log.stage" class="approval-log-stage">{{ log.stage }}</text>
+                                </view>
+                                <text v-if="log.comment" class="approval-log-comment">{{ log.comment }}</text>
+                            </view>
+                        </view>
                     </view>
                 </scroll-view>
                 <view class="modal-footer">
@@ -251,6 +267,7 @@
 import { ref } from 'vue';
 import { onLoad, onShow, onPullDownRefresh } from '@dcloudio/uni-app';
 import navigationBar from '@/components/navigation-bar/navigation-bar.vue';
+import { getMyReservations, cancelReservation, getReservationDetail } from '@/api/student.js';
 // pages/student-pending-process/student-pending-process.ts
 
 // 筛选状态
@@ -312,26 +329,20 @@ const formatDateTime = (date: Date): string => {
 };
 
 // 加载申请数据
-const loadApplications = () => {
+const loadApplications = async () => {
     try {
-        // 获取当前登录学生信息
-        const currentStudent = uni.getStorageSync('studentInfo');
-        if (!currentStudent || !currentStudent.studentId) {
-            uni.showToast({
-                title: '请先登录',
-                icon: 'none'
-            });
-            return;
-        }
+        // 从后端接口加载当前学生的预约申请
+        const list = (await getMyReservations()) || [];
 
-        // 从本地存储加载申请数据
-        const allApplications = uni.getStorageSync('studentApplications') || [];
-
-        // 只显示当前登录学生的申请
-        const myApplications = allApplications.filter((app: any) => {
-            // 通过申请人信息匹配当前登录学生
-            return app.applicant === currentStudent.name || app.studentId === currentStudent.studentId || app.studentName === currentStudent.name;
-        });
+        // 待办流程只展示进行中/已结审的申请；completed 交由「已办流程」页处理
+        const myApplications = (Array.isArray(list) ? list : [])
+            .filter((item: any) => item.status !== 'completed')
+            // 适配模板所需字段形状（lab.name / type.name）
+            .map((item: any) => ({
+                ...item,
+                lab: { id: item.labId, name: item.labName },
+                type: { name: item.applicationTypeName }
+            }));
 
         // 处理申请数据，添加显示用的字段
         const processedApplications = myApplications.map((app: any) => {
@@ -347,41 +358,19 @@ const loadApplications = () => {
                 }
             }
 
-            // 根据状态设置显示文本和样式
-            let statusText = '';
-            let statusClass = '';
-            let progressText = '';
-            switch (app.status) {
-                case 'pending':
-                    statusText = '待教师审核';
-                    statusClass = 'status-pending';
-                    progressText = '等待教师审核...';
-                    break;
-                case 'teacher_approved':
-                    statusText = '待管理员审核';
-                    statusClass = 'status-teacher-approved';
-                    progressText = '教师已审核通过，等待管理员最终审核...';
-                    break;
-                case 'approved':
-                    statusText = '已通过';
-                    statusClass = 'status-approved';
-                    progressText = '审核通过，可正常使用';
-                    break;
-                case 'rejected':
-                    statusText = '已拒绝';
-                    statusClass = 'status-rejected';
-                    progressText = '申请被拒绝';
-                    break;
-                case 'cancelled':
-                    statusText = '已取消';
-                    statusClass = 'status-cancelled';
-                    progressText = '申请已取消';
-                    break;
-                default:
-                    statusText = '未知状态';
-                    statusClass = 'status-unknown';
-                    progressText = '状态未知';
-            }
+            // 状态文本/样式优先复用后端算好的 statusText / statusClass，
+            // 自然覆盖 completed 等所有状态，避免出现「未知状态」。
+            const progressTextMap: { [key: string]: string } = {
+                pending: '等待教师审核...',
+                teacher_approved: '教师已审核通过，等待管理员最终审核...',
+                approved: '审核通过，可正常使用',
+                rejected: '申请被拒绝',
+                cancelled: '申请已取消',
+                completed: '申请已完成使用'
+            };
+            const statusText = app.statusText || app.status;
+            const statusClass = app.statusClass || 'status-' + String(app.status).replace(/_/g, '-');
+            const progressText = progressTextMap[app.status] || statusText;
             const canModify = app.status === 'approved' && new Date(app.date).getTime() > Date.now() + 86400 * 1000;
             return {
                 ...app,
@@ -403,12 +392,13 @@ const loadApplications = () => {
         applications.value = processedApplications;
         calculateStatusCounts();
         filterApplications();
-    } catch (error) {
-        console.log('CatchClause', error);
-        console.log('CatchClause', error);
+    } catch (error: any) {
         console.error('加载申请数据失败:', error);
+        applications.value = [];
+        calculateStatusCounts();
+        filterApplications();
         uni.showToast({
-            title: '加载数据失败',
+            title: error?.data?.message || '加载失败',
             icon: 'none'
         });
     }
@@ -448,11 +438,39 @@ const filterApplications = () => {
     filteredApplications.value = filtered;
 };
 
-// 查看申请详情
-const viewApplicationDetail = (e: any) => {
-    const application = e.currentTarget.dataset.application;
-    selectedApplication.value = application;
-    showDetailModal.value = true;
+// 查看申请详情：列表项不含 approvalLogs，需拉取详情接口
+const viewApplicationDetail = async (e: any) => {
+    const item = e.currentTarget.dataset.application;
+    if (!item || !item.id) {
+        return;
+    }
+    uni.showLoading({ title: '加载中...' });
+    try {
+        const detail: any = (await getReservationDetail(item.id)) || {};
+        // 映射详情字段到模板所需形状（lab.name / type.name）及真实审核人/时间别名
+        const reviewer = detail.adminReviewerName || detail.teacherReviewerName || '';
+        const reviewTime = detail.adminReviewTime || detail.teacherReviewTime || '';
+        selectedApplication.value = {
+            ...detail,
+            lab: { id: detail.labId, name: detail.labName },
+            type: { name: detail.applicationTypeName },
+            timeText: detail.timeText || (detail.startTime && detail.endTime ? `${detail.startTime}-${detail.endTime}` : '未选择时间段'),
+            submitTimeText: detail.submitTime ? formatDateTime(new Date(detail.submitTime)) : '',
+            reviewer,
+            reviewTime,
+            reviewTimeText: reviewTime ? formatDateTime(new Date(reviewTime)) : '',
+            approvalLogs: Array.isArray(detail.approvalLogs) ? detail.approvalLogs : []
+        };
+        uni.hideLoading();
+        showDetailModal.value = true;
+    } catch (error: any) {
+        uni.hideLoading();
+        console.error('加载详情失败:', error);
+        uni.showToast({
+            title: error?.data?.message || '加载详情失败',
+            icon: 'none'
+        });
+    }
 };
 
 // 关闭详情弹窗
@@ -484,7 +502,7 @@ const closeCancelModal = () => {
 };
 
 // 确认取消申请
-const confirmCancel = () => {
+const confirmCancel = async () => {
     if (!cancelApplicationId.value) {
         return;
     }
@@ -492,40 +510,25 @@ const confirmCancel = () => {
         title: '取消中...'
     });
 
-    // 模拟取消请求
-    setTimeout(() => {
+    try {
+        // 调用后端取消接口
+        await cancelReservation(cancelApplicationId.value);
         uni.hideLoading();
-        try {
-            // 更新本地存储
-            const apps = uni.getStorageSync('studentApplications') || [];
-            const updatedApplications = apps.map((app: any) => {
-                if (app.id === cancelApplicationId.value) {
-                    return {
-                        ...app,
-                        status: 'cancelled',
-                        statusText: '已取消',
-                        cancelTime: new Date().toISOString()
-                    };
-                }
-                return app;
-            });
-            uni.setStorageSync('studentApplications', updatedApplications);
-            uni.showToast({
-                title: '申请已取消',
-                icon: 'success'
-            });
-            showCancelModal.value = false;
-            cancelApplicationId.value = '';
-            loadApplications();
-        } catch (error) {
-            console.log('CatchClause', error);
-            console.log('CatchClause', error);
-            uni.showToast({
-                title: '取消失败，请重试',
-                icon: 'none'
-            });
-        }
-    }, 1500);
+        uni.showToast({
+            title: '申请已取消',
+            icon: 'success'
+        });
+        showCancelModal.value = false;
+        cancelApplicationId.value = '';
+        loadApplications();
+    } catch (error: any) {
+        uni.hideLoading();
+        console.error('取消申请失败:', error);
+        uni.showToast({
+            title: error?.data?.message || '取消失败，请重试',
+            icon: 'none'
+        });
+    }
 };
 
 // 重新申请

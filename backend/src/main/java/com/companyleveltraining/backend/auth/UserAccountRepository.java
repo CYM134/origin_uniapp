@@ -110,6 +110,33 @@ public class UserAccountRepository {
         return result;
     }
 
+    /**
+     * 轻量查询：仅取出账号状态与软删时间，用于过滤器每请求回库校验账号有效性。
+     * 返回空表示用户不存在。
+     */
+    public Optional<AccountStatus> findAccountStatusById(long userId) {
+        String sql = """
+            SELECT status, deleted_at
+            FROM sys_users
+            WHERE id = ?
+            LIMIT 1
+            """;
+        return jdbcTemplate.query(
+            sql,
+            (rs, rowNum) -> new AccountStatus(
+                rs.getString("status"),
+                rs.getTimestamp("deleted_at") != null
+            ),
+            userId
+        ).stream().findFirst();
+    }
+
+    /**
+     * 账号状态快照：status 取值（active/disabled/deleted 等）与是否已软删（deleted_at 非空）。
+     */
+    public record AccountStatus(String status, boolean deleted) {
+    }
+
     public void updateLoginSuccess(Long userId) {
         long startTime = System.currentTimeMillis();
         String sql = """

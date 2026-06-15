@@ -85,6 +85,13 @@
 			}
 		},
 		{
+			"path": "pages/student-notifications/student-notifications",
+			"style": {
+				"navigationStyle": "custom",
+				"enablePullDownRefresh": true
+			}
+		},
+		{
 			"path": "pages/teacher-login/teacher-login"
 		},
 		{
@@ -126,6 +133,13 @@
 			"style": {
 				"enablePullDownRefresh": true,
 				"backgroundTextStyle": "dark"
+			}
+		},
+		{
+			"path": "pages/teacher-notifications/teacher-notifications",
+			"style": {
+				"navigationStyle": "custom",
+				"enablePullDownRefresh": true
 			}
 		}
 	],

@@ -142,6 +142,7 @@ import { ref } from 'vue';
 import { onLoad, onUnload } from '@dcloudio/uni-app';
 import navigationBar from '@/components/navigation-bar/navigation-bar.vue';
 import { fetchCurrentUser } from '@/api/auth';
+import { getStudentProfile, updateStudentProfile, changePassword } from '@/api/student';
 import { getAccessToken, getStoredRole, getStoredUser, hasCompleteUserProfile, saveAuthSession } from '@/api/storage';
 // pages/student-personal-info/student-personal-info.ts
 
@@ -205,6 +206,21 @@ onLoad(() => {
 });
 
 /**
+ * 把后端返回的 profile 适配成模板使用的形状
+ */
+const normalizeProfile = (profile: any) => ({
+    name: profile.name || profile.realName || '',
+    studentId: profile.studentId || profile.accountNo || '',
+    gender: profile.gender || '',
+    college: profile.college || '',
+    major: profile.major || '',
+    phone: profile.phone || '',
+    email: profile.email || '',
+    registerTime: profile.registerTime || profile.createTime || '',
+    password: profile.password || ''
+});
+
+/**
  * 页面返回时检查是否有未保存的修改
  */
 onUnload(() => {
@@ -239,36 +255,20 @@ const formatRegisterTime = (registerTime: string) => {
 /**
  * 加载学生信息
  */
-const loadStudentInfo = () => {
+const loadStudentInfo = async () => {
     try {
-        const storedInfo = uni.getStorageSync('studentInfo') || getStoredUser();
-        if (storedInfo) {
-            const normalizedInfo = {
-                name: storedInfo.name || storedInfo.realName || '',
-                studentId: storedInfo.studentId || storedInfo.accountNo || '',
-                gender: storedInfo.gender || '',
-                college: storedInfo.college || '',
-                major: storedInfo.major || '',
-                phone: storedInfo.phone || '',
-                email: storedInfo.email || '',
-                registerTime: storedInfo.registerTime || '',
-                password: storedInfo.password || ''
-            };
+        const profile: any = await getStudentProfile();
+        const normalizedInfo = normalizeProfile(profile || {});
 
-            studentInfo.value = normalizedInfo;
-            originalInfo.value = JSON.parse(JSON.stringify(normalizedInfo));
-            formattedRegisterTime.value = formatRegisterTime(normalizedInfo.registerTime);
-            return;
-        }
-
-        formattedRegisterTime.value = '2024-01-01';
-    } catch (error) {
-        console.log('CatchClause', error);
-        console.log('CatchClause', error);
+        studentInfo.value = normalizedInfo;
+        originalInfo.value = JSON.parse(JSON.stringify(normalizedInfo));
+        formattedRegisterTime.value = formatRegisterTime(normalizedInfo.registerTime);
+    } catch (error: any) {
         console.error('加载学生信息失败:', error);
+        formattedRegisterTime.value = '2024-01-01';
         uni.showToast({
-            title: '加载信息失败',
-            icon: 'error'
+            title: error?.data?.message || '加载失败',
+            icon: 'none'
         });
     }
 };
@@ -339,10 +339,10 @@ const chooseImage = (sourceType: 'camera' | 'album') => {
         mediaType: ['image'],
         sourceType: [sourceType],
         success: (res) => {
-            // 这里可以上传图片到服务器，目前只是模拟
+            // 暂无对象存储，头像不做真实上传/持久化，避免误导性的“成功”提示
             uni.showToast({
-                title: '头像更新成功',
-                icon: 'success'
+                title: '当前为演示，头像暂不保存',
+                icon: 'none'
             });
         },
         fail: (error) => {
@@ -494,12 +494,26 @@ const confirmEdit = () => {
 /**
  * 保存信息
  */
-const saveInfo = () => {
+const saveInfo = async () => {
     try {
+        const payload = {
+            name: studentInfo.value.name,
+            gender: studentInfo.value.gender,
+            college: studentInfo.value.college,
+            major: studentInfo.value.major,
+            phone: studentInfo.value.phone,
+            email: studentInfo.value.email || ''
+        };
+        const updated: any = await updateStudentProfile(payload);
+        if (updated && typeof updated === 'object') {
+            studentInfo.value = normalizeProfile({ ...studentInfo.value, ...updated });
+            formattedRegisterTime.value = formatRegisterTime(studentInfo.value.registerTime);
+        }
+
+        // 同步会话缓存，保持鉴权信息可用
         const accessToken = getAccessToken();
         const storedUser = getStoredUser() || {};
-        uni.setStorageSync('studentInfo', studentInfo.value);
-        uni.setStorageSync('currentUser', {
+        const mergedUser = {
             ...storedUser,
             accountNo: studentInfo.value.studentId,
             realName: studentInfo.value.name,
@@ -509,24 +523,23 @@ const saveInfo = () => {
             college: studentInfo.value.college,
             major: studentInfo.value.major,
             registerTime: studentInfo.value.registerTime
-        });
+        };
         if (accessToken) {
-            saveAuthSession(accessToken, uni.getStorageSync('currentUser'));
+            saveAuthSession(accessToken, mergedUser);
         }
+
         uni.showToast({
-            title: '已保存到本地缓存',
+            title: '保存成功',
             icon: 'success'
         });
 
         // 更新原始信息
         originalInfo.value = JSON.parse(JSON.stringify(studentInfo.value));
-    } catch (error) {
-        console.log('CatchClause', error);
-        console.log('CatchClause', error);
+    } catch (error: any) {
         console.error('保存信息失败:', error);
         uni.showToast({
-            title: '保存失败',
-            icon: 'error'
+            title: error?.data?.message || '加载失败',
+            icon: 'none'
         });
     }
 };
@@ -560,12 +573,37 @@ const onConfirmNewPasswordInput = (e: any) => {
     confirmNewPassword.value = e.detail.value;
 };
 
-const confirmPasswordChange = () => {
-    showPasswordModal.value = false;
-    uni.showToast({
-        title: '后端暂未提供修改密码接口',
-        icon: 'none'
-    });
+const confirmPasswordChange = async () => {
+    if (!oldPassword.value) {
+        uni.showToast({ title: '请输入原密码', icon: 'none' });
+        return;
+    }
+    if (!newPassword.value || newPassword.value.length < 6) {
+        uni.showToast({ title: '新密码至少6位', icon: 'none' });
+        return;
+    }
+    if (newPassword.value !== confirmNewPassword.value) {
+        uni.showToast({ title: '两次输入的新密码不一致', icon: 'none' });
+        return;
+    }
+
+    try {
+        await changePassword({
+            oldPassword: oldPassword.value,
+            newPassword: newPassword.value
+        });
+        closePasswordModal();
+        uni.showToast({
+            title: '密码修改成功',
+            icon: 'success'
+        });
+    } catch (error: any) {
+        console.error('修改密码失败:', error);
+        uni.showToast({
+            title: error?.data?.message || '加载失败',
+            icon: 'none'
+        });
+    }
 };
 </script>
 <style lang="less">

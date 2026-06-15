@@ -362,6 +362,7 @@
 import { ref } from 'vue';
 import { onLoad, onShow } from '@dcloudio/uni-app';
 import navigationBar from '@/components/navigation-bar/navigation-bar.vue';
+import { getLabs, getApplicationTypes, createStudentReservation } from '@/api/student';
 // pages/student-reservation-apply/student-reservation-apply.ts
 
 // 表单数据
@@ -378,56 +379,9 @@ const contact = ref<string>('');
 const requirements = ref<string>('');
 const emergencyContact = ref<string>('');
 const emergencyPhone = ref<string>('');
-// 选项数据
-const labs = ref<any[]>([
-    {
-        id: 'lab1',
-        name: '国际课程实验室',
-        maxStudents: 30
-    },
-    {
-        id: 'lab2',
-        name: '新商科实验室',
-        maxStudents: 25
-    },
-    {
-        id: 'lab3',
-        name: 'VR实验室',
-        maxStudents: 20
-    },
-    {
-        id: 'lab4',
-        name: '法语实验室',
-        maxStudents: 35
-    },
-    {
-        id: 'lab5',
-        name: '402实验室',
-        maxStudents: 28
-    }
-]);
-const applicationTypes = ref<any[]>([
-    {
-        id: 'course',
-        name: '课程实验'
-    },
-    {
-        id: 'research',
-        name: '科研项目'
-    },
-    {
-        id: 'competition',
-        name: '竞赛培训'
-    },
-    {
-        id: 'activity',
-        name: '学术活动'
-    },
-    {
-        id: 'other',
-        name: '其他'
-    }
-]);
+// 选项数据（由后端接口加载）
+const labs = ref<any[]>([]);
+const applicationTypes = ref<any[]>([]);
 // 日期限制,人数限制
 const minDate = ref<string>('');
 const maxDate = ref<string>('');
@@ -483,10 +437,26 @@ const errorAgreement = ref<string>('');
 onLoad(() => {
     initializeDates();
     loadUserInfo();
+    loadOptions();
     // 默认时间，避免未选时间导致无法提交
     startTime.value = '08:00';
     endTime.value = '09:50';
 });
+
+/**
+ * 加载实验室与申请类型选项
+ */
+const loadOptions = async () => {
+    try {
+        const [labList, typeList] = await Promise.all([getLabs(), getApplicationTypes()]);
+        labs.value = Array.isArray(labList) ? labList : [];
+        applicationTypes.value = Array.isArray(typeList) ? typeList : [];
+    } catch (err: any) {
+        labs.value = [];
+        applicationTypes.value = [];
+        uni.showToast({ title: err?.data?.message || '加载失败', icon: 'none' });
+    }
+};
 
 onShow(() => {
     validateForm();
@@ -791,7 +761,7 @@ const validateForm = () => {
 };
 
 // 提交申请
-const submitApplication = () => {
+const submitApplication = async () => {
     if (!canSubmit.value) {
         uni.showToast({
             title: '请完善申请信息',
@@ -827,71 +797,54 @@ const submitApplication = () => {
         return;
     }
 
-    // 获取当前登录学生信息
-    const currentStudent = uni.getStorageSync('studentInfo');
-    const applicationData = {
-        id: 'app_' + Date.now(),
-        lab: selectedLab.value,
-        date: selectedDate.value,
-        startTime: startTime.value,
-        endTime: endTime.value,
-        studentCount: studentCount.value,
-        type: selectedType.value,
-        title: title.value,
-        purpose: purpose.value,
-        teacher: teacher.value,
-        contact: contact.value,
-        requirements: requirements.value,
-        emergencyContact: emergencyContact.value,
-        emergencyPhone: emergencyPhone.value,
-        status: 'pending',
-        statusText: '待审核',
-        submitTime: new Date().toISOString(),
-        applicant: (currentStudent && currentStudent.name) || '未知',
-        studentId: (currentStudent && currentStudent.studentId) || '',
-        // 添加学生ID
-        studentName: (currentStudent && currentStudent.name) || '未知' // 添加学生姓名
-    };
+    // 提交真实预约申请
     uni.showLoading({
         title: '提交中...'
     });
-
-    // 模拟提交请求
-    setTimeout(() => {
+    try {
+        await createStudentReservation({
+            labId: (selectedLab.value && selectedLab.value.id) || '',
+            date: selectedDate.value,
+            startTime: startTime.value,
+            endTime: endTime.value,
+            studentCount: studentCount.value,
+            applicationType: (selectedType.value && selectedType.value.id) || '',
+            title: title.value,
+            purpose: purpose.value,
+            teacher: teacher.value,
+            contact: contact.value,
+            requirements: requirements.value,
+            emergencyContact: emergencyContact.value,
+            emergencyPhone: emergencyPhone.value
+        });
         uni.hideLoading();
 
-        // 保存到本地存储
+        // 清除保存的草稿
         try {
-            const applications = uni.getStorageSync('studentApplications') || [];
-            applications.unshift(applicationData);
-            uni.setStorageSync('studentApplications', applications);
-
-            // 清除保存的草稿
-            try {
-                uni.removeStorageSync('studentApplicationDraft');
-                console.log('草稿已清除');
-            } catch (e) {
-                console.log('CatchClause', e);
-                console.log('CatchClause', e);
-                console.error('清除草稿失败:', e);
-            }
-            uni.showModal({
-                title: '申请提交成功',
-                content: '您的预约申请已提交，请等待审核结果。您可以在"待办流程"中查看申请状态。',
-                showCancel: false,
-                success: () => {
-                    uni.navigateBack();
-                }
-            });
-        } catch (error) {
-            console.log('CatchClause', error);
-            console.log('CatchClause', error);
-            uni.showToast({
-                title: '提交失败，请重试',
-                icon: 'none'
-            });
+            uni.removeStorageSync('studentApplicationDraft');
+            console.log('草稿已清除');
+        } catch (e) {
+            console.log('CatchClause', e);
+            console.error('清除草稿失败:', e);
         }
-    }, 2000);
+
+        uni.showToast({
+            title: '提交成功',
+            icon: 'success'
+        });
+        // 跳转待办流程页
+        setTimeout(() => {
+            uni.redirectTo({
+                url: '/pages/student-pending-process/student-pending-process'
+            });
+        }, 1200);
+    } catch (err: any) {
+        uni.hideLoading();
+        uni.showToast({
+            title: err?.data?.message || '提交失败，请重试',
+            icon: 'none'
+        });
+    }
 };
 
 // 阻止事件冒泡

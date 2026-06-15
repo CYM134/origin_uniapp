@@ -120,6 +120,7 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import navigationBar from '@/components/navigation-bar/navigation-bar.vue';
+import { registerStudent, checkStudentExists } from '@/api/student';
 // pages/student-register/student-register.ts
 
 const studentId = ref<string>('');
@@ -315,14 +316,13 @@ const validateForm = () => {
     return true;
 };
 
-const checkStudentIdExists = (studentIdArg: string) => {
-    // 模拟检查学号是否已存在
-    // 实际应用中应该调用后端API
-    const existingStudents = uni.getStorageSync('registeredStudents') || [];
-    return existingStudents.some((student: any) => student.studentId === studentIdArg);
+const checkStudentIdExists = async (studentIdArg: string) => {
+    // 调用后端 API 检查学号是否已存在
+    const res: any = await checkStudentExists(studentIdArg);
+    return !!(res && res.exists);
 };
 
-const register = () => {
+const register = async () => {
     if (!validateForm()) {
         return;
     }
@@ -335,47 +335,49 @@ const register = () => {
     const phoneVal = phone.value;
     const passwordVal = password.value;
 
-    // 检查学号是否已存在
-    if (checkStudentIdExists(studentIdVal)) {
-        uni.showToast({
-            title: '该学号已注册',
-            icon: 'none'
-        });
-        return;
-    }
     uni.showLoading({
         title: '注册中...',
         mask: true
     });
 
-    // 模拟注册过程
-    setTimeout(() => {
-        uni.hideLoading();
+    try {
+        // 检查学号是否已存在
+        const exists = await checkStudentIdExists(studentIdVal);
+        if (exists) {
+            uni.hideLoading();
+            uni.showToast({
+                title: '该学号已注册',
+                icon: 'none'
+            });
+            return;
+        }
 
-        // 保存注册信息
-        const existingStudents = uni.getStorageSync('registeredStudents') || [];
-        const newStudent = {
+        // 提交注册
+        await registerStudent({
             studentId: studentIdVal,
             name: nameVal,
             gender: genderVal,
             college: collegesVal[collegeIndexVal],
             major: majorVal,
             phone: phoneVal,
-            password: passwordVal,
-            registerTime: new Date().toISOString()
-        };
-        existingStudents.push(newStudent);
-        uni.setStorageSync('registeredStudents', existingStudents);
-        uni.showModal({
-            title: '注册成功',
-            content: '恭喜您注册成功！现在可以使用学号和密码登录了。',
-            showCancel: false,
-            confirmText: '去登录',
-            success: () => {
-                uni.navigateBack();
-            }
+            password: passwordVal
         });
-    }, 2000);
+
+        uni.hideLoading();
+        uni.showToast({
+            title: '注册成功',
+            icon: 'success'
+        });
+        setTimeout(() => {
+            uni.navigateBack();
+        }, 1500);
+    } catch (err: any) {
+        uni.hideLoading();
+        uni.showToast({
+            title: err?.data?.message || '注册失败',
+            icon: 'none'
+        });
+    }
 };
 
 const goToLogin = () => {

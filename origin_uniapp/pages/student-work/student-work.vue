@@ -105,6 +105,7 @@ import { onLoad, onShow, onPullDownRefresh } from '@dcloudio/uni-app';
 import navigationBar from '@/components/navigation-bar/navigation-bar.vue';
 import { fetchCurrentUser, logout as logoutAuth } from '@/api/auth';
 import { getStoredRole, getStoredUser, hasCompleteUserProfile } from '@/api/storage';
+import { getMyReservationStats, getUnreadCount } from '@/api/student';
 // pages/student-work/student-work.ts
 
 const studentInfo = ref<any>({
@@ -174,30 +175,14 @@ const syncCurrentStudent = async () => {
 /**
  * 加载待办事项数量
  */
-const loadPendingCount = () => {
+const loadPendingCount = async () => {
     try {
-        // 获取当前登录学生信息
-        const currentStudent = uni.getStorageSync('studentInfo');
-        if (!currentStudent || !currentStudent.studentId) {
-            pendingCount.value = 0;
-            return;
-        }
-
         // 获取待办事项数量（待审核状态的申请，且属于当前登录学生）
-        const allApplications = uni.getStorageSync('studentApplications') || [];
-        const myPendingApplications = allApplications.filter((app: any) => {
-            // 首先过滤出当前学生的申请
-            const isMyApplication = app.studentId === currentStudent.studentId || app.applicant === currentStudent.name || app.studentName === currentStudent.name;
-
-            // 然后过滤出待审核状态的申请（包括待教师审核和待管理员审核）
-            const isPending = app.status === 'pending' || app.status === 'teacher_approved';
-            return isMyApplication && isPending;
-        });
-        pendingCount.value = myPendingApplications.length;
+        const stats: any = await getMyReservationStats();
+        pendingCount.value = Number(stats?.todo) || 0;
     } catch (error) {
-        console.log('CatchClause', error);
-        console.log('CatchClause', error);
         console.error('加载待办事项失败:', error);
+        uni.showToast({ title: error?.data?.message || '加载失败', icon: 'none' });
         pendingCount.value = 0;
     }
 };
@@ -205,16 +190,15 @@ const loadPendingCount = () => {
 /**
  * 加载通知数量
  */
-const loadNotificationCount = () => {
+const loadNotificationCount = async () => {
     try {
-        // 模拟获取未读通知数量
-        const notifications = uni.getStorageSync('notifications') || [];
-        const unreadCount = notifications.filter((item: any) => !item.read).length;
-        notificationCount.value = unreadCount;
+        // 获取未读通知数量
+        const res: any = await getUnreadCount();
+        notificationCount.value = Number(res?.count) || 0;
     } catch (error) {
-        console.log('CatchClause', error);
-        console.log('CatchClause', error);
         console.error('加载通知数量失败:', error);
+        uni.showToast({ title: error?.data?.message || '加载失败', icon: 'none' });
+        notificationCount.value = 0;
     }
 };
 
@@ -367,7 +351,11 @@ const viewTodaySchedule = () => {
  */
 const viewNotifications = () => {
     uni.navigateTo({
-        url: '/pages/student-notifications/student-notifications'
+        url: '/pages/student-notifications/student-notifications',
+        fail: (error) => {
+            console.error('打开消息通知失败:', error);
+            uni.showToast({ title: '页面打开失败', icon: 'none' });
+        }
     });
 };
 </script>

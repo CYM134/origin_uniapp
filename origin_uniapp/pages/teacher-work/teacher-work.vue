@@ -104,6 +104,7 @@ import { onLoad, onShow, onPullDownRefresh } from '@dcloudio/uni-app';
 import navigationBar from '@/components/navigation-bar/navigation-bar.vue';
 import { fetchCurrentUser, logout as logoutAuth } from '@/api/auth';
 import { getStoredRole, getStoredUser, hasCompleteUserProfile } from '@/api/storage';
+import { getPendingReviewCount, getUnreadCount } from '@/api/teacher';
 // pages/teacher-work/teacher-work.ts
 
 const teacherInfo = ref<any>({
@@ -174,39 +175,30 @@ const syncCurrentTeacher = async () => {
 /**
  * 加载待办事项数量
  */
-const loadPendingCount = () => {
+const loadPendingCount = async () => {
     try {
-        // 获取需要教师审核的学生申请数量
-        const applications = uni.getStorageSync('studentApplications') || [];
-
-        // 只统计学生发送的待审核申请，排除教师申请
-        const pendingApplications = applications.filter((app: any) => {
-            // 排除教师申请（type为'teacher'的申请）
-            // 只统计状态为'pending'的学生申请
-            return app.status === 'pending' && app.type !== 'teacher';
-        });
-        pendingCount.value = pendingApplications.length;
-    } catch (error) {
-        console.log('CatchClause', error);
-        console.log('CatchClause', error);
+        // 获取需要教师审核的待审核申请数量
+        const res: any = await getPendingReviewCount();
+        pendingCount.value = Number(res?.count) || 0;
+    } catch (error: any) {
         console.error('加载待办事项失败:', error);
         pendingCount.value = 0;
+        uni.showToast({ title: error?.data?.message || '加载失败', icon: 'none' });
     }
 };
 
 /**
  * 加载通知数量
  */
-const loadNotificationCount = () => {
+const loadNotificationCount = async () => {
     try {
-        // 模拟获取未读通知数量
-        const notifications = uni.getStorageSync('teacherNotifications') || [];
-        const unreadCount = notifications.filter((item: any) => !item.read).length;
-        notificationCount.value = unreadCount;
-    } catch (error) {
-        console.log('CatchClause', error);
-        console.log('CatchClause', error);
+        // 获取未读通知数量
+        const res: any = await getUnreadCount();
+        notificationCount.value = Number(res?.count) || 0;
+    } catch (error: any) {
         console.error('加载通知数量失败:', error);
+        notificationCount.value = 0;
+        uni.showToast({ title: error?.data?.message || '加载失败', icon: 'none' });
     }
 };
 
@@ -359,7 +351,11 @@ const viewTodaySchedule = () => {
  */
 const viewNotifications = () => {
     uni.navigateTo({
-        url: '/pages/teacher-notifications/teacher-notifications'
+        url: '/pages/teacher-notifications/teacher-notifications',
+        fail: (error) => {
+            console.error('打开消息通知失败:', error);
+            uni.showToast({ title: '页面打开失败', icon: 'none' });
+        }
     });
 };
 </script>

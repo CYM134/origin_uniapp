@@ -14,8 +14,8 @@ server:
 
 security:
   jwt:
-    secret: ${JWT_SECRET:CompanyLevelTrainingJwtSecretKeyForHs2562026Secure}
-    expiration-seconds: ${JWT_EXPIRATION_SECONDS:720000}
+    secret: ${JWT_SECRET:}
+    expiration-seconds: ${JWT_EXPIRATION_SECONDS:86400}
 
 logging:
   level:

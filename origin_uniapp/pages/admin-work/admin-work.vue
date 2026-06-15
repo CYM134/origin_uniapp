@@ -98,8 +98,23 @@ import { onLoad } from '@dcloudio/uni-app';
 import navigationBar from '@/components/navigation-bar/navigation-bar.vue';
 import { fetchCurrentUser, logout as logoutAuth } from '@/api/auth';
 import { getStoredRole, getStoredUser, hasCompleteUserProfile } from '@/api/storage';
+import { getDashboardSummary } from '@/api/admin';
 
 const username = ref('管理员');
+
+// 仪表盘待办计数（如 pendingReservations 等）。本页模板暂无展示位，
+// 仅加载备用，不强行改动 <template>。
+const dashboardSummary = ref<any>({});
+
+const loadDashboardSummary = async () => {
+    try {
+        const summary: any = await getDashboardSummary();
+        dashboardSummary.value = summary || {};
+    } catch (err: any) {
+        dashboardSummary.value = {};
+        console.error('加载仪表盘统计失败', err);
+    }
+};
 
 const loadCurrentAdmin = async () => {
     const storedRole = getStoredRole();
@@ -129,6 +144,7 @@ const loadCurrentAdmin = async () => {
 onLoad(() => {
     setTimeout(() => {
         loadCurrentAdmin();
+        loadDashboardSummary();
     }, 0);
 });
 

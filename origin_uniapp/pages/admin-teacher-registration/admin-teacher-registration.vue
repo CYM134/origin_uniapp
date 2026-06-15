@@ -201,6 +201,12 @@
 import { ref } from 'vue';
 import { onLoad } from '@dcloudio/uni-app';
 import navigationBar from '@/components/navigation-bar/navigation-bar.vue';
+import {
+    getTeacherRegistrations,
+    getTeacherRegistrationDetail,
+    approveTeacherRegistration,
+    rejectTeacherRegistration
+} from '@/api/admin';
 // teacher-registration.ts
 
 const activeTab = ref('pending');
@@ -223,94 +229,45 @@ const reasonTemplates = ref<any[]>([
     '提交的信息与学校记录不符',
     '请提供有效的教师证明材料'
 ]);
-// 示例数据
-const mockTeachers = ref<any[]>([
-    {
-        id: 'T20230001',
-        name: '张教授',
-        // avatar: '/static/images/avatar/teacher1.png',  //这里放老师的照片，因为没有所以注释
-        department: '计算机科学与技术学院',
-        position: '教授',
-        phone: '13800138001',
-        email: 'zhang@university.edu',
-        idCardFront: '/static/images/icons/id-card-sample.png',
-        idCardBack: '/static/images/icons/id-card-sample.png',
-        teacherCardImage: '/static/images/teacher-card-sample.png',
-        registerTime: '2023-09-01 10:23:45',
-        status: 'pending',
-        approvalTime: '',
-        rejectReason: ''
-    },
-    {
-        id: 'T20230002',
-        name: '李副教授',
-        //avatar: '/static/images/avatar/teacher2.png',
-        department: '物理学院',
-        position: '副教授',
-        phone: '13900139002',
-        email: 'li@university.edu',
-        idCardFront: '/static/images/id-card-sample.png',
-        idCardBack: '/static/images/id-card-sample.png',
-        teacherCardImage: '/static/images/teacher-card-sample.png',
-        registerTime: '2023-09-02 14:35:22',
-        status: 'approved',
-        approvalTime: '2023-09-03 09:15:30',
-        rejectReason: ''
-    },
-    {
-        id: 'T20230003',
-        name: '王讲师',
-        //avatar: '/static/images/avatar/teacher3.png',
-        department: '化学学院',
-        position: '讲师',
-        phone: '13700137003',
-        email: 'wang@university.edu',
-        idCardFront: '/static/images/id-card-sample.png',
-        idCardBack: '/static/images/id-card-sample.png',
-        teacherCardImage: '/static/images/teacher-card-sample.png',
-        registerTime: '2023-09-03 16:42:18',
-        status: 'rejected',
-        approvalTime: '2023-09-04 11:20:45',
-        rejectReason: '证件照片不清晰，请重新上传'
-    },
-    {
-        id: 'T20230004',
-        name: '刘教授',
-        // avatar: '/static/images/avatar/teacher4.png',
-        department: '数学学院',
-        position: '教授',
-        phone: '13600136004',
-        email: 'liu@university.edu',
-        idCardFront: '/static/images/id-card-sample.png',
-        idCardBack: '/static/images/id-card-sample.png',
-        teacherCardImage: '/static/images/teacher-card-sample.png',
-        registerTime: '2023-09-04 09:18:33',
-        status: 'pending',
-        approvalTime: '',
-        rejectReason: ''
-    },
-    {
-        id: 'T20230005',
-        name: '陈副教授',
-        //avatar: '/static/images/avatar/teacher5.png',
-        department: '外国语学院',
-        position: '副教授',
-        phone: '13500135005',
-        email: 'chen@university.edu',
-        idCardFront: '/static/images/id-card-sample.png',
-        idCardBack: '/static/images/id-card-sample.png',
-        teacherCardImage: '/static/images/teacher-card-sample.png',
-        registerTime: '2023-09-05 15:27:56',
-        status: 'approved',
-        approvalTime: '2023-09-06 10:05:12',
-        rejectReason: ''
+// 教师注册申请列表（来自后端，替代本地 mock）
+const mockTeachers = ref<any[]>([]);
+
+// 将后端返回的注册申请适配为模板需要的形状
+// 模板用 item.id 既作"工号"展示又作列表内查找的 key，因此 id 取工号(teacherNo)；
+// 申请 id 单独存为 appId，供审核接口调用。
+const mapRegistration = (r: any) => ({
+    ...r,
+    appId: r.id, // 申请 id（用于 approve/reject/detail 接口）
+    id: r.teacherNo || r.teacherId || r.id, // 工号，用于模板展示与列表查找
+    name: r.name || r.teacherName || r.applicantName || '',
+    department: r.department || '',
+    position: r.position || '',
+    phone: r.phone || r.contact || r.applicantPhone || '',
+    email: r.email || '',
+    avatar: r.avatar || '',
+    idCardFront: r.idCardFront || '',
+    idCardBack: r.idCardBack || '',
+    teacherCardImage: r.teacherCardImage || '',
+    registerTime: r.registerTime || r.submitTime || r.createTime || '',
+    approvalTime: r.approvalTime || r.adminReviewTime || '',
+    rejectReason: r.rejectReason || r.adminReviewComment || '',
+    status: r.status || 'pending'
+});
+
+// 拉取教师注册申请列表
+const loadTeachers = async () => {
+    try {
+        const list = await getTeacherRegistrations();
+        mockTeachers.value = Array.isArray(list) ? list.map(mapRegistration) : [];
+    } catch (err: any) {
+        mockTeachers.value = [];
+        uni.showToast({ title: err?.data?.message || '加载失败', icon: 'none' });
     }
-]);
+    filterTeachers();
+};
 
 onLoad(() => {
-    filterTeachers();
-    // 计算待审核数量
-    pendingCount.value = pendingTeachers.value.length;
+    loadTeachers();
 });
 
 // 过滤教师列表
@@ -364,7 +321,7 @@ const clearSearch = () => {
 };
 
 // 显示教师详情
-const showTeacherDetail = (e: any) => {
+const showTeacherDetail = async (e: any) => {
     const teacherId = e.currentTarget.dataset.id;
     console.log('点击教师卡片，ID:', teacherId);
 
@@ -383,16 +340,26 @@ const showTeacherDetail = (e: any) => {
     if (!teacher) {
         teacher = mockTeachers.value.find((t) => t.id === teacherId);
     }
-    if (teacher) {
-        console.log('找到教师信息:', teacher);
-        currentTeacher.value = teacher;
-        showDetailModal.value = true;
-    } else {
+    if (!teacher) {
         console.log('未找到教师信息');
         uni.showToast({
             title: '未找到教师信息',
             icon: 'none'
         });
+        return;
+    }
+
+    // 先用列表里的数据展示，再向后端拉取完整详情补全字段
+    currentTeacher.value = teacher;
+    showDetailModal.value = true;
+    try {
+        const detail = await getTeacherRegistrationDetail(teacher.appId);
+        if (detail) {
+            currentTeacher.value = mapRegistration(detail);
+        }
+    } catch (err: any) {
+        // 详情拉取失败时保留列表数据展示，仅提示
+        uni.showToast({ title: err?.data?.message || '加载失败', icon: 'none' });
     }
 };
 
@@ -443,33 +410,34 @@ const previewImage = (e: any) => {
 };
 
 // 通过审核
-const approveTeacher = (e: any) => {
+const approveTeacher = async (e: any) => {
     const teacherId = e.currentTarget.dataset.id || (currentTeacher.value ? currentTeacher.value.id : '');
     if (!teacherId) {
         return;
     }
+    // data-id 携带的是工号(item.id)，先定位申请记录拿到申请 id(appId)
+    const teacher = mockTeachers.value.find((t) => t.id === teacherId);
+    const appId = teacher ? teacher.appId : currentTeacher.value ? currentTeacher.value.appId : '';
+    if (!appId) {
+        uni.showToast({ title: '未找到申请信息', icon: 'none' });
+        return;
+    }
 
-    // 更新教师状态
-    mockTeachers.value = mockTeachers.value.map((teacher) => {
-        if (teacher.id === teacherId) {
-            return {
-                ...teacher,
-                status: 'approved',
-                approvalTime: formatDate(new Date())
-            };
-        }
-        return teacher;
-    });
-    showDetailModal.value = false;
-    filterTeachers();
-    uni.showToast({
-        title: '已通过审核',
-        icon: 'success'
-    });
+    try {
+        await approveTeacherRegistration(appId);
+        showDetailModal.value = false;
+        uni.showToast({
+            title: '已通过审核',
+            icon: 'success'
+        });
+        await loadTeachers();
+    } catch (err: any) {
+        uni.showToast({ title: err?.data?.message || '操作失败', icon: 'none' });
+    }
 };
 
 // 拒绝审核
-const rejectTeacher = () => {
+const rejectTeacher = async () => {
     const _currentTeacher = currentTeacher.value;
     const _rejectReason = rejectReason.value;
     if (!_currentTeacher || !_rejectReason.trim()) {
@@ -479,25 +447,24 @@ const rejectTeacher = () => {
         });
         return;
     }
+    const appId = _currentTeacher.appId;
+    if (!appId) {
+        uni.showToast({ title: '未找到申请信息', icon: 'none' });
+        return;
+    }
 
-    // 更新教师状态
-    mockTeachers.value = mockTeachers.value.map((teacher) => {
-        if (teacher.id === _currentTeacher.id) {
-            return {
-                ...teacher,
-                status: 'rejected',
-                approvalTime: formatDate(new Date()),
-                rejectReason: _rejectReason.trim()
-            };
-        }
-        return teacher;
-    });
-    showRejectModal.value = false;
-    filterTeachers();
-    uni.showToast({
-        title: '已拒绝申请',
-        icon: 'success'
-    });
+    try {
+        await rejectTeacherRegistration(appId, _rejectReason.trim());
+        showRejectModal.value = false;
+        showDetailModal.value = false;
+        uni.showToast({
+            title: '已拒绝申请',
+            icon: 'success'
+        });
+        await loadTeachers();
+    } catch (err: any) {
+        uni.showToast({ title: err?.data?.message || '操作失败', icon: 'none' });
+    }
 };
 
 // 格式化日期

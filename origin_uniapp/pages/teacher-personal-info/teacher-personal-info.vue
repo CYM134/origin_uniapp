@@ -40,7 +40,7 @@
                 <view class="info-item">
                     <view class="info-label">性别</view>
                     <view class="info-content">
-                        <text class="info-value">{{ teacherInfo.gender === 'male' ? '男' : '女' }}</text>
+                        <text class="info-value">{{ teacherInfo.gender === 'male' ? '男' : teacherInfo.gender === 'female' ? '女' : '未设置' }}</text>
                         <image class="edit-icon" src="/static/images/icons/edit-icon.png" @tap="editGender" mode="aspectFit"></image>
                     </view>
                 </view>
@@ -58,6 +58,14 @@
                     <view class="info-content">
                         <text class="info-value">{{ teacherInfo.department }}</text>
                         <image class="edit-icon" src="/static/images/icons/edit-icon.png" @tap="editDepartment" mode="aspectFit"></image>
+                    </view>
+                </view>
+
+                <view class="info-item">
+                    <view class="info-label">职称</view>
+                    <view class="info-content">
+                        <text class="info-value">{{ teacherInfo.positionTitle }}</text>
+                        <image class="edit-icon" src="/static/images/icons/edit-icon.png" @tap="editPositionTitle" mode="aspectFit"></image>
                     </view>
                 </view>
 
@@ -143,6 +151,7 @@ import { onLoad, onUnload } from '@dcloudio/uni-app';
 import navigationBar from '@/components/navigation-bar/navigation-bar.vue';
 import { fetchCurrentUser } from '@/api/auth';
 import { getAccessToken, getStoredRole, getStoredUser, hasCompleteUserProfile, saveAuthSession } from '@/api/storage';
+import { getTeacherProfile, updateTeacherProfile, changePassword } from '@/api/teacher';
 // pages/teacher-personal-info/teacher-personal-info.ts
 
 const teacherInfo = ref<any>({
@@ -151,7 +160,9 @@ const teacherInfo = ref<any>({
     gender: '',
     college: '',
     department: '',
+    positionTitle: '',
     phone: '',
+    email: '',
     registerTime: '',
     password: ''
 });
@@ -217,31 +228,51 @@ onUnload(() => {
 /**
  * 加载教师信息
  */
-const loadTeacherInfo = () => {
+const loadTeacherInfo = async () => {
     try {
-        const storedInfo = uni.getStorageSync('teacherInfo') || getStoredUser();
-        if (storedInfo) {
-            const normalizedInfo = {
-                name: storedInfo.name || storedInfo.realName || '',
-                teacherId: storedInfo.teacherId || storedInfo.accountNo || '',
-                gender: storedInfo.gender || '',
-                college: storedInfo.college || '',
-                department: storedInfo.department || '',
-                phone: storedInfo.phone || '',
-                email: storedInfo.email || '',
-                registerTime: storedInfo.registerTime || '',
-                password: storedInfo.password || ''
-            };
-            teacherInfo.value = normalizedInfo;
-            originalInfo.value = JSON.parse(JSON.stringify(normalizedInfo));
-        }
-    } catch (error) {
-        console.log('CatchClause', error);
-        console.log('CatchClause', error);
+        const profile: any = await getTeacherProfile();
+        const src = profile || {};
+        const normalizedInfo = {
+            name: src.name || src.realName || '',
+            teacherId: src.teacherId || src.accountNo || src.teacherNo || '',
+            gender: src.gender || '',
+            college: src.college || '',
+            department: src.department || '',
+            positionTitle: src.positionTitle || '',
+            phone: src.phone || '',
+            email: src.email || '',
+            registerTime: src.registerTime || src.createTime || '',
+            password: ''
+        };
+        teacherInfo.value = normalizedInfo;
+        originalInfo.value = JSON.parse(JSON.stringify(normalizedInfo));
+    } catch (error: any) {
         console.error('加载教师信息失败:', error);
+        // 接口失败时回退到本地缓存，避免页面空白
+        try {
+            const storedInfo = uni.getStorageSync('teacherInfo') || getStoredUser();
+            if (storedInfo) {
+                const normalizedInfo = {
+                    name: storedInfo.name || storedInfo.realName || '',
+                    teacherId: storedInfo.teacherId || storedInfo.accountNo || '',
+                    gender: storedInfo.gender || '',
+                    college: storedInfo.college || '',
+                    department: storedInfo.department || '',
+                    positionTitle: storedInfo.positionTitle || '',
+                    phone: storedInfo.phone || '',
+                    email: storedInfo.email || '',
+                    registerTime: storedInfo.registerTime || '',
+                    password: ''
+                };
+                teacherInfo.value = normalizedInfo;
+                originalInfo.value = JSON.parse(JSON.stringify(normalizedInfo));
+            }
+        } catch (e) {
+            console.error('读取本地缓存失败:', e);
+        }
         uni.showToast({
-            title: '加载信息失败',
-            icon: 'error'
+            title: error?.data?.message || '加载失败',
+            icon: 'none'
         });
     }
 };
@@ -357,6 +388,13 @@ const editDepartment = () => {
 };
 
 /**
+ * 编辑职称
+ */
+const editPositionTitle = () => {
+    openEditModal('职称', 'input', teacherInfo.value.positionTitle);
+};
+
+/**
  * 编辑手机号
  */
 const editPhone = () => {
@@ -454,6 +492,9 @@ const confirmEdit = () => {
         case '部门':
             teacherInfo.value.department = _editValue;
             break;
+        case '职称':
+            teacherInfo.value.positionTitle = _editValue;
+            break;
         case '手机号':
             teacherInfo.value.phone = _editValue;
             break;
@@ -468,8 +509,20 @@ const confirmEdit = () => {
 /**
  * 保存信息
  */
-const saveInfo = () => {
+const saveInfo = async () => {
     try {
+        const payload = {
+            name: teacherInfo.value.name,
+            gender: teacherInfo.value.gender,
+            college: teacherInfo.value.college,
+            department: teacherInfo.value.department,
+            positionTitle: teacherInfo.value.positionTitle || '',
+            phone: teacherInfo.value.phone,
+            email: teacherInfo.value.email || ''
+        };
+        await updateTeacherProfile(payload);
+
+        // 同步本地缓存与会话，保持鉴权信息一致
         const accessToken = getAccessToken();
         const storedUser = getStoredUser() || {};
         uni.setStorageSync('teacherInfo', teacherInfo.value);
@@ -488,19 +541,17 @@ const saveInfo = () => {
             saveAuthSession(accessToken, uni.getStorageSync('currentUser'));
         }
         uni.showToast({
-            title: '已保存到本地缓存',
+            title: '保存成功',
             icon: 'success'
         });
 
         // 更新原始信息
         originalInfo.value = JSON.parse(JSON.stringify(teacherInfo.value));
-    } catch (error) {
-        console.log('CatchClause', error);
-        console.log('CatchClause', error);
+    } catch (error: any) {
         console.error('保存信息失败:', error);
         uni.showToast({
-            title: '保存失败',
-            icon: 'error'
+            title: error?.data?.message || '加载失败',
+            icon: 'none'
         });
     }
 };
@@ -534,12 +585,37 @@ const onConfirmNewPasswordInput = (e: any) => {
     confirmNewPassword.value = e.detail.value;
 };
 
-const confirmPasswordChange = () => {
-    showPasswordModal.value = false;
-    uni.showToast({
-        title: '后端暂未提供修改密码接口',
-        icon: 'none'
-    });
+const confirmPasswordChange = async () => {
+    if (!oldPassword.value) {
+        uni.showToast({ title: '请输入原密码', icon: 'none' });
+        return;
+    }
+    if (!newPassword.value || newPassword.value.length < 6) {
+        uni.showToast({ title: '新密码至少6位', icon: 'none' });
+        return;
+    }
+    if (newPassword.value !== confirmNewPassword.value) {
+        uni.showToast({ title: '两次输入的新密码不一致', icon: 'none' });
+        return;
+    }
+
+    try {
+        await changePassword({
+            oldPassword: oldPassword.value,
+            newPassword: newPassword.value
+        });
+        closePasswordModal();
+        uni.showToast({
+            title: '密码修改成功',
+            icon: 'success'
+        });
+    } catch (error: any) {
+        console.error('修改密码失败:', error);
+        uni.showToast({
+            title: error?.data?.message || '加载失败',
+            icon: 'none'
+        });
+    }
 };
 </script>
 <style lang="less">

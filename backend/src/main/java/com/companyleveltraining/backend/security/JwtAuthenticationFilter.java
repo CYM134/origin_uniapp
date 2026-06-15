@@ -1,7 +1,9 @@
 package com.companyleveltraining.backend.security;
 
 import java.io.IOException;
+import java.util.Optional;
 
+import com.companyleveltraining.backend.auth.UserAccountRepository;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -16,10 +18,15 @@ import org.springframework.web.filter.OncePerRequestFilter;
 @Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
-    private final JwtService jwtService;
+    /** sys_users.status 中代表「启用」的取值，详见 AdminUserService / 注册种子数据。 */
+    private static final String STATUS_ACTIVE = "active";
 
-    public JwtAuthenticationFilter(JwtService jwtService) {
+    private final JwtService jwtService;
+    private final UserAccountRepository userAccountRepository;
+
+    public JwtAuthenticationFilter(JwtService jwtService, UserAccountRepository userAccountRepository) {
         this.jwtService = jwtService;
+        this.userAccountRepository = userAccountRepository;
     }
 
     @Override
@@ -42,11 +49,30 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         }
 
         SecurityUser user = jwtService.parseToken(token);
+
+        // 回库按 id 校验账号当前状态：禁用/删除/不存在的账号即便持有未过期 token 也不再放行，
+        // 让请求落到未认证 -> RestAuthenticationEntryPoint 返回 401。
+        if (!isAccountActive(user.id())) {
+            filterChain.doFilter(request, response);
+            return;
+        }
+
         UsernamePasswordAuthenticationToken authentication =
             new UsernamePasswordAuthenticationToken(user, null, user.getAuthorities());
         authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
         SecurityContextHolder.getContext().setAuthentication(authentication);
 
         filterChain.doFilter(request, response);
+    }
+
+    private boolean isAccountActive(Long userId) {
+        if (userId == null) {
+            return false;
+        }
+        Optional<UserAccountRepository.AccountStatus> status =
+            userAccountRepository.findAccountStatusById(userId);
+        return status
+            .map(s -> !s.deleted() && STATUS_ACTIVE.equals(s.status()))
+            .orElse(false);
     }
 }

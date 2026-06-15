@@ -136,9 +136,7 @@
                         <view class="detail-header">
                             <view class="detail-title">
                                 <text class="title-text">
-                                    {{
-                                        selectedApplication.applicationType === 'course' ? '课程实验' : selectedApplication.applicationType === 'research' ? '科研项目' : '其他活动'
-                                    }}
+                                    {{ selectedApplication.applicationTypeName || selectedApplication.courseName || '预约申请' }}
                                 </text>
                                 <view :class="'status-badge status-' + selectedApplication.status">{{ selectedApplication.statusText }}</view>
                             </view>
@@ -224,6 +222,15 @@
                                 <text class="detail-value">{{ selectedApplication.reviewComment }}</text>
                             </view>
                         </view>
+
+                        <!-- 审批流水 -->
+                        <view class="review-section" v-if="selectedApplication.approvalLogs && selectedApplication.approvalLogs.length > 0">
+                            <view class="section-title">审批流水</view>
+                            <view class="detail-item" v-for="(log, logIndex) in selectedApplication.approvalLogs" :key="logIndex">
+                                <text class="detail-label">{{ log.action }}{{ log.reviewerName ? '（' + log.reviewerName + '）' : '' }}：</text>
+                                <text class="detail-value">{{ log.createTime }}{{ log.comment ? ' ' + log.comment : '' }}</text>
+                            </view>
+                        </view>
                     </view>
                 </scroll-view>
 
@@ -264,6 +271,7 @@
 import { ref } from 'vue';
 import { onLoad, onShow, onPullDownRefresh } from '@dcloudio/uni-app';
 import navigationBar from '@/components/navigation-bar/navigation-bar.vue';
+import { getMyReservations, completeReservation, getReservationDetail } from '@/api/student';
 // pages/student-completed-process/student-completed-process.ts
 
 // 筛选状态
@@ -319,45 +327,11 @@ const getStatusText = (status: string, isCompleted: boolean): string => {
     return statusTextMap[status] || status;
 };
 
-// 更新本地存储
-const updateLocalStorage = (processedApplications: any[]) => {
-    try {
-        const allApplications = uni.getStorageSync('studentApplications') || [];
-        const updatedApplications = allApplications.map((app: any) => {
-            const processed = processedApplications.find((p: any) => p.id === app.id);
-            if (processed && processed.status !== app.status) {
-                return {
-                    ...app,
-                    status: processed.status,
-                    isCompleted: processed.isCompleted
-                };
-            }
-            return app;
-        });
-        uni.setStorageSync('studentApplications', updatedApplications);
-    } catch (error) {
-        console.log('CatchClause', error);
-        console.log('CatchClause', error);
-        console.error('更新本地存储失败:', error);
-    }
-};
-
-// 筛选申请
+// 筛选申请：状态以后端真值为准（completed 为真实状态，不再依赖前端伪造的 isCompleted）
 const filterApplications = () => {
     let filtered = applications.value;
     if (selectedStatus.value !== 'all') {
-        if (selectedStatus.value === 'completed') {
-            // 显示已完成的申请
-            filtered = applications.value.filter((app: any) => app.status === 'approved' && app.isCompleted);
-        } else {
-            // 显示其他状态的申请（排除已完成的已通过申请）
-            filtered = applications.value.filter((app: any) => {
-                if (selectedStatus.value === 'approved') {
-                    return app.status === 'approved' && !app.isCompleted;
-                }
-                return app.status === selectedStatus.value;
-            });
-        }
+        filtered = applications.value.filter((app: any) => app.status === selectedStatus.value);
     }
     filteredApplications.value = filtered;
 };
@@ -372,9 +346,7 @@ const calculateStatusCounts = () => {
         completed: 0
     };
     applications.value.forEach((app: any) => {
-        if (app.status === 'approved' && app.isCompleted) {
-            counts.completed++;
-        } else if (counts.hasOwnProperty(app.status)) {
+        if (counts.hasOwnProperty(app.status)) {
             counts[app.status as keyof typeof counts]++;
         }
     });
@@ -382,42 +354,36 @@ const calculateStatusCounts = () => {
 };
 
 // 加载申请数据
-const loadApplications = () => {
+const loadApplications = async () => {
     try {
-        // 获取当前登录学生信息
-        const currentStudent = uni.getStorageSync('studentInfo');
-        if (!currentStudent || !currentStudent.studentId) {
-            uni.showToast({
-                title: '请先登录',
-                icon: 'none'
-            });
-            return;
-        }
+        // 从后端获取我的预约列表
+        const list = (await getMyReservations()) || [];
 
-        // 从本地存储加载申请数据
-        const allApplications = uni.getStorageSync('studentApplications') || [];
-
-        // 只显示当前登录学生的申请，且为已办流程（非待审核状态）
-        const myCompletedApplications = allApplications.filter((app: any) => {
-            // 首先过滤出当前学生的申请
-            const isMyApplication = app.studentId === currentStudent.studentId || app.applicant === currentStudent.name;
-
-            // 然后过滤出已办流程（非待审核状态）
-            const isCompleted = app.status !== 'pending';
-            return isMyApplication && isCompleted;
+        // 只显示已办流程（非待审核状态）
+        const myCompletedApplications = (Array.isArray(list) ? list : []).filter((app: any) => {
+            return app.status !== 'pending';
         });
 
         // 处理申请数据，添加显示用的字段
-        const processedApplications = myCompletedApplications.map((app: any) => {
-            const submitTime = new Date(app.submitTime);
+        const processedApplications = myCompletedApplications.map((rawApp: any) => {
+            // 字段对齐：后端别名 -> 模板/处理逻辑所需字段
+            const app: any = {
+                ...rawApp,
+                reviewComment: rawApp.reviewComment || rawApp.adminReviewComment || rawApp.rejectReason || rawApp.teacherReviewReason || '',
+                reviewer: rawApp.reviewer || rawApp.adminReviewerName || rawApp.teacherReviewerName || '',
+                reviewTime: rawApp.reviewTime || rawApp.adminReviewTime || rawApp.approvalTime || rawApp.teacherReviewTime || '',
+                teacherReviewTime: rawApp.teacherReviewTime || '',
+                teacherReviewerName: rawApp.teacherReviewerName || ''
+            };
+            const submitTime = app.submitTime ? new Date(app.submitTime) : new Date(app.applyTime || app.createTime || Date.now());
             const reviewTime = app.reviewTime ? new Date(app.reviewTime) : null;
             const teacherReviewTime = app.teacherReviewTime ? new Date(app.teacherReviewTime) : null;
 
             // 兼容字段
-            const labName = (app.lab && app.lab.name) || app.laboratory || '';
+            const labName = app.labName || (app.lab && app.lab.name) || app.laboratory || '';
             const studentCount = app.studentCount || app.peopleCount || '';
             const title = app.title || app.subject || '';
-            let timeText = app.timeText;
+            let timeText = app.timeText || app.timeSlot;
             if (!timeText) {
                 if (app.startTime && app.endTime) {
                     timeText = `${app.startTime}-${app.endTime}`;
@@ -426,14 +392,12 @@ const loadApplications = () => {
                 }
             }
 
-            // 判断是否已过期
+            // 判断是否已过期（仅用于展示，不据此伪造状态）
             const isExpired = new Date(app.date).getTime() < Date.now();
-            let finalStatus = app.status;
-            let isCompleted = app.isCompleted;
-            if (app.status === 'approved' && isExpired && !app.isCompleted) {
-                finalStatus = 'completed';
-                isCompleted = true;
-            }
+            // 状态与是否完成一律以后端真值为准，不在前端臆造 completed/isCompleted，
+            // 否则过期但未完成的 approved 预约会被永久屏蔽「标记完成」按钮、无法真正落库。
+            const finalStatus = app.status;
+            const isCompleted = app.isCompleted;
 
             // 根据状态设置显示文本和样式
             let statusText = '';
@@ -515,16 +479,15 @@ const loadApplications = () => {
         });
         applications.value = processedApplications;
 
-        // 更新本地存储（保存自动完成的状态）
-        updateLocalStorage(processedApplications);
         calculateStatusCounts();
         filterApplications();
-    } catch (error) {
-        console.log('CatchClause', error);
-        console.log('CatchClause', error);
+    } catch (error: any) {
         console.error('加载申请数据失败:', error);
+        applications.value = [];
+        calculateStatusCounts();
+        filterApplications();
         uni.showToast({
-            title: '加载数据失败',
+            title: error?.data?.message || '加载失败',
             icon: 'none'
         });
     }
@@ -550,11 +513,40 @@ const filterByStatus = (e: any) => {
     filterApplications();
 };
 
-// 查看申请详情
-const viewApplicationDetail = (e: any) => {
-    const application = e.currentTarget.dataset.application;
-    selectedApplication.value = application;
-    showDetailModal.value = true;
+// 查看申请详情：列表项不含 approvalLogs，需拉取详情接口
+const viewApplicationDetail = async (e: any) => {
+    const item = e.currentTarget.dataset.application;
+    if (!item || !item.id) {
+        return;
+    }
+    uni.showLoading({ title: '加载中...' });
+    try {
+        const detail: any = (await getReservationDetail(item.id)) || {};
+        // 真实审核人/时间别名：adminReviewerName/teacherReviewerName、adminReviewTime/teacherReviewTime
+        const reviewer = detail.adminReviewerName || detail.teacherReviewerName || '';
+        const reviewTime = detail.adminReviewTime || detail.teacherReviewTime || '';
+        const reviewComment = detail.adminReviewComment || detail.rejectReason || detail.teacherReviewReason || '';
+        selectedApplication.value = {
+            ...detail,
+            labName: detail.labName || (detail.lab && detail.lab.name) || '',
+            timeText: detail.timeText || (detail.startTime && detail.endTime ? `${detail.startTime}-${detail.endTime}` : '未选择时间段'),
+            submitTimeText: detail.submitTime ? formatDateTime(new Date(detail.submitTime)) : '',
+            reviewer,
+            reviewComment,
+            reviewTimeText: reviewTime ? formatDateTime(new Date(reviewTime)) : '',
+            canModify: detail.status === 'approved' && !detail.isCompleted && new Date(detail.date).getTime() > Date.now() + 86400 * 1000,
+            approvalLogs: Array.isArray(detail.approvalLogs) ? detail.approvalLogs : []
+        };
+        uni.hideLoading();
+        showDetailModal.value = true;
+    } catch (error: any) {
+        uni.hideLoading();
+        console.error('加载详情失败:', error);
+        uni.showToast({
+            title: error?.data?.message || '加载详情失败',
+            icon: 'none'
+        });
+    }
 };
 
 // 关闭详情弹窗
@@ -586,47 +578,31 @@ const closeCompleteModal = () => {
 };
 
 // 确认完成
-const confirmComplete = () => {
+const confirmComplete = async () => {
     if (!completeApplicationId.value) {
         return;
     }
     uni.showLoading({
         title: '处理中...'
     });
-
-    // 模拟完成请求
-    setTimeout(() => {
+    try {
+        await completeReservation(completeApplicationId.value);
         uni.hideLoading();
-        try {
-            // 更新本地存储
-            const apps = uni.getStorageSync('studentApplications') || [];
-            const updatedApplications = apps.map((app: any) => {
-                if (app.id === completeApplicationId.value) {
-                    return {
-                        ...app,
-                        isCompleted: true,
-                        completedTime: new Date().toISOString()
-                    };
-                }
-                return app;
-            });
-            uni.setStorageSync('studentApplications', updatedApplications);
-            uni.showToast({
-                title: '已标记完成',
-                icon: 'success'
-            });
-            showCompleteModal.value = false;
-            completeApplicationId.value = '';
-            loadApplications();
-        } catch (error) {
-            console.log('CatchClause', error);
-            console.log('CatchClause', error);
-            uni.showToast({
-                title: '操作失败，请重试',
-                icon: 'none'
-            });
-        }
-    }, 1500);
+        uni.showToast({
+            title: '已标记完成',
+            icon: 'success'
+        });
+        showCompleteModal.value = false;
+        completeApplicationId.value = '';
+        await loadApplications();
+    } catch (error: any) {
+        uni.hideLoading();
+        console.error('标记完成失败:', error);
+        uni.showToast({
+            title: error?.data?.message || '操作失败，请重试',
+            icon: 'none'
+        });
+    }
 };
 
 // 重新申请

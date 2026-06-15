@@ -384,6 +384,20 @@
 import { ref } from 'vue';
 import { onLoad } from '@dcloudio/uni-app';
 import navigationBar from '@/components/navigation-bar/navigation-bar.vue';
+import {
+    getSystemSettings,
+    updateSystemSettings,
+    getBackups,
+    createBackup,
+    restoreBackup as apiRestoreBackup,
+    deleteBackup as apiDeleteBackup,
+    getUsers,
+    createUser as apiCreateUser,
+    updateUser as apiUpdateUser,
+    toggleUserStatus as apiToggleUserStatus,
+    resetUserPassword,
+    deleteUser as apiDeleteUser
+} from '@/api/admin';
 // system-management.ts
 
 const activeTab = ref<number>(0);
@@ -402,26 +416,7 @@ const settings = ref<any>({
     reminderNotification: true
 });
 
-const backupRecords = ref<any[]>([
-    {
-        id: 'backup001',
-        name: '全部数据备份',
-        time: '2023-09-15 15:30:45',
-        size: '5.2MB'
-    },
-    {
-        id: 'backup002',
-        name: '实验室数据备份',
-        time: '2023-09-10 09:15:22',
-        size: '1.8MB'
-    },
-    {
-        id: 'backup003',
-        name: '课表数据备份',
-        time: '2023-09-05 14:22:36',
-        size: '2.3MB'
-    }
-]);
+const backupRecords = ref<any[]>([]);
 
 const backupProgress = ref<number>(0);
 
@@ -439,56 +434,7 @@ const searchValue = ref<string>('');
 
 const userType = ref<string>('all');
 
-const users = ref<any[]>([
-    {
-        id: 'admin001',
-        name: '系统管理员',
-        //avatar: '/static/images/avatar/admin.png',
-        avatar: '/static/images/icons/管理员_角色管理.png',
-        role: 'admin',
-        roleName: '管理员',
-        status: 'active',
-        lastLogin: '2023-09-15 10:30:22'
-    },
-    {
-        id: 'T20230001',
-        name: '张教授',
-        //avatar: '/static/images/avatar/teacher1.png',
-        avatar: '/static/images/icons/教师，领导中心.png',
-        role: 'teacher',
-        roleName: '教师',
-        status: 'active',
-        lastLogin: '2023-09-14 16:45:18'
-    },
-    {
-        id: 'T20230002',
-        name: '李副教授',
-        avatar: '/static/images/icons/教师，领导中心.png',
-        role: 'teacher',
-        roleName: '教师',
-        status: 'active',
-        lastLogin: '2023-09-13 09:22:45'
-    },
-    {
-        id: 'S20230001',
-        name: '王同学',
-        avatar: '/static/images/icons/学生.png',
-        role: 'student',
-        roleName: '学生',
-        status: 'active',
-        lastLogin: '2023-09-15 14:18:36'
-    },
-    {
-        id: 'S20230002',
-        name: '赵同学',
-        //avatar: '/static/images/avatar/student2.png',
-        avatar: '/static/images/icons/学生.png',
-        role: 'student',
-        roleName: '学生',
-        status: 'disabled',
-        lastLogin: '2023-09-10 11:05:52'
-    }
-]);
+const users = ref<any[]>([]);
 
 const filteredUsers = ref<any[]>([]);
 const showUserModal = ref<boolean>(false);
@@ -529,8 +475,49 @@ const showDeleteUserConfirmModal = ref<boolean>(false);
 const deleteUserId = ref<string>('');
 const name = ref<string>('');
 
-onLoad(() => {
+// 加载系统设置
+const loadSettings = async () => {
+    try {
+        const data = await getSystemSettings();
+        if (data) {
+            settings.value = { ...settings.value, ...data };
+            // picker mode="time" 需要 'HH:mm'，若后端带秒则截取兜底
+            settings.value.reservationStartTime = (settings.value.reservationStartTime || '').slice(0, 5);
+            settings.value.reservationEndTime = (settings.value.reservationEndTime || '').slice(0, 5);
+        }
+    } catch (err: any) {
+        uni.showToast({ title: err?.data?.message || '加载失败', icon: 'none' });
+    }
+};
+
+// 加载备份记录
+const loadBackups = async () => {
+    try {
+        const data = await getBackups();
+        backupRecords.value = Array.isArray(data) ? data : [];
+    } catch (err: any) {
+        backupRecords.value = [];
+        uni.showToast({ title: err?.data?.message || '加载失败', icon: 'none' });
+    }
+};
+
+// 加载用户列表（keyword 与 role 由当前筛选状态决定）
+const loadUsers = async () => {
+    try {
+        const role = userType.value === 'all' ? '' : userType.value;
+        const data = await getUsers(searchValue.value, role);
+        users.value = Array.isArray(data) ? data : [];
+    } catch (err: any) {
+        users.value = [];
+        uni.showToast({ title: err?.data?.message || '加载失败', icon: 'none' });
+    }
     filterUsers();
+};
+
+onLoad(() => {
+    loadSettings();
+    loadBackups();
+    loadUsers();
 });
 
 // 切换选项卡
@@ -589,12 +576,17 @@ const onReminderNotificationChange = (e: any) => {
     settings.value.reminderNotification = e.detail.value;
 };
 
-const saveSettings = () => {
-    // 保存设置到服务器的逻辑在这里实现
-    uni.showToast({
-        title: '设置已保存',
-        icon: 'success'
-    });
+const saveSettings = async () => {
+    // 保存设置到服务器
+    try {
+        await updateSystemSettings(settings.value);
+        uni.showToast({
+            title: '设置已保存',
+            icon: 'success'
+        });
+    } catch (err: any) {
+        uni.showToast({ title: err?.data?.message || '保存失败', icon: 'none' });
+    }
 };
 
 // 数据备份相关方法
@@ -618,40 +610,36 @@ const backupAll = () => {
     startBackup('全部');
 };
 
-const startBackup = (type: string) => {
+const startBackup = async (type: string) => {
     showBackupProgressModal.value = true;
     backupProgress.value = 0;
     backupInfo.value.type = type;
 
-    // 模拟备份进度
+    // 进度条仅作 UI 过渡，真正备份由后端完成
     let progress = 0;
     const timer = setInterval(() => {
-        progress += 10;
-        if (progress > 100) {
-            clearInterval(timer);
-            progress = 100;
+        progress = Math.min(progress + 10, 90);
+        backupProgress.value = progress;
+    }, 200);
 
-            // 模拟添加新备份记录
-            const now = new Date();
-            const newBackup = {
-                id: 'backup' + now.getTime(),
-                name: type + '数据备份',
-                time: formatDateTime(now),
-                size: (Math.random() * 5 + 1).toFixed(1) + 'MB'
-            };
-            backupProgress.value = progress;
-            backupRecords.value = [newBackup, ...backupRecords.value];
-            setTimeout(() => {
-                showBackupProgressModal.value = false;
-                uni.showToast({
-                    title: '备份完成',
-                    icon: 'success'
-                });
-            }, 500);
-        } else {
-            backupProgress.value = progress;
-        }
-    }, 300);
+    try {
+        await createBackup(type);
+        clearInterval(timer);
+        backupProgress.value = 100;
+        // 重新拉取备份记录
+        await loadBackups();
+        setTimeout(() => {
+            showBackupProgressModal.value = false;
+            uni.showToast({
+                title: '备份完成',
+                icon: 'success'
+            });
+        }, 500);
+    } catch (err: any) {
+        clearInterval(timer);
+        showBackupProgressModal.value = false;
+        uni.showToast({ title: err?.data?.message || '备份失败', icon: 'none' });
+    }
 };
 
 const restoreBackup = (e: any) => {
@@ -664,24 +652,26 @@ const closeRestoreConfirmModal = () => {
     showRestoreConfirmModal.value = false;
 };
 
-const confirmRestore = () => {
-    // 恢复备份的逻辑在这里实现
+const confirmRestore = async () => {
+    // 恢复备份
     const backupId = currentBackupId.value;
-    const backup = backupRecords.value.find((item) => item.id === backupId);
-    if (backup) {
-        showRestoreConfirmModal.value = false;
-        uni.showLoading({
-            title: '正在恢复数据'
+    if (!backupId) {
+        return;
+    }
+    showRestoreConfirmModal.value = false;
+    uni.showLoading({
+        title: '正在恢复数据'
+    });
+    try {
+        await apiRestoreBackup(backupId);
+        uni.hideLoading();
+        uni.showToast({
+            title: '恢复完成',
+            icon: 'success'
         });
-
-        // 模拟恢复过程
-        setTimeout(() => {
-            uni.hideLoading();
-            uni.showToast({
-                title: '恢复完成',
-                icon: 'success'
-            });
-        }, 2000);
+    } catch (err: any) {
+        uni.hideLoading();
+        uni.showToast({ title: err?.data?.message || '恢复失败', icon: 'none' });
     }
 };
 
@@ -714,14 +704,24 @@ const closeDeleteConfirmModal = () => {
     showDeleteConfirmModal.value = false;
 };
 
-const confirmDelete = () => {
+const confirmDelete = async () => {
     const backupId = currentBackupId.value;
-    backupRecords.value = backupRecords.value.filter((item) => item.id !== backupId);
-    showDeleteConfirmModal.value = false;
-    uni.showToast({
-        title: '已删除',
-        icon: 'success'
-    });
+    if (!backupId) {
+        showDeleteConfirmModal.value = false;
+        return;
+    }
+    try {
+        await apiDeleteBackup(backupId);
+        backupRecords.value = backupRecords.value.filter((item) => item.id !== backupId);
+        showDeleteConfirmModal.value = false;
+        uni.showToast({
+            title: '已删除',
+            icon: 'success'
+        });
+    } catch (err: any) {
+        showDeleteConfirmModal.value = false;
+        uni.showToast({ title: err?.data?.message || '删除失败', icon: 'none' });
+    }
 };
 
 // 用户管理相关方法
@@ -730,27 +730,18 @@ const onSearchInput = (e: any) => {
 };
 
 const searchUsers = () => {
-    filterUsers();
+    loadUsers();
 };
 
 const filterUsers = () => {
-    let filtered = users.value;
-
-    // 按角色筛选
-    if (userType.value !== 'all') {
-        filtered = filtered.filter((user) => user.role === userType.value);
-    }
-
-    // 按搜索值筛选
-    if (searchValue.value) {
-        filtered = filtered.filter((user) => user.name.includes(searchValue.value) || user.id.includes(searchValue.value) || user.roleName.includes(searchValue.value));
-    }
-    filteredUsers.value = filtered;
+    // keyword 与 role 已由 loadUsers 传给后端做模糊匹配/筛选，
+    // 这里直接采用后端返回的结果，避免对数字 id 调 .includes() 抛 TypeError。
+    filteredUsers.value = users.value;
 };
 
 const filterUsersByType = (e: any) => {
     userType.value = e.currentTarget.dataset.type;
-    filterUsers();
+    loadUsers();
 };
 
 const showAddUserModal = () => {
@@ -768,7 +759,7 @@ const showAddUserModal = () => {
 
 const editUser = (e: any) => {
     const userId = e.currentTarget.dataset.id;
-    const user = users.value.find((u) => u.id === userId);
+    const user = users.value.find((u) => String(u.id) === String(userId));
     if (user) {
         const roleIndexVal = roles.value.findIndex((r) => r.id === user.role);
         showUserModal.value = true;
@@ -811,7 +802,7 @@ const onStatusChange = (e: any) => {
     userForm.value.status = e.detail.value;
 };
 
-const saveUser = () => {
+const saveUser = async () => {
     // 表单验证
     if (!userForm.value.name) {
         uni.showToast({
@@ -835,10 +826,11 @@ const saveUser = () => {
         return;
     }
 
-    // 检查ID是否已存在（仅在添加新用户时检查）
-    if (!isEditingUser.value && users.value.some((u) => u.id === userForm.value.id)) {
+    // 检查账号是否已存在（仅在添加新用户时检查）
+    // 列表项 id 为数字、accountNo 为账号字符串，统一 String() 化比较，避免类型坑。
+    if (!isEditingUser.value && users.value.some((u) => String(u.accountNo || u.id) === String(userForm.value.id))) {
         uni.showToast({
-            title: '用户ID已存在',
+            title: '用户账号已存在',
             icon: 'none'
         });
         return;
@@ -856,43 +848,43 @@ const saveUser = () => {
     }
     if (isEditingUser.value) {
         // 更新现有用户
-        const updatedUsers = users.value.map((user) => {
-            if (user.id === userForm.value.id) {
-                return {
-                    ...user,
-                    name: userForm.value.name,
-                    role: userForm.value.role,
-                    roleName,
-                    status: userForm.value.status
-                };
-            }
-            return user;
-        });
-        users.value = updatedUsers;
-        showUserModal.value = false;
-        filterUsers();
-        uni.showToast({
-            title: '用户已更新',
-            icon: 'success'
-        });
+        try {
+            await apiUpdateUser(userForm.value.id, {
+                name: userForm.value.name,
+                role: userForm.value.role,
+                roleName,
+                status: userForm.value.status
+            });
+            showUserModal.value = false;
+            await loadUsers();
+            uni.showToast({
+                title: '用户已更新',
+                icon: 'success'
+            });
+        } catch (err: any) {
+            uni.showToast({ title: err?.data?.message || '更新失败', icon: 'none' });
+        }
     } else {
         // 添加新用户
-        const newUser = {
-            id: userForm.value.id,
-            name: userForm.value.name,
-            avatar: '/static/images/avatar/default.png',
-            role: userForm.value.role,
-            roleName,
-            status: userForm.value.status,
-            lastLogin: ''
-        };
-        users.value = [...users.value, newUser];
-        showUserModal.value = false;
-        filterUsers();
-        uni.showToast({
-            title: '用户已添加',
-            icon: 'success'
-        });
+        try {
+            // 后端读取的是 accountNo（管理员输入的登录账号），而非自增 id。
+            await apiCreateUser({
+                accountNo: userForm.value.id,
+                name: userForm.value.name,
+                role: userForm.value.role,
+                roleName,
+                status: userForm.value.status,
+                password: userForm.value.password
+            });
+            showUserModal.value = false;
+            await loadUsers();
+            uni.showToast({
+                title: '用户已添加',
+                icon: 'success'
+            });
+        } catch (err: any) {
+            uni.showToast({ title: err?.data?.message || '添加失败', icon: 'none' });
+        }
     }
 };
 
@@ -916,7 +908,7 @@ const onConfirmPasswordInput = (e: any) => {
     confirmPassword.value = e.detail.value;
 };
 
-const confirmResetPassword = () => {
+const confirmResetPassword = async () => {
     if (!newPassword.value) {
         uni.showToast({
             title: '请输入新密码',
@@ -932,30 +924,36 @@ const confirmResetPassword = () => {
         return;
     }
 
-    // 重置密码的逻辑在这里实现
-    showResetPasswordModal.value = false;
-    uni.showToast({
-        title: '密码已重置',
-        icon: 'success'
-    });
+    // 重置密码
+    try {
+        await resetUserPassword(currentUserId.value);
+        showResetPasswordModal.value = false;
+        uni.showToast({
+            title: '密码已重置',
+            icon: 'success'
+        });
+    } catch (err: any) {
+        uni.showToast({ title: err?.data?.message || '重置失败', icon: 'none' });
+    }
 };
 
-const toggleUserStatus = (e: any) => {
+const toggleUserStatus = async (e: any) => {
     const userId = e.currentTarget.dataset.id;
-    users.value = users.value.map((user) => {
-        if (user.id === userId) {
-            return {
-                ...user,
-                status: user.status === 'active' ? 'disabled' : 'active'
-            };
-        }
-        return user;
-    });
-    filterUsers();
-    uni.showToast({
-        title: '状态已更新',
-        icon: 'success'
-    });
+    const user = users.value.find((u) => String(u.id) === String(userId));
+    if (!user) {
+        return;
+    }
+    const nextStatus = user.status === 'active' ? 'disabled' : 'active';
+    try {
+        await apiToggleUserStatus(userId, nextStatus);
+        await loadUsers();
+        uni.showToast({
+            title: '状态已更新',
+            icon: 'success'
+        });
+    } catch (err: any) {
+        uni.showToast({ title: err?.data?.message || '更新失败', icon: 'none' });
+    }
 };
 
 const closeDeleteUserConfirmModal = () => {
@@ -963,16 +961,22 @@ const closeDeleteUserConfirmModal = () => {
     deleteUserId.value = '';
 };
 
-const confirmDeleteUser = () => {
-    users.value = users.value.filter((u) => u.id !== deleteUserId.value);
-    showDeleteUserConfirmModal.value = false;
-    deleteUserId.value = '';
-    showUserModal.value = false; // 删除后关闭编辑弹窗
-    filterUsers();
-    uni.showToast({
-        title: '用户已删除',
-        icon: 'success'
-    });
+const confirmDeleteUser = async () => {
+    const targetId = deleteUserId.value;
+    try {
+        await apiDeleteUser(targetId);
+        showDeleteUserConfirmModal.value = false;
+        deleteUserId.value = '';
+        showUserModal.value = false; // 删除后关闭编辑弹窗
+        await loadUsers();
+        uni.showToast({
+            title: '用户已删除',
+            icon: 'success'
+        });
+    } catch (err: any) {
+        showDeleteUserConfirmModal.value = false;
+        uni.showToast({ title: err?.data?.message || '删除失败', icon: 'none' });
+    }
 };
 
 // 辅助方法

@@ -214,6 +214,7 @@
 import { ref } from 'vue';
 import { onLoad, onShow, onPullDownRefresh } from '@dcloudio/uni-app';
 import navigationBar from '@/components/navigation-bar/navigation-bar.vue';
+import { getMyReservations, getReviewedApplications, reapproveReservation } from '@/api/teacher';
 // pages/teacher-completed-process/teacher-completed-process.ts
 
 interface TeacherInfo {
@@ -324,21 +325,9 @@ const formatTime = (timeString: string) => {
 const filterApplications = () => {
     let filteredApplications = allApplications.value;
     if (currentFilter.value === 'mine') {
-        // 我的：显示当前教师的所有申请（包括所有状态）
+        // 我的：显示当前教师的所有申请（包括所有状态），仅按 id 去重（在 loadApplications 中已完成），
+        // 不再按 日期+时间段+实验室 二次去重，避免吞掉本人合法的多次申请
         filteredApplications = allApplications.value.filter((app: any) => app.isMyApplication);
-
-        // 对"我的"状态页面进行额外去重，根据日期、时间段和实验室名称
-        const uniqueMap = new Map();
-        const uniqueFilteredApplications: any[] = [];
-        filteredApplications.forEach((app: any) => {
-            // 创建唯一键：日期+时间段+实验室名称
-            const uniqueKey = `${app.date}_${app.timeSlot}_${app.labName}`;
-            if (!uniqueMap.has(uniqueKey)) {
-                uniqueMap.set(uniqueKey, true);
-                uniqueFilteredApplications.push(app);
-            }
-        });
-        filteredApplications = uniqueFilteredApplications;
     } else if (currentFilter.value === 'student_approved') {
         // 学生：已通过 - 显示已通过和待管理员审核的记录
         filteredApplications = allApplications.value.filter((app: any) => app.isStudentApplication && (app.status === 'approved' || app.status === 'teacher_approved'));
@@ -391,123 +380,71 @@ const updateFilterCounts = () => {
 };
 
 /**
+ * 将后端预约对象映射成模板需要的形状
+ */
+const mapApplication = (app: any, isMyApplication: boolean) => {
+    const status = app.status || '';
+    const reviewTime = app.teacherReviewTime || app.adminReviewTime || app.approvalTime || app.reviewTime || '';
+    const submitTime = app.submitTime || app.applyTime || app.createTime || '';
+    const reviewReason = app.teacherReviewReason || app.adminReviewComment || app.rejectReason || app.reviewReason || '';
+    const reviewerName = app.teacherReviewerName || app.adminReviewerName || app.reviewerName || '';
+    const formattedApp: any = {
+        ...app,
+        isMyApplication,
+        isStudentApplication: !isMyApplication,
+        status,
+        labName: app.labName || '未知实验室',
+        labId: app.labId || '',
+        courseName: app.courseName || app.title || '未知课程',
+        courseType: app.courseType || '未知类型',
+        studentCount: app.studentCount || 0,
+        date: app.date || '',
+        timeSlot: app.timeSlot || (app.startTime && app.endTime ? `${app.startTime}-${app.endTime}` : ''),
+        remark: app.remark || app.purpose || '',
+        statusText: app.statusText || getStatusText(status),
+        submitTimeText: submitTime ? formatTime(submitTime) : '',
+        reviewTimeText: reviewTime ? formatTime(reviewTime) : '',
+        reviewTime,
+        submitTime,
+        reviewReason,
+        reviewerName,
+        applicantType: isMyApplication ? '教师申请' : '学生申请'
+    };
+    if (isMyApplication) {
+        // 教师自己的申请：申请人显示为教师本人
+        formattedApp.studentName = app.applicantName || app.applicant || teacherInfo.value.name || '';
+        formattedApp.studentId = app.applicantUserId || teacherInfo.value.teacherId || '';
+        formattedApp.phone = app.applicantPhone || app.contact || app.phone || teacherInfo.value.phone || '';
+    } else {
+        // 学生申请
+        formattedApp.studentName = app.studentName || app.applicantName || app.applicant || '未知学生';
+        formattedApp.studentId = app.studentId || app.applicantUserId || '未知学号';
+        formattedApp.phone = app.applicantPhone || app.phone || app.contact || '未提供';
+    }
+    return formattedApp;
+};
+
+/**
  * 加载申请列表
  */
-const loadApplications = () => {
+const loadApplications = async () => {
     try {
-        const currentTeacher = teacherInfo.value;
-        if (!currentTeacher || !currentTeacher.teacherId || !currentTeacher.name) {
-            uni.showToast({
-                title: '请先登录',
-                icon: 'none'
-            });
-            return;
-        }
+        // 并行拉取「我的申请」与「我审核过的学生申请」
+        const [myRes, reviewedRes] = await Promise.all([getMyReservations(), getReviewedApplications()]);
+        const myList = Array.isArray(myRes) ? myRes : [];
+        const reviewedList = Array.isArray(reviewedRes) ? reviewedRes : [];
 
-        // 获取教师申请和学生申请
-        const teacherApplications = uni.getStorageSync('teacherApplications') || [];
-        const studentApplications = uni.getStorageSync('studentApplications') || [];
-
-        // 筛选与当前教师相关的申请
-        const filteredTeacherApplications = teacherApplications.filter((app: any) => {
-            return (
-                app.teacherId === currentTeacher.teacherId || app.teacherName === currentTeacher.name || (app.type === 'teacher' && app.applicant === currentTeacher.name)
-            );
-        });
-
-        // 筛选当前教师审核过的学生申请
-        const filteredStudentApplications = studentApplications.filter((app: any) => {
-            return (
-                (app.teacherReviewerId === currentTeacher.teacherId || app.teacherReviewerName === currentTeacher.name) &&
-                (app.status === 'approved' || app.status === 'rejected' || app.status === 'teacher_approved')
-            );
-        });
-
-        // 合并当前教师相关的申请数据并去重
-        // 使用Map根据id去重
+        // 合并为 allApplications，并按 id 去重
         const applicationMap = new Map();
-
-        // 先处理教师申请
-        filteredTeacherApplications.forEach((app: any) => {
-            applicationMap.set(app.id, app);
+        myList.forEach((app: any) => {
+            applicationMap.set(app.id, mapApplication(app, true));
         });
-
-        // 再处理学生申请，如果id已存在则不添加
-        filteredStudentApplications.forEach((app: any) => {
+        reviewedList.forEach((app: any) => {
             if (!applicationMap.has(app.id)) {
-                applicationMap.set(app.id, app);
+                applicationMap.set(app.id, mapApplication(app, false));
             }
         });
-
-        // 转换回数组
-        const uniqueApplications = Array.from(applicationMap.values());
-
-        // 格式化申请数据
-        const formattedApplications = uniqueApplications.map((app: any) => {
-            // 判断申请类型 - 修复教师申请识别逻辑
-            const isMyApplication =
-                app.teacherId === currentTeacher.teacherId || app.teacherName === currentTeacher.name || (app.type === 'teacher' && app.applicant === currentTeacher.name);
-
-            // 学生申请：不是教师申请且不是当前教师的申请
-            const isStudentApplication = !isMyApplication && app.type !== 'teacher';
-
-            // 确保所有必要字段都存在
-            const formattedApp = {
-                ...app,
-                isMyApplication,
-                isStudentApplication
-            };
-            if (isMyApplication) {
-                // 教师自己的申请
-                formattedApp.studentName = currentTeacher.name;
-                formattedApp.studentId = currentTeacher.teacherId;
-                formattedApp.phone = currentTeacher.phone || ''; // 显示当前账号的手机号码
-                formattedApp.labName = (app.lab && app.lab.name) || app.labName || '未知实验室';
-                formattedApp.labId = (app.lab && app.lab.id) || app.labId || '';
-                formattedApp.courseName = app.title || app.courseName || '未知课程';
-                formattedApp.courseType = (app.type && app.type.name) || app.courseType || '未知类型';
-                formattedApp.studentCount = app.studentCount || 0;
-                formattedApp.date = app.date || '';
-                formattedApp.timeSlot = app.timeSlot || (app.startTime && app.endTime ? `${app.startTime}-${app.endTime}` : '');
-                formattedApp.remark = app.purpose || app.remark || '';
-                // 教师申请的状态文本
-                formattedApp.statusText =
-                    app.status === 'approved'
-                        ? '已通过'
-                        : app.status === 'rejected'
-                        ? '已驳回'
-                        : app.status === 'pending'
-                        ? '待审核'
-                        : app.status === 'teacher_approved'
-                        ? '待管理员审核'
-                        : '未知状态';
-                formattedApp.submitTimeText = formatTime(app.submitTime);
-                formattedApp.reviewTimeText = app.reviewTime ? formatTime(app.reviewTime) : '';
-                formattedApp.reviewReason = app.reviewReason || '';
-                formattedApp.reviewerName = app.reviewerName || '';
-                formattedApp.applicantType = '教师申请';
-            } else {
-                // 学生申请
-                formattedApp.studentName = app.studentName || app.applicant || '未知学生';
-                formattedApp.studentId = app.studentId || '未知学号';
-                formattedApp.phone = app.phone || app.contact || '未提供';
-                formattedApp.labName = (app.lab && app.lab.name) || app.labName || '未知实验室';
-                formattedApp.labId = (app.lab && app.lab.id) || app.labId || '';
-                formattedApp.courseName = app.title || app.courseName || '未知课程';
-                formattedApp.courseType = (app.type && app.type.name) || app.courseType || '未知类型';
-                formattedApp.studentCount = app.studentCount || 0;
-                formattedApp.date = app.date || '';
-                formattedApp.timeSlot = app.timeSlot || (app.startTime && app.endTime ? `${app.startTime}-${app.endTime}` : '');
-                formattedApp.remark = app.purpose || app.remark || '';
-                formattedApp.statusText = getStatusText(app.status);
-                formattedApp.submitTimeText = formatTime(app.submitTime);
-                formattedApp.reviewTimeText = app.reviewTime ? formatTime(app.reviewTime) : '';
-                formattedApp.reviewReason = app.reviewReason || app.teacherReviewReason || '';
-                formattedApp.reviewerName = app.reviewerName || app.teacherReviewerName || '';
-                formattedApp.applicantType = '学生申请';
-            }
-            return formattedApp;
-        });
+        const formattedApplications = Array.from(applicationMap.values());
 
         // 按审核时间倒序排列
         formattedApplications.sort((a: any, b: any) => {
@@ -517,13 +454,15 @@ const loadApplications = () => {
         updateStatistics();
         updateFilterCounts();
         filterApplications();
-    } catch (error) {
-        console.log('CatchClause', error);
-        console.log('CatchClause', error);
+    } catch (error: any) {
         console.error('加载申请列表失败:', error);
+        allApplications.value = [];
+        updateStatistics();
+        updateFilterCounts();
+        filterApplications();
         uni.showToast({
-            title: '加载失败',
-            icon: 'error'
+            title: error?.data?.message || '加载失败',
+            icon: 'none'
         });
     }
 };
@@ -562,13 +501,9 @@ onShow(() => {
 /**
  * 页面相关事件处理函数--监听用户下拉动作
  */
-onPullDownRefresh(() => {
-    loadApplications();
-
-    // 停止下拉刷新
-    setTimeout(() => {
-        uni.stopPullDownRefresh();
-    }, 1000);
+onPullDownRefresh(async () => {
+    await loadApplications();
+    uni.stopPullDownRefresh();
 });
 
 /**
@@ -638,33 +573,9 @@ const onNewReasonInput = (e: any) => {
 };
 
 /**
- * 发送通知给学生
- */
-const sendNotificationToStudent = (application: any) => {
-    try {
-        const notifications = uni.getStorageSync('notifications') || [];
-        const notification = {
-            id: 'notif_' + Date.now(),
-            title: '申请重新审核通过',
-            content: `您的实验室预约申请（${application.labName} ${application.date} ${application.timeSlot}）已重新审核通过`,
-            type: 'success',
-            read: false,
-            createTime: new Date().toISOString(),
-            studentId: application.studentId
-        };
-        notifications.unshift(notification);
-        uni.setStorageSync('notifications', notifications);
-    } catch (error) {
-        console.log('CatchClause', error);
-        console.log('CatchClause', error);
-        console.error('发送通知失败:', error);
-    }
-};
-
-/**
  * 确认重新审核
  */
-const confirmReprocess = () => {
+const confirmReprocess = async () => {
     if (!newReviewReason.value.trim()) {
         uni.showToast({
             title: '请填写审核意见',
@@ -680,36 +591,19 @@ const confirmReprocess = () => {
         return;
     }
     try {
-        // 更新申请状态
-        const allApps = uni.getStorageSync('studentApplications') || [];
-        const applicationIndex = allApps.findIndex((app: any) => app.id === currentApplication.value!.id);
-        if (applicationIndex !== -1) {
-            allApps[applicationIndex] = {
-                ...allApps[applicationIndex],
-                status: 'approved',
-                reviewReason: newReviewReason.value,
-                reviewTime: new Date().toISOString(),
-                reviewerId: teacherInfo.value.teacherId || '',
-                reviewerName: teacherInfo.value.name || ''
-            };
-            uni.setStorageSync('studentApplications', allApps);
-
-            // 发送通知给学生
-            sendNotificationToStudent(allApps[applicationIndex]);
-            uni.showToast({
-                title: '重新审核成功',
-                icon: 'success'
-            });
-            closeReprocessModal();
-            loadApplications();
-        }
-    } catch (error) {
-        console.log('CatchClause', error);
-        console.log('CatchClause', error);
+        // 调用后端重新审核接口，后端会自动通知学生
+        await reapproveReservation(currentApplication.value.id, newReviewReason.value.trim());
+        uni.showToast({
+            title: '重新审核成功',
+            icon: 'success'
+        });
+        closeReprocessModal();
+        await loadApplications();
+    } catch (error: any) {
         console.error('重新审核失败:', error);
         uni.showToast({
-            title: '审核失败',
-            icon: 'error'
+            title: error?.data?.message || '审核失败',
+            icon: 'none'
         });
     }
 };

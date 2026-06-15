@@ -199,6 +199,7 @@
 import { ref } from 'vue';
 import { onLoad, onShow, onPullDownRefresh } from '@dcloudio/uni-app';
 import navigationBar from '@/components/navigation-bar/navigation-bar.vue';
+import { getPendingReviews, approveReservation, rejectReservation } from '@/api/teacher.js';
 // pages/teacher-pending-process/teacher-pending-process.ts
 
 interface TeacherInfo {
@@ -343,54 +344,50 @@ const updateFilterCounts = () => {
 /**
  * 加载申请列表
  */
-const loadApplications = () => {
+const loadApplications = async () => {
     try {
-        // 获取所有学生申请
-        const allApps = uni.getStorageSync('studentApplications') || [];
+        // 获取待教师审核的学生申请（后端已返回 status=pending 的列表）
+        const list = (await getPendingReviews()) || [];
 
-        // 只过滤出学生发送的预约申请，排除教师申请和已取消的申请
-        const studentApplications = allApps.filter((app: any) => {
-            // 排除教师申请（type为'teacher'的申请）和已取消的申请
-            // 显示所有非教师申请且非已取消状态的学生申请
-            return app.type !== 'teacher' && app.status !== 'cancelled';
-        });
-
-        // 格式化申请数据
-        const formattedApplications = studentApplications.map((app: any) => {
+        // 格式化申请数据，对齐模板字段形状
+        const formattedApplications = (list as any[]).map((app: any) => {
             return {
                 ...app,
-                // 映射学生申请的数据结构到教师端显示格式
-                studentName: app.applicant || app.studentName || '未知学生',
-                studentId: app.studentId || '未知学号',
-                phone: app.contact || app.phone || '未提供',
-                labName: (app.lab && app.lab.name) || app.labName || '未知实验室',
-                labId: (app.lab && app.lab.id) || app.labId || '',
-                courseName: app.title || app.courseName || '未知课程',
-                courseType: (app.type && app.type.name) || app.courseType || '未知类型',
+                // 映射后端预约对象到教师端显示格式
+                studentName: app.studentName || app.applicantName || app.applicant || '未知学生',
+                studentId: app.studentId || app.applicantUserId || '未知学号',
+                phone: app.contact || app.phone || app.applicantPhone || '未提供',
+                labName: app.labName || (app.lab && app.lab.name) || '未知实验室',
+                labId: app.labId || (app.lab && app.lab.id) || '',
+                courseName: app.courseName || app.title || '未知课程',
+                courseType: app.courseType || (app.type && app.type.name) || '未知类型',
                 studentCount: app.studentCount || 0,
                 date: app.date || '',
-                timeSlot: app.startTime && app.endTime ? `${app.startTime}-${app.endTime}` : '',
+                timeSlot: app.timeSlot || (app.startTime && app.endTime ? `${app.startTime}-${app.endTime}` : ''),
                 remark: app.purpose || app.remark || '',
-                statusText: getStatusText(app.status),
-                submitTimeText: formatTime(app.submitTime),
-                reviewTimeText: app.reviewTime ? formatTime(app.reviewTime) : ''
+                statusText: app.statusText || getStatusText(app.status),
+                submitTimeText: app.submitTime ? formatTime(app.submitTime) : (app.applyTime ? formatTime(app.applyTime) : ''),
+                reviewTime: app.teacherReviewTime || app.reviewTime || '',
+                reviewReason: app.teacherReviewReason || app.reviewReason || '',
+                reviewTimeText: app.teacherReviewTime ? formatTime(app.teacherReviewTime) : (app.reviewTime ? formatTime(app.reviewTime) : '')
             };
         });
 
         // 按提交时间倒序排列
         formattedApplications.sort((a: any, b: any) => {
-            return new Date(b.submitTime).getTime() - new Date(a.submitTime).getTime();
+            return new Date(b.submitTime || b.applyTime).getTime() - new Date(a.submitTime || a.applyTime).getTime();
         });
         allApplications.value = formattedApplications;
         updateFilterCounts();
         filterApplications();
-    } catch (error) {
-        console.log('CatchClause', error);
-        console.log('CatchClause', error);
+    } catch (error: any) {
         console.error('加载申请列表失败:', error);
+        allApplications.value = [];
+        updateFilterCounts();
+        filterApplications();
         uni.showToast({
-            title: '加载失败',
-            icon: 'error'
+            title: error?.data?.message || '加载失败',
+            icon: 'none'
         });
     }
 };
@@ -549,7 +546,7 @@ const sendNotificationToStudent = (application: any) => {
 /**
  * 确认审核
  */
-const confirmReview = () => {
+const confirmReview = async () => {
     // 驳回时必须填写原因
     if (reviewType.value === 'reject' && !reviewReason.value.trim()) {
         uni.showToast({
@@ -566,37 +563,23 @@ const confirmReview = () => {
         return;
     }
     try {
-        // 更新申请状态
-        const allApps = uni.getStorageSync('studentApplications') || [];
-        const applicationIndex = allApps.findIndex((app: any) => app.id === currentApplication.value!.id);
-        if (applicationIndex !== -1) {
-            const tInfo = teacherInfo.value as any;
-            allApps[applicationIndex] = {
-                ...allApps[applicationIndex],
-                status: reviewType.value === 'approve' ? 'teacher_approved' : 'rejected',
-                teacherReviewReason: reviewReason.value,
-                teacherReviewTime: new Date().toISOString(),
-                teacherReviewerId: tInfo.teacherId || '',
-                teacherReviewerName: tInfo.name || '未知教师'
-            };
-            uni.setStorageSync('studentApplications', allApps);
-
-            // 发送通知给学生（模拟）
-            sendNotificationToStudent(allApps[applicationIndex]);
-            uni.showToast({
-                title: reviewType.value === 'approve' ? '已提交管理员审核' : '已驳回申请',
-                icon: 'success'
-            });
-            closeReviewModal();
-            loadApplications();
+        const id = currentApplication.value.id;
+        if (reviewType.value === 'approve') {
+            await approveReservation(id, reviewReason.value);
+        } else {
+            await rejectReservation(id, reviewReason.value);
         }
-    } catch (error) {
-        console.log('CatchClause', error);
-        console.log('CatchClause', error);
+        uni.showToast({
+            title: reviewType.value === 'approve' ? '已提交管理员审核' : '已驳回申请',
+            icon: 'success'
+        });
+        closeReviewModal();
+        await loadApplications();
+    } catch (error: any) {
         console.error('审核失败:', error);
         uni.showToast({
-            title: '审核失败',
-            icon: 'error'
+            title: error?.data?.message || '审核失败',
+            icon: 'none'
         });
     }
 };

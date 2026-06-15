@@ -22,18 +22,32 @@ import navigationBar from '@/components/navigation-bar/navigation-bar.vue';
 // logs.ts
 // const util = require('../../utils/util.js')
 import { formatTime } from '../../utils/util';
+import { getAuditLogs } from '@/api/admin';
 
 const logs = ref<any[]>([]);
 const log = ref<any>({ date: '' });
 
-onMounted(() => {
-    // 处理小程序 attached 生命周期
-    logs.value = (uni.getStorageSync('logs') || []).map((logItem: string) => {
-        return {
-            date: formatTime(new Date(logItem)),
-            timeStamp: logItem
-        };
-    });
+onMounted(async () => {
+    // 处理小程序 attached 生命周期：拉取后端审计日志列表
+    try {
+        const list = (await getAuditLogs()) || [];
+        logs.value = list.map((item: any) => {
+            return {
+                id: item.id,
+                module: item.module,
+                action: item.action,
+                role: item.role,
+                userName: item.userName,
+                detail: item.detail,
+                createTime: item.createTime,
+                // 模板按 {{ log.date }} 渲染，映射 createTime 为 date
+                date: item.createTime
+            };
+        });
+    } catch (err: any) {
+        uni.showToast({ title: err?.data?.message || '加载失败', icon: 'none' });
+        logs.value = [];
+    }
 });
 </script>
 <style lang="less">

@@ -272,6 +272,7 @@
 import { ref } from 'vue';
 import { onLoad, onShow } from '@dcloudio/uni-app';
 import navigationBar from '@/components/navigation-bar/navigation-bar.vue';
+import { getLabs, createTeacherReservation } from '@/api/teacher';
 // pages/teacher-reservation-apply/teacher-reservation-apply.ts
 interface Lab {
     id: string;
@@ -293,36 +294,7 @@ interface CourseType {
 }
 
 const teacherInfo = ref<TeacherInfo>({} as TeacherInfo);
-const labOptions = ref<Lab[]>([
-    {
-        id: 'lab001',
-        name: '国际课程实验室',
-        capacity: 65,
-        equipment: '高配置电脑、投影仪、白板',
-        location: '综合楼东A301'
-    },
-    {
-        id: 'lab002',
-        name: '新商科实验室',
-        capacity: 80,
-        equipment: '标准配置电脑、投影仪',
-        location: '综合楼西A303'
-    },
-    {
-        id: 'lab003',
-        name: '法语实验室',
-        capacity: 60,
-        equipment: '网络设备、服务器、交换机',
-        location: '综合楼西A305'
-    },
-    {
-        id: 'lab004',
-        name: '402实验室',
-        capacity: 80,
-        equipment: '开发环境、测试工具',
-        location: '综合楼西A402'
-    }
-]);
+const labOptions = ref<Lab[]>([]);
 const selectedLabIndex = ref<number>(-1);
 const selectedLab = ref<Lab>({} as Lab);
 const selectedDate = ref<string>('');
@@ -398,6 +370,7 @@ const errorStudentCount = ref<string>('');
  */
 onLoad((options: any) => {
     loadTeacherInfo();
+    loadLabs();
     initDates();
 
     // 检查是否是快速预约模式
@@ -411,6 +384,29 @@ onLoad((options: any) => {
     }
     validateForm();
 });
+
+/**
+ * 加载实验室列表（真实接口）
+ */
+const loadLabs = async () => {
+    try {
+        const res = await getLabs();
+        const list = Array.isArray(res) ? res : res?.list || [];
+        labOptions.value = list.map((item: any) => ({
+            id: item.id,
+            name: item.name,
+            capacity: item.capacity ?? item.maxStudents ?? 0,
+            equipment: item.equipment || '',
+            location: item.location || ''
+        }));
+    } catch (err: any) {
+        labOptions.value = [];
+        uni.showToast({
+            title: err?.data?.message || '加载失败',
+            icon: 'none'
+        });
+    }
+};
 
 /**
  * 生命周期函数--监听页面显示
@@ -897,7 +893,7 @@ const stopPropagation = () => {
 /**
  * 确认提交
  */
-const confirmSubmit = () => {
+const confirmSubmit = async () => {
     try {
         // 再次验证申请人信息是否完整
         if (!teacherInfo.value.name || !teacherInfo.value.phone) {
@@ -909,40 +905,18 @@ const confirmSubmit = () => {
             return;
         }
         const selectedCourseType = courseTypes.value.find((type) => type.selected);
-        const application = {
-            id: 'app_' + Date.now(),
-            teacherId: teacherInfo.value.teacherId || '',
-            teacherName: teacherInfo.value.name || '未知教师',
-            teacherPhone: teacherInfo.value.phone || '',
-            // 确保包含申请人电话号码
-            applicantName: teacherInfo.value.name || '',
-            // 申请人姓名
-            applicantPhone: teacherInfo.value.phone || '',
-            // 申请人电话号码
+
+        // 调用真实接口创建预约
+        await createTeacherReservation({
             labId: selectedLab.value.id,
-            labName: selectedLab.value.name,
             date: selectedDate.value,
             startTime: startTime.value,
             endTime: endTime.value,
-            timeSlot: `${startTime.value}-${endTime.value}`,
+            studentCount: parseInt(studentCount.value),
             courseName: courseName.value,
             courseType: selectedCourseType ? selectedCourseType.name : '实验课',
-            studentCount: parseInt(studentCount.value),
-            remark: remark.value,
-            status: 'pending',
-            submitTime: new Date().toISOString(),
-            type: 'teacher'
-        };
-
-        // 保存到本地存储
-        const applications = uni.getStorageSync('teacherApplications') || [];
-        applications.unshift(application);
-        uni.setStorageSync('teacherApplications', applications);
-
-        // 同时保存到学生申请列表（供管理员查看）
-        const allApplications = uni.getStorageSync('studentApplications') || [];
-        allApplications.unshift(application);
-        uni.setStorageSync('studentApplications', allApplications);
+            remark: remark.value
+        });
 
         // 清除保存的草稿
         uni.removeStorageSync('teacherApplicationDraft');
@@ -956,13 +930,11 @@ const confirmSubmit = () => {
         setTimeout(() => {
             uni.navigateBack();
         }, 1500);
-    } catch (error) {
-        console.log('CatchClause', error);
-        console.log('CatchClause', error);
+    } catch (error: any) {
         console.error('提交申请失败:', error);
         uni.showToast({
-            title: '提交失败',
-            icon: 'error'
+            title: error?.data?.message || '提交失败',
+            icon: 'none'
         });
     }
 };

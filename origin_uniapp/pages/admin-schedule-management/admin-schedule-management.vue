@@ -195,10 +195,27 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive } from "vue";
+import { ref, reactive, onMounted } from "vue";
 import navigationBar from "@/components/navigation-bar/navigation-bar.vue";
+import { getSemesters, createImportBatch, getImportBatch, createExportTask } from "@/api/admin";
 const activeTab = ref("import");
-const semesters = ref(["2023-2024学年第一学期", "2023-2024学年第二学期", "2024-2025学年第一学期", "2024-2025学年第二学期", "2025-2026学年第一学期", "2025-2026学年第二学期"]);
+const semesters = ref([]);
+const semesterList = ref([]);
+const loadSemesters = async () => {
+    try {
+        const list = await getSemesters();
+        const arr = Array.isArray(list) ? list : [];
+        semesterList.value = arr;
+        semesters.value = arr.map((item) => item.semesterName);
+        if (semesterIndex.value >= semesters.value.length) semesterIndex.value = 0;
+        if (exportSemesterIndex.value >= semesters.value.length) exportSemesterIndex.value = 0;
+    } catch (err) {
+        semesterList.value = [];
+        semesters.value = [];
+        uni.showToast({ title: err?.data?.message || "加载失败", icon: "none" });
+    }
+};
+onMounted(() => { loadSemesters(); });
 const semesterIndex = ref(0);
 const exportSemesterIndex = ref(0);
 const showSemesterPickerModal = ref(false);
@@ -228,11 +245,10 @@ const onFormatChange = (e) => { exportFormat.value = e.detail.value; };
 const onExportOptionsChange = (e) => { const values = e.detail.value; exportOptions.includeRooms = values.includes("includeRooms"); exportOptions.includeTeachers = values.includes("includeTeachers"); exportOptions.includeStudents = values.includes("includeStudents"); };
 const chooseFile = () => { uni.showToast({ title: "选择文件功能开发中", icon: "none" }); setTimeout(() => { importFile.value = { name: "2023-2024-1学期课表.xlsx", size: "256KB", path: "temp/2023-2024-1.xlsx" }; }, 1000); };
 const previewTemplate = () => { uni.showToast({ title: "模板下载功能开发中", icon: "none" }); };
-const importSchedule = () => { if (!importFile.value) { uni.showToast({ title: "请先选择文件", icon: "none" }); return; } showProgressModal.value = true; importProgress.value = 0; progressStatus.value = "准备导入..."; simulateImportProgress(); };
-const simulateImportProgress = () => { let progress = 0; const timer = setInterval(() => { progress += 10; let status = "准备导入..."; if (progress > 0 && progress <= 30) { status = "解析Excel文件..."; } else if (progress > 30 && progress <= 60) { status = "验证数据格式..."; } else if (progress > 60 && progress <= 90) { status = "保存课表数据..."; } else if (progress > 90) { status = "完成导入..."; } importProgress.value = progress; progressStatus.value = status; if (progress >= 100) { clearInterval(timer); const success = Math.random() > 0.3; setTimeout(() => { showProgressModal.value = false; showImportResult(success); }, 500); } }, 300); };
-const showImportResult = (success) => { let message = ""; let errDetails = ""; if (success) { message = "课表导入成功！"; } else { message = "课表导入失败"; errDetails = "第15行数据格式错误：教室信息不完整。请检查Excel 文件格式是否正确，并确保所有必填字段已填写。"; } showResultModal.value = true; importSuccess.value = success; resultMessage.value = message; errorDetails.value = errDetails; };
+const importSchedule = async () => { if (!importFile.value) { uni.showToast({ title: "请先选择文件", icon: "none" }); return; } showProgressModal.value = true; importProgress.value = 0; progressStatus.value = "准备导入..."; try { const semester = semesterList.value[semesterIndex.value]; const batch = await createImportBatch({ semesterId: semester?.id, fileName: importFile.value.name }); importProgress.value = 100; progressStatus.value = "完成导入..."; const success = batch?.status ? batch.status === "success" || batch.status === "completed" : true; setTimeout(() => { showProgressModal.value = false; showImportResult(success, batch); }, 500); } catch (err) { showProgressModal.value = false; showImportResult(false, { errorDetail: err?.data?.message || "加载失败" }); } };
+const showImportResult = (success, batch) => { let message = ""; let errDetails = ""; if (success) { message = (batch && batch.message) || "课表导入成功！"; } else { message = (batch && batch.message) || "课表导入失败"; errDetails = (batch && (batch.errorDetail || batch.errorDetails || batch.message)) || "导入失败，请检查Excel文件格式是否正确，并确保所有必填字段已填写。"; } showResultModal.value = true; importSuccess.value = success; resultMessage.value = message; errorDetails.value = errDetails; };
 const hideResultModal = () => { showResultModal.value = false; if (importSuccess.value) { importFile.value = null; } };
-const exportSchedule = () => { let optionsText = []; if (exportOptions.includeRooms) { optionsText.push("教室信息"); } if (exportOptions.includeTeachers) { optionsText.push("教师信息"); } if (exportOptions.includeStudents) { optionsText.push("学生名单"); } const formatText = exportFormat.value === "excel" ? "Excel格式" : "PDF格式"; const optionsString = optionsText.length > 0 ? "，包含" + optionsText.join("、") : ""; uni.showModal({ title: "确认导出", content: "您将导出" + semesters.value[exportSemesterIndex.value] + "的课表，" + formatText + optionsString + "。确定继续吗？", confirmColor: "#3a7bd5", success: (res) => { if (res.confirm) { uni.showLoading({ title: "导出中..." }); setTimeout(() => { uni.hideLoading(); uni.showToast({ title: "导出成功", icon: "success" }); }, 2000); } } }); };
+const exportSchedule = () => { let optionsText = []; if (exportOptions.includeRooms) { optionsText.push("教室信息"); } if (exportOptions.includeTeachers) { optionsText.push("教师信息"); } if (exportOptions.includeStudents) { optionsText.push("学生名单"); } const formatText = exportFormat.value === "excel" ? "Excel格式" : "PDF格式"; const optionsString = optionsText.length > 0 ? "，包含" + optionsText.join("、") : ""; uni.showModal({ title: "确认导出", content: "您将导出" + semesters.value[exportSemesterIndex.value] + "的课表，" + formatText + optionsString + "。确定继续吗？", confirmColor: "#3a7bd5", success: async (res) => { if (res.confirm) { uni.showLoading({ title: "导出中..." }); try { const semester = semesterList.value[exportSemesterIndex.value]; await createExportTask({ semesterId: semester?.id, exportFormat: exportFormat.value, includeRooms: exportOptions.includeRooms, includeTeachers: exportOptions.includeTeachers, includeStudents: exportOptions.includeStudents }); uni.hideLoading(); uni.showToast({ title: "导出成功", icon: "success" }); } catch (err) { uni.hideLoading(); uni.showToast({ title: err?.data?.message || "加载失败", icon: "none" }); } } } }); };
 </script>
 <style lang="less">
 @import './admin-schedule-management.less';

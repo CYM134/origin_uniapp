@@ -43,7 +43,11 @@ public class SecurityConfig {
             .exceptionHandling(exception -> exception.authenticationEntryPoint(restAuthenticationEntryPoint))
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/health", "/api/health/**").permitAll()
                 .requestMatchers(HttpMethod.POST, "/api/auth/login").permitAll()
+                .requestMatchers(HttpMethod.POST, "/api/auth/student/register", "/api/auth/teacher/register").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/auth/student/exists", "/api/auth/teacher/exists").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/colleges", "/api/dict/**").permitAll()
                 .anyRequest().authenticated()
             )
             .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);

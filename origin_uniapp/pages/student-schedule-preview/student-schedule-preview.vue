@@ -115,11 +115,10 @@
 
                                 <view class="course-cell" v-for="(day, dayIndex) in weekDays" :key="dayIndex">
                                     <view
-                                        v-if="course.timeSlot === item"
                                         :class="'week-course ' + course.status"
                                         @tap="viewCourseDetail"
                                         :data-course="course"
-                                        v-for="(course, index) in day.courses"
+                                        v-for="(course, index) in day.courses.filter((c) => c.hourSlot === item)"
                                         :key="index"
                                     >
                                         <text class="course-name">{{ course.courseName }}</text>
@@ -259,6 +258,7 @@
 import { ref } from 'vue';
 import { onLoad, onShow, onPullDownRefresh } from '@dcloudio/uni-app';
 import navigationBar from '@/components/navigation-bar/navigation-bar.vue';
+import { getCourseSchedulesByDate, getCourseSchedulesByWeek, getLabs } from '@/api/student';
 // pages/student-schedule-preview/student-schedule-preview.ts
 
 // 日期相关
@@ -282,28 +282,31 @@ const labs = ref<any[]>([
     {
         id: 'all',
         name: '全部实验室'
-    },
-    {
-        id: 'lab1',
-        name: '国际课程实验室'
-    },
-    {
-        id: 'lab2',
-        name: '新商科实验室'
-    },
-    {
-        id: 'lab3',
-        name: 'VR实验室'
-    },
-    {
-        id: 'lab4',
-        name: '法语实验室'
-    },
-    {
-        id: 'lab5',
-        name: '402实验室'
     }
 ]);
+
+// 加载实验室列表
+const loadLabs = async () => {
+    try {
+        const list = await getLabs();
+        const labOptions = (Array.isArray(list) ? list : []).map((lab: any) => ({
+            id: lab.id,
+            name: lab.name
+        }));
+        labs.value = [
+            {
+                id: 'all',
+                name: '全部实验室'
+            },
+            ...labOptions
+        ];
+    } catch (err: any) {
+        uni.showToast({
+            title: err?.data?.message || '加载失败',
+            icon: 'none'
+        });
+    }
+};
 
 // 时间段
 const timeSlots = ref<string[]>(['08:00', '09:00', '10:00', '11:00', '14:00', '15:00', '16:00', '17:00', '19:00', '20:00', '21:00']);
@@ -345,6 +348,7 @@ const day = ref<any>({
 
 onLoad(() => {
     initializeDate();
+    loadLabs();
     loadCourses();
 });
 
@@ -352,8 +356,8 @@ onShow(() => {
     loadCourses();
 });
 
-onPullDownRefresh(() => {
-    loadCourses();
+onPullDownRefresh(async () => {
+    await loadCourses();
     uni.stopPullDownRefresh();
 });
 
@@ -402,89 +406,85 @@ const formatDate = (date: Date): string => {
     return `${year}-${month}-${day}`;
 };
 
-// 加载课程数据
-const loadCourses = () => {
-    // 模拟课程数据
-    const mockCourses = [
-        {
-            id: 'course1',
-            courseName: '数据结构与算法',
-            labName: '新商科实验室',
-            labId: 'lab2',
-            teacherName: '张教授',
-            startTime: '08:00',
-            endTime: '09:50',
-            date: selectedDate.value,
-            timeSlot: '08:00',
-            currentStudents: 25,
-            maxStudents: 30,
-            courseType: '必修课',
-            status: 'available',
-            statusText: '仅供查看',
-            canReserve: true,
-            description: '学习基本的数据结构和算法设计方法，包括线性表、栈、队列、树、图等数据结构的实现和应用。'
-        },
-        {
-            id: 'course2',
-            courseName: '计算机网络',
-            labName: '国际课程实验室',
-            labId: 'lab1',
-            teacherName: '李教授',
-            startTime: '10:00',
-            endTime: '11:50',
-            date: selectedDate.value,
-            timeSlot: '10:00',
-            currentStudents: 30,
-            maxStudents: 30,
-            courseType: '必修课',
-            status: 'full',
-            statusText: '已满员',
-            canReserve: false,
-            description: '深入学习计算机网络的基本原理、协议和技术，包括TCP/IP协议栈、网络安全等内容。'
-        },
-        {
-            id: 'course3',
-            courseName: '软件工程',
-            labName: '法语实验室',
-            labId: 'lab4',
-            teacherName: '王教授',
-            startTime: '14:00',
-            endTime: '15:50',
-            date: selectedDate.value,
-            timeSlot: '14:00',
-            currentStudents: 20,
-            maxStudents: 25,
-            courseType: '选修课',
-            status: 'ongoing',
-            statusText: '进行中',
-            canReserve: false,
-            description: '学习软件开发的全生命周期管理，包括需求分析、系统设计、编码实现、测试和维护。'
-        }
-    ];
-    courses.value = mockCourses;
-    filterCourses();
-    loadWeekCourses();
+// 计算课程归属的整点行（取 startTime 或 timeSlot 起点的小时，如 '08:00-09:50' -> '08:00'）
+const hourSlot = (item: any): string => {
+    const src = item.startTime || item.timeSlot || '';
+    const hh = src.slice(0, 2);
+    return hh ? `${hh}:00` : '';
 };
 
-// 筛选课程
-const filterCourses = () => {
-    let filtered = courses.value.filter((course) => course.date === selectedDate.value);
-    if (selectedLab.value !== 'all') {
-        filtered = filtered.filter((course) => course.labId === selectedLab.value);
+// 适配课程字段到模板需要的形状
+const mapCourse = (item: any) => ({
+    ...item,
+    id: item.id,
+    courseName: item.courseName || item.name,
+    labName: item.labName || item.lab,
+    labId: item.labId,
+    teacherName: item.teacherName || item.teacher,
+    startTime: item.startTime,
+    endTime: item.endTime,
+    date: item.date,
+    timeSlot: item.timeSlot,
+    hourSlot: hourSlot(item),
+    currentStudents: item.currentStudents ?? item.studentCount,
+    maxStudents: item.maxStudents,
+    courseType: item.courseType || item.typeText,
+    status: item.status,
+    statusText: item.statusText,
+    canReserve: item.canReserve,
+    description: item.description || item.remark
+});
+
+// 加载课程数据（日视图，后端已按日期+实验室筛选返回）
+const loadCourses = async () => {
+    const labId = selectedLab.value !== 'all' ? selectedLab.value : null;
+    try {
+        const list = await getCourseSchedulesByDate(selectedDate.value, labId);
+        const mapped = (Array.isArray(list) ? list : []).map(mapCourse);
+        courses.value = mapped;
+        filteredCourses.value = mapped;
+    } catch (err: any) {
+        courses.value = [];
+        filteredCourses.value = [];
+        uni.showToast({
+            title: err?.data?.message || '加载失败',
+            icon: 'none'
+        });
     }
-    filteredCourses.value = filtered;
+    await loadWeekCourses();
 };
 
-// 加载周视图课程
-const loadWeekCourses = () => {
-    const updatedWeekDays = weekDays.value.map((day) => {
-        const dayCourses = courses.value.filter((course) => course.date === day.fullDate);
-        return {
+// 筛选课程（实验室切换时重新拉取日视图数据）
+const filterCourses = () => {
+    loadCourses();
+};
+
+// 加载周视图课程（后端按周一~周日范围返回，再按日期归入每天）
+const loadWeekCourses = async () => {
+    if (!weekDays.value || weekDays.value.length === 0) {
+        return;
+    }
+    const startDate = weekDays.value[0].fullDate;
+    const endDate = weekDays.value[weekDays.value.length - 1].fullDate;
+    try {
+        const list = await getCourseSchedulesByWeek(startDate, endDate);
+        const mapped = (Array.isArray(list) ? list : []).map(mapCourse);
+        const updatedWeekDays = weekDays.value.map((day) => ({
             ...day,
-            courses: dayCourses
-        };
-    });
-    weekDays.value = updatedWeekDays;
+            courses: mapped.filter((course) => course.date === day.fullDate)
+        }));
+        weekDays.value = updatedWeekDays;
+    } catch (err: any) {
+        const updatedWeekDays = weekDays.value.map((day) => ({
+            ...day,
+            courses: []
+        }));
+        weekDays.value = updatedWeekDays;
+        uni.showToast({
+            title: err?.data?.message || '加载失败',
+            icon: 'none'
+        });
+    }
 };
 
 // 显示实验室选择器
