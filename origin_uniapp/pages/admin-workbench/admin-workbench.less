@@ -1,0 +1,372 @@
+@accent: #F5A623;
+@accent-dark: #E2941A;
+
+@text: #1F2937;
+@text-2: #6B7280;
+@text-3: #9CA3AF;
+@card: #FFFFFF;
+@border: #EEF0F4;
+@soft: #F8F9FC;
+
+.page {
+  min-height: 100vh;
+}
+
+/* ===== Header ===== */
+.hd {
+  padding: 60rpx 32rpx 32rpx;
+  background: linear-gradient(135deg, @accent 0%, @accent-dark 100%);
+
+  .hd-title {
+    color: #fff;
+    font-size: 40rpx;
+    font-weight: 700;
+  }
+}
+
+.body {
+  padding: 24rpx 24rpx 48rpx;
+}
+
+.loading {
+  text-align: center;
+  color: @text-3;
+  font-size: 26rpx;
+  padding: 80rpx 0;
+}
+
+/* ===== 欢迎卡 ===== */
+.welcome {
+  display: flex;
+  align-items: center;
+  background: @card;
+  border-radius: 16rpx;
+  padding: 24rpx;
+  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.04);
+  margin-bottom: 20rpx;
+
+  .welcome-avatar {
+    width: 88rpx;
+    height: 88rpx;
+    border-radius: 50%;
+    background: linear-gradient(135deg, @accent 0%, @accent-dark 100%);
+    color: #fff;
+    font-size: 38rpx;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 24rpx;
+  }
+
+  .welcome-info {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+  }
+
+  .welcome-name {
+    font-size: 32rpx;
+    font-weight: 700;
+    color: @text;
+    margin-bottom: 8rpx;
+  }
+
+  .welcome-tip {
+    font-size: 24rpx;
+    color: @text-2;
+  }
+}
+
+/* ===== Section 通用 ===== */
+.section {
+  background: @card;
+  border-radius: 16rpx;
+  padding: 24rpx;
+  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.04);
+  margin-bottom: 20rpx;
+}
+
+.section-hd {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20rpx;
+
+  .section-title {
+    font-size: 30rpx;
+    font-weight: 700;
+    color: @text;
+    position: relative;
+    padding-left: 18rpx;
+  }
+
+  .section-title::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 6rpx;
+    bottom: 6rpx;
+    width: 6rpx;
+    border-radius: 4rpx;
+    background: @accent;
+  }
+
+  .section-more {
+    font-size: 24rpx;
+    color: @text-3;
+  }
+}
+
+.empty {
+  text-align: center;
+  color: @text-3;
+  font-size: 26rpx;
+  padding: 40rpx 0;
+}
+
+/* ===== 数字概览宫格 ===== */
+.stat-grid {
+  display: flex;
+  flex-wrap: wrap;
+}
+
+.stat-cell {
+  width: 25%;
+  box-sizing: border-box;
+  padding: 16rpx 8rpx;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+
+  .stat-num {
+    font-size: 40rpx;
+    font-weight: 700;
+    color: @accent;
+    line-height: 1.1;
+  }
+
+  .stat-label {
+    margin-top: 10rpx;
+    font-size: 22rpx;
+    color: @text-2;
+    text-align: center;
+  }
+}
+
+/* ===== 使用率进度条 ===== */
+.usage {
+  margin-top: 16rpx;
+  padding-top: 20rpx;
+  border-top: 2rpx solid @border;
+}
+
+.usage-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12rpx;
+
+  .usage-label {
+    font-size: 26rpx;
+    color: @text;
+  }
+
+  .usage-val {
+    font-size: 28rpx;
+    font-weight: 700;
+    color: @accent;
+  }
+}
+
+.usage-track {
+  height: 18rpx;
+  border-radius: 12rpx;
+  background: @soft;
+  overflow: hidden;
+}
+
+.usage-fill {
+  height: 100%;
+  border-radius: 12rpx;
+  background: linear-gradient(90deg, @accent 0%, @accent-dark 100%);
+  transition: width 0.3s ease;
+}
+
+/* ===== 状态分布横向条形图 ===== */
+.bars {
+  display: flex;
+  flex-direction: column;
+}
+
+.bar-row {
+  display: flex;
+  align-items: center;
+  margin-bottom: 18rpx;
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+
+  .bar-name {
+    width: 120rpx;
+    font-size: 24rpx;
+    color: @text-2;
+    flex-shrink: 0;
+  }
+
+  .bar-track {
+    flex: 1;
+    height: 22rpx;
+    border-radius: 12rpx;
+    background: @soft;
+    overflow: hidden;
+    margin: 0 16rpx;
+  }
+
+  .bar-fill {
+    height: 100%;
+    border-radius: 12rpx;
+    min-width: 6rpx;
+    transition: width 0.3s ease;
+  }
+
+  .bar-count {
+    width: 64rpx;
+    text-align: right;
+    font-size: 24rpx;
+    font-weight: 600;
+    color: @text;
+    flex-shrink: 0;
+  }
+}
+
+/* 不同状态条颜色 */
+.bar-pending { background: #D97706; }
+.bar-teacher_approved { background: #1D6FDB; }
+.bar-approved { background: #059669; }
+.bar-rejected { background: #DC2626; }
+.bar-cancelled { background: #6B7280; }
+.bar-completed { background: @accent; }
+
+/* ===== 管理入口宫格 ===== */
+.entry-grid {
+  display: flex;
+  flex-wrap: wrap;
+}
+
+.entry-cell {
+  width: 33.33%;
+  box-sizing: border-box;
+  padding: 20rpx 8rpx;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+
+  .entry-emoji {
+    width: 84rpx;
+    height: 84rpx;
+    border-radius: 20rpx;
+    background: #FEF3C7;
+    font-size: 40rpx;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .entry-text {
+    margin-top: 12rpx;
+    font-size: 24rpx;
+    color: @text;
+  }
+}
+
+.entry-cell:active {
+  opacity: 0.7;
+}
+
+/* ===== 通知 / 资讯列表 ===== */
+.list {
+  display: flex;
+  flex-direction: column;
+}
+
+.row-item {
+  display: flex;
+  flex-direction: column;
+  padding: 18rpx 0;
+  border-bottom: 2rpx solid @border;
+
+  &:last-child {
+    border-bottom: none;
+  }
+
+  .row-title {
+    font-size: 28rpx;
+    color: @text;
+    margin-bottom: 8rpx;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .row-time {
+    font-size: 22rpx;
+    color: @text-3;
+  }
+}
+
+/* ===== 最近预约表格 ===== */
+.table {
+  display: flex;
+  flex-direction: column;
+}
+
+.tr {
+  display: flex;
+  align-items: center;
+  padding: 18rpx 0;
+  border-bottom: 2rpx solid @border;
+
+  &:last-child {
+    border-bottom: none;
+  }
+}
+
+.tr.th {
+  border-bottom: 2rpx solid @border;
+
+  .td {
+    font-size: 24rpx;
+    color: @text-2;
+    font-weight: 600;
+  }
+}
+
+.td {
+  font-size: 24rpx;
+  color: @text;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.td-user { width: 26%; }
+.td-lab { width: 30%; }
+.td-date { width: 24%; }
+.td-status { width: 20%; display: flex; justify-content: flex-end; }
+
+.status-tag {
+  display: inline-block;
+  padding: 4rpx 14rpx;
+  border-radius: 999rpx;
+  font-size: 20rpx;
+  line-height: 1.5;
+}
+
+.st-pending { color: #D97706; background: #FEF3C7; }
+.st-teacher_approved { color: #1D6FDB; background: #DBEAFE; }
+.st-approved { color: #059669; background: #D1FAE5; }
+.st-rejected { color: #DC2626; background: #FEE2E2; }
+.st-cancelled { color: #6B7280; background: #F3F4F6; }
+.st-completed { color: #E2941A; background: #FEF3C7; }

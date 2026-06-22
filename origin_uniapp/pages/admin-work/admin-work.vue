@@ -7,6 +7,17 @@
             </view>
 
             <view class="function-container">
+                <!-- 综合服务工作台 -->
+                <view class="function-card" @tap="goWorkbench">
+                    <view class="card-icon">
+                        <image src="/static/images/icons/system-icon.png" mode="aspectFit"></image>
+                    </view>
+                    <view class="card-content">
+                        <text class="card-title">综合服务工作台</text>
+                        <text class="card-desc">数字概览 · 应用 · 通知 · 资讯管理</text>
+                    </view>
+                </view>
+
                 <!-- 实验室信息管理 -->
                 <view class="function-card" @tap="navigateToLabManagement">
                     <view class="card-icon">
@@ -139,6 +150,13 @@ const loadCurrentAdmin = async () => {
             console.error('加载管理员信息失败', error);
         }
     }
+};
+
+/**
+ * 跳转到管理员综合服务工作台
+ */
+const goWorkbench = () => {
+    uni.navigateTo({ url: '/pages/admin-workbench/admin-workbench' });
 };
 
 onLoad(() => {

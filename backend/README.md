@@ -3,6 +3,45 @@
 系统利用 Spring Boot 构建 RESTful API 接口，负责处理前端小程序的各类请求，实现业务逻辑的封装和执行。
 在数据存储层面，选用 MySQL 关系型数据库用于数据存储。
 
+## 校园综合服务平台扩展（2026-06 新增）
+
+在原「实验室预约管理系统」基础上**增量扩展**为校园综合服务平台，遵循“不改旧表、不重写登录、不删除实验室预约功能、不新增 super_admin”的原则（admin 在第一阶段兼任超级管理员）。完整说明见仓库根目录 [`校园综合服务平台-交付说明.md`](../校园综合服务平台-交付说明.md)。
+
+### 新增后端模块（位于 `com.companyleveltraining.backend` 下）
+- `portal.app` 应用中心：应用分类、按角色可见应用、收藏、访问统计，管理员应用增删改查/启停/排序
+- `portal.home` 师生门户首页聚合
+- `portal.notice` 通知公告（门户查看/已读 + 管理员发布/置顶/上下线）
+- `portal.news` 校园资讯（门户 + 管理员）
+- `portal.task` 任务中心（聚合现有预约审批数据，未新建 task 表）
+- `portal.menu` 菜单与按钮权限
+- `portal.dashboard` 管理员综合工作台
+- `portal.calendar` 我的日历（个人日程 + 预约派生事件）
+- `ai` AI 校园助手（OpenAI 兼容接口，密钥经环境变量注入，未配置时自动降级为内置规则问答）
+- 复用并增强：预约**提交时即生成站内消息**；新增 `GET /api/laboratories/{id}/available-times`
+
+### 新增接口前缀
+- `/api/portal/*`：门户首页、应用中心、通知公告、校园资讯、任务中心、日历
+- `/api/admin/portal/*`、`/api/admin/notices/*`、`/api/admin/news/*`：管理端
+- `/api/ai/*`：AI 助手
+- `/api/auth/menus`、`/api/auth/permissions`：菜单 / 按钮权限
+
+### 新增数据库脚本（`docs/sql/`，均可重复执行、不改旧表）
+- `V1__portal_app.sql`、`V2__notice_news.sql`、`V3__calendar_ai.sql`、`V4__init_portal_data.sql`
+- 共新增 11 张表（应用中心 4 + 公告/资讯 4 + 日历/AI 3），并初始化 9 分类 + 15 应用 + 演示公告/资讯/日程
+
+### 新增前端（uni-app，`../origin_uniapp`）
+- `api/portal.js` + 14 个页面：门户首页、应用中心、通知/资讯列表与详情、消息中心、任务中心、我的日历、AI 助手、管理员工作台及应用/通知/资讯管理；并在原 student/teacher/admin 工作台增加“综合服务门户/工作台”入口。
+
+### AI 助手配置（可选）
+通过环境变量启用真实大模型，否则走内置规则问答：
+
+```text
+AI_ENABLED=true
+AI_API_URL=<OpenAI 兼容的 chat/completions 地址>
+AI_API_KEY=<密钥>
+AI_MODEL=<模型名，默认 gpt-3.5-turbo>
+```
+
 ## 项目结构
 
 - `pom.xml`：Maven 项目定义
@@ -72,6 +111,15 @@ jdbc:mysql://mysql6.sqlpub.com:3311/company_level?useUnicode=true&characterEncod
 
 ```powershell
 mysql -h mysql6.sqlpub.com -P 3311 -u super_admin666 -p company_level < .\docs\schema.sql
+```
+
+校园综合服务平台扩展表需在 `schema.sql` 之后依次导入（均可重复执行）：
+
+```powershell
+mysql -h mysql6.sqlpub.com -P 3311 -u super_admin666 -p company_level < .\docs\sql\V1__portal_app.sql
+mysql -h mysql6.sqlpub.com -P 3311 -u super_admin666 -p company_level < .\docs\sql\V2__notice_news.sql
+mysql -h mysql6.sqlpub.com -P 3311 -u super_admin666 -p company_level < .\docs\sql\V3__calendar_ai.sql
+mysql -h mysql6.sqlpub.com -P 3311 -u super_admin666 -p company_level < .\docs\sql\V4__init_portal_data.sql
 ```
 
 ## 启动项目

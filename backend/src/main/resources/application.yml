@@ -17,6 +17,14 @@ security:
     secret: ${JWT_SECRET:}
     expiration-seconds: ${JWT_EXPIRATION_SECONDS:86400}
 
+# AI 校园助手配置（可选）。未配置 api-url / api-key 时，后端自动降级为内置规则问答。
+# 密钥仅通过环境变量注入，严禁硬编码：AI_ENABLED=true AI_API_URL=... AI_API_KEY=... AI_MODEL=...
+ai:
+  enabled: ${AI_ENABLED:false}
+  api-url: ${AI_API_URL:}
+  api-key: ${AI_API_KEY:}
+  model: ${AI_MODEL:gpt-3.5-turbo}
+
 logging:
   level:
     root: INFO

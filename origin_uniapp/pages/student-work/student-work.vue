@@ -17,6 +17,15 @@
 
             <!-- 功能模块 -->
             <view class="function-grid">
+                <!-- 综合服务门户 -->
+                <view class="function-item" @tap="goPortal">
+                    <view class="function-icon">
+                        <image src="/static/images/icons/personal-info.svg" mode="aspectFit"></image>
+                    </view>
+                    <text class="function-title">综合服务门户</text>
+                    <text class="function-desc">应用中心 · 通知 · 消息 · 日历</text>
+                </view>
+
                 <!-- 个人信息 -->
                 <view class="function-item" @tap="goToPersonalInfo">
                     <view class="function-icon">
@@ -270,6 +279,13 @@ const logout = () => {
             }
         }
     });
+};
+
+/**
+ * 跳转到校园综合服务平台门户首页
+ */
+const goPortal = () => {
+    uni.navigateTo({ url: '/pages/portal-home/portal-home' });
 };
 
 /**

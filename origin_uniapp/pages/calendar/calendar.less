@@ -1,0 +1,281 @@
+@accent: #3B82F6;
+@accent-2: #1D6FDB;
+
+@text: #1F2937;
+@text-2: #6B7280;
+@text-3: #9CA3AF;
+@card: #FFFFFF;
+@border: #EEF0F4;
+
+.page {
+  min-height: 100vh;
+  position: relative;
+}
+
+/* 顶部 header */
+.hd {
+  padding: 60rpx 32rpx 32rpx;
+  background: linear-gradient(135deg, @accent 0%, @accent-2 100%);
+}
+
+.hd-title {
+  display: block;
+  font-size: 40rpx;
+  font-weight: 700;
+  color: #fff;
+}
+
+/* 月份切换条 */
+.month-bar {
+  margin-top: 24rpx;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 72rpx;
+  padding: 0 12rpx;
+  background: rgba(255, 255, 255, 0.18);
+  border-radius: 36rpx;
+}
+
+.month-nav {
+  font-size: 26rpx;
+  color: #fff;
+  padding: 0 24rpx;
+  line-height: 72rpx;
+}
+
+.month-label {
+  font-size: 30rpx;
+  font-weight: 600;
+  color: #fff;
+  line-height: 72rpx;
+}
+
+/* 内容区 */
+.body {
+  padding: 24rpx 24rpx 140rpx;
+}
+
+.list {
+  margin-top: 4rpx;
+}
+
+/* 日期分组标题 */
+.group {
+  margin-bottom: 12rpx;
+}
+
+.group-hd {
+  display: flex;
+  align-items: baseline;
+  padding: 8rpx 8rpx 16rpx;
+}
+
+.group-date {
+  font-size: 28rpx;
+  font-weight: 700;
+  color: @text;
+}
+
+.group-week {
+  margin-left: 16rpx;
+  font-size: 24rpx;
+  color: @text-3;
+}
+
+/* 卡片 / 事件 */
+.card {
+  background: @card;
+  border-radius: 16rpx;
+  padding: 24rpx;
+  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.04);
+  margin-bottom: 20rpx;
+}
+
+.event {
+  display: flex;
+  align-items: stretch;
+  padding: 20rpx 24rpx;
+}
+
+.event-bar {
+  width: 8rpx;
+  border-radius: 4rpx;
+  flex-shrink: 0;
+  margin-right: 20rpx;
+}
+
+.event-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.event-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.event-time {
+  font-size: 24rpx;
+  color: @text-2;
+}
+
+.type-tag {
+  font-size: 20rpx;
+  line-height: 1;
+  padding: 6rpx 14rpx;
+  border-radius: 8rpx;
+}
+
+.event-title {
+  display: block;
+  margin-top: 12rpx;
+  font-size: 30rpx;
+  font-weight: 500;
+  color: @text;
+  line-height: 1.4;
+}
+
+.event-loc {
+  display: block;
+  margin-top: 10rpx;
+  font-size: 24rpx;
+  color: @text-3;
+}
+
+/* 加载 / 空状态 */
+.state {
+  padding: 140rpx 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.state-text {
+  font-size: 28rpx;
+  color: @text-3;
+}
+
+/* 悬浮添加按钮 */
+.fab {
+  position: fixed;
+  right: 40rpx;
+  bottom: 60rpx;
+  width: 100rpx;
+  height: 100rpx;
+  border-radius: 50%;
+  background: linear-gradient(135deg, @accent 0%, @accent-2 100%);
+  box-shadow: 0 8rpx 24rpx rgba(59, 130, 246, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 20;
+}
+
+.fab-icon {
+  font-size: 56rpx;
+  color: #fff;
+  line-height: 1;
+  margin-top: -6rpx;
+}
+
+/* 弹层 */
+.mask {
+  position: fixed;
+  left: 0;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: flex-end;
+  z-index: 50;
+}
+
+.sheet {
+  width: 100%;
+  background: #fff;
+  border-radius: 28rpx 28rpx 0 0;
+  padding: 32rpx 32rpx 48rpx;
+  box-sizing: border-box;
+}
+
+.sheet-hd {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24rpx;
+}
+
+.sheet-title {
+  font-size: 32rpx;
+  font-weight: 700;
+  color: @text;
+}
+
+.sheet-close {
+  font-size: 44rpx;
+  color: @text-3;
+  line-height: 1;
+}
+
+.field {
+  display: flex;
+  align-items: center;
+  padding: 18rpx 0;
+  border-bottom: 1rpx solid @border;
+}
+
+.field-label {
+  width: 150rpx;
+  flex-shrink: 0;
+  font-size: 28rpx;
+  color: @text-2;
+}
+
+.field-input {
+  flex: 1;
+  font-size: 28rpx;
+  color: @text;
+}
+
+.field-picker {
+  flex: 1;
+  font-size: 28rpx;
+  color: @text;
+}
+
+.field-ph {
+  color: @text-3;
+}
+
+.sheet-actions {
+  display: flex;
+  margin-top: 36rpx;
+}
+
+.btn {
+  flex: 1;
+  height: 88rpx;
+  line-height: 88rpx;
+  text-align: center;
+  font-size: 30rpx;
+  border-radius: 44rpx;
+}
+
+.btn-cancel {
+  background: #F3F4F6;
+  color: @text-2;
+  margin-right: 20rpx;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, @accent 0%, @accent-2 100%);
+  color: #fff;
+  font-weight: 600;
+}
+
+.btn-disabled {
+  opacity: 0.6;
+}

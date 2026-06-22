@@ -11,6 +11,7 @@ import com.companyleveltraining.backend.common.BizNoGenerator;
 import com.companyleveltraining.backend.common.BusinessException;
 import com.companyleveltraining.backend.lab.dto.LabResponse;
 import com.companyleveltraining.backend.lab.LaboratoryRepository;
+import com.companyleveltraining.backend.notification.NotificationService;
 import com.companyleveltraining.backend.reservation.dto.StudentReservationRequest;
 import com.companyleveltraining.backend.reservation.dto.TeacherReservationRequest;
 import com.companyleveltraining.backend.security.SecurityUser;
@@ -34,15 +35,17 @@ public class ReservationService {
     private final LaboratoryRepository laboratoryRepository;
     private final BizNoGenerator bizNoGenerator;
     private final AuditLogService auditLogService;
+    private final NotificationService notificationService;
 
     public ReservationService(ReservationRepository repository, ApprovalLogRepository logRepository,
                               LaboratoryRepository laboratoryRepository, BizNoGenerator bizNoGenerator,
-                              AuditLogService auditLogService) {
+                              AuditLogService auditLogService, NotificationService notificationService) {
         this.repository = repository;
         this.logRepository = logRepository;
         this.laboratoryRepository = laboratoryRepository;
         this.bizNoGenerator = bizNoGenerator;
         this.auditLogService = auditLogService;
+        this.notificationService = notificationService;
     }
 
     @Transactional
@@ -65,6 +68,8 @@ public class ReservationService {
         );
         Long id = repository.insert(params);
         logRepository.insert(id, "system", "submit", null, "pending", user.id(), user.realName(), "学生提交预约申请");
+        notificationService.send(user.id(), "student", user.accountNo(), "预约申请已提交",
+            "您的实验室预约申请（" + lab.name() + "）已提交，等待教师与管理员审核，请关注审批进度。", "info", id);
         auditLogService.record(user.id(), "student", "reservation", "submit", "reservation_applications", id, null);
         return getDetail(id);
     }
@@ -85,6 +90,8 @@ public class ReservationService {
         );
         Long id = repository.insert(params);
         logRepository.insert(id, "system", "submit", null, "pending", user.id(), user.realName(), "教师提交预约申请");
+        notificationService.send(user.id(), "teacher", user.accountNo(), "预约申请已提交",
+            "您的实验室预约申请（" + lab.name() + "）已提交，等待管理员审核，请关注审批进度。", "info", id);
         auditLogService.record(user.id(), "teacher", "reservation", "submit", "reservation_applications", id, null);
         return getDetail(id);
     }

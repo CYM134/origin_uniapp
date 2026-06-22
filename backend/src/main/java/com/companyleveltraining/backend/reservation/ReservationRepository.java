@@ -105,6 +105,20 @@ public class ReservationRepository {
             BASE_SELECT + " AND ra.teacher_review_user_id = ? ORDER BY ra.teacher_review_at DESC", teacherUserId);
     }
 
+    /** 任务中心：等待管理员终审的申请（学生 teacher_approved + 教师 pending）。 */
+    public List<Map<String, Object>> findAdminPending() {
+        return jdbcTemplate.queryForList(BASE_SELECT
+            + " AND ((ra.applicant_role = 'student' AND ra.status = 'teacher_approved')"
+            + " OR (ra.applicant_role = 'teacher' AND ra.status = 'pending'))"
+            + " ORDER BY ra.submitted_at ASC");
+    }
+
+    /** 任务中心：由该管理员终审过的申请。 */
+    public List<Map<String, Object>> findReviewedByAdmin(Long adminUserId) {
+        return jdbcTemplate.queryForList(
+            BASE_SELECT + " AND ra.admin_review_user_id = ? ORDER BY ra.admin_review_at DESC", adminUserId);
+    }
+
     public List<Map<String, Object>> findAllForAdmin() {
         return jdbcTemplate.queryForList(BASE_SELECT + " ORDER BY ra.submitted_at DESC, ra.id DESC");
     }

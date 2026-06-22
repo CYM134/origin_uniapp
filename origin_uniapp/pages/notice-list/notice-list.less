@@ -1,0 +1,150 @@
+@accent: #3B82F6;
+@accent-2: #1D6FDB;
+
+@text: #1F2937;
+@text-2: #6B7280;
+@text-3: #9CA3AF;
+@card: #FFFFFF;
+@border: #EEF0F4;
+
+.page {
+  min-height: 100vh;
+}
+
+/* 顶部 header */
+.hd {
+  padding: 60rpx 32rpx 32rpx;
+  background: linear-gradient(135deg, @accent 0%, @accent-2 100%);
+}
+
+.hd-title {
+  display: block;
+  font-size: 40rpx;
+  font-weight: 700;
+  color: #fff;
+}
+
+/* 搜索框 */
+.search {
+  margin-top: 24rpx;
+  display: flex;
+  align-items: center;
+  height: 72rpx;
+  padding: 0 24rpx;
+  background: rgba(255, 255, 255, 0.92);
+  border-radius: 36rpx;
+}
+
+.search-input {
+  flex: 1;
+  height: 72rpx;
+  font-size: 28rpx;
+  color: @text;
+}
+
+.search-ph {
+  color: @text-3;
+}
+
+.search-clear {
+  width: 44rpx;
+  height: 44rpx;
+  line-height: 40rpx;
+  text-align: center;
+  font-size: 36rpx;
+  color: @text-3;
+  flex-shrink: 0;
+}
+
+/* 内容区 */
+.body {
+  padding: 24rpx 24rpx 60rpx;
+}
+
+.list {
+  margin-top: 4rpx;
+}
+
+/* 卡片 */
+.card {
+  background: @card;
+  border-radius: 16rpx;
+  padding: 24rpx;
+  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.04);
+  margin-bottom: 20rpx;
+}
+
+.card-title-row {
+  display: flex;
+  align-items: center;
+}
+
+.tag-top {
+  flex-shrink: 0;
+  font-size: 20rpx;
+  line-height: 1;
+  color: #DC2626;
+  background: #FEE2E2;
+  padding: 6rpx 12rpx;
+  border-radius: 8rpx;
+  margin-right: 12rpx;
+}
+
+.unread-dot {
+  flex-shrink: 0;
+  width: 14rpx;
+  height: 14rpx;
+  border-radius: 50%;
+  background: #DC2626;
+  margin-right: 12rpx;
+}
+
+.card-title {
+  flex: 1;
+  font-size: 30rpx;
+  font-weight: 500;
+  color: @text;
+  line-height: 1.4;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.card-title--unread {
+  font-weight: 600;
+}
+
+.card-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 18rpx;
+}
+
+.type-tag {
+  font-size: 22rpx;
+  color: @accent-2;
+  background: #DBEAFE;
+  padding: 6rpx 16rpx;
+  border-radius: 8rpx;
+}
+
+.meta-time {
+  font-size: 24rpx;
+  color: @text-3;
+}
+
+/* 加载 / 空状态 */
+.state {
+  padding: 140rpx 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.state-text {
+  font-size: 28rpx;
+  color: @text-3;
+}

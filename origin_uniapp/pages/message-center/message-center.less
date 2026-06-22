@@ -1,0 +1,182 @@
+// ===== message-center =====
+// 消息中心（复用站内通知）。accent: 信息蓝 #1D6FDB（消息为系统级，非角色独占）
+
+@accent: #1D6FDB;
+@accent-2: #3B82F6;
+
+@text: #1F2937;
+@text-2: #6B7280;
+@text-3: #9CA3AF;
+@card: #ffffff;
+@border: #EEF0F4;
+@soft: #F8F9FC;
+
+.page {
+    min-height: 100vh;
+}
+
+// ===== 顶部 header =====
+.hd {
+    position: relative;
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    padding: 60rpx 32rpx 32rpx;
+    background: linear-gradient(135deg, @accent-2 0%, @accent 100%);
+
+    .hd-title {
+        color: #ffffff;
+        font-size: 40rpx;
+        font-weight: 600;
+    }
+
+    .hd-action {
+        padding: 10rpx 24rpx;
+        border-radius: 999rpx;
+        background: rgba(255, 255, 255, 0.18);
+
+        text {
+            color: #ffffff;
+            font-size: 26rpx;
+        }
+    }
+}
+
+// ===== body =====
+.body {
+    padding: 24rpx 24rpx 40rpx;
+}
+
+// ===== tabs =====
+.tabs {
+    display: flex;
+    align-items: center;
+    margin-bottom: 20rpx;
+
+    .tab {
+        padding: 12rpx 32rpx;
+        margin-right: 16rpx;
+        border-radius: 999rpx;
+        background: @card;
+        border: 2rpx solid @border;
+
+        text {
+            font-size: 26rpx;
+            color: @text-2;
+        }
+
+        &.tab--on {
+            background: @accent;
+            border-color: @accent;
+
+            text {
+                color: #ffffff;
+            }
+        }
+    }
+}
+
+// ===== 状态（加载 / 空） =====
+.state {
+    padding: 120rpx 0;
+    text-align: center;
+
+    .state-text {
+        font-size: 28rpx;
+        color: @text-3;
+    }
+}
+
+// ===== 列表 =====
+.list {
+    width: 100%;
+}
+
+.msg-card {
+    display: flex;
+    align-items: flex-start;
+    background: @card;
+    border-radius: 16rpx;
+    padding: 24rpx;
+    box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.04);
+    margin-bottom: 20rpx;
+}
+
+// 左侧按 type 着色圆点
+.dot {
+    flex-shrink: 0;
+    width: 20rpx;
+    height: 20rpx;
+    border-radius: 50%;
+    margin-top: 8rpx;
+    margin-right: 20rpx;
+    background: @accent;
+
+    &.dot--info {
+        background: #1D6FDB;
+    }
+    &.dot--success {
+        background: #059669;
+    }
+    &.dot--warning {
+        background: #D97706;
+    }
+    &.dot--error {
+        background: #DC2626;
+    }
+}
+
+.msg-main {
+    flex: 1;
+    min-width: 0;
+}
+
+.msg-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.msg-title {
+    flex: 1;
+    font-size: 30rpx;
+    color: @text;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+
+    &.msg-title--unread {
+        font-weight: 600;
+    }
+}
+
+.badge {
+    flex-shrink: 0;
+    width: 14rpx;
+    height: 14rpx;
+    border-radius: 50%;
+    margin-left: 16rpx;
+    background: #DC2626;
+}
+
+.msg-summary {
+    display: block;
+    margin-top: 10rpx;
+    font-size: 26rpx;
+    color: @text-2;
+    line-height: 1.5;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+.msg-foot {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 12rpx;
+
+    .msg-time {
+        font-size: 24rpx;
+        color: @text-3;
+    }
+}
