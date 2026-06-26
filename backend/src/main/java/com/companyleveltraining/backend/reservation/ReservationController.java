@@ -3,6 +3,8 @@ package com.companyleveltraining.backend.reservation;
 import java.util.List;
 import java.util.Map;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 
 import org.springframework.web.bind.annotation.GetMapping;
@@ -23,6 +25,7 @@ import com.companyleveltraining.backend.security.SecurityUser;
  */
 @RestController
 @RequestMapping("/api")
+@Tag(name = "实验室预约", description = "学生和教师预约申请、个人预约、详情、取消、完成和统计接口")
 public class ReservationController {
 
     private final ReservationService service;
@@ -32,28 +35,33 @@ public class ReservationController {
     }
 
     @PostMapping("/student/reservations")
+    @Operation(summary = "学生发起预约", description = "学生提交实验室预约申请，进入后续审核流程")
     public Map<String, Object> createStudent(@Valid @RequestBody StudentReservationRequest req) {
         SecurityUtils.requireRole("student");
         return service.createStudentReservation(SecurityUtils.currentUser(), req);
     }
 
     @PostMapping("/teacher/reservations")
+    @Operation(summary = "教师发起预约", description = "教师提交实验室预约申请")
     public Map<String, Object> createTeacher(@Valid @RequestBody TeacherReservationRequest req) {
         SecurityUtils.requireRole("teacher");
         return service.createTeacherReservation(SecurityUtils.currentUser(), req);
     }
 
     @GetMapping("/reservations/mine")
+    @Operation(summary = "我的预约列表", description = "查询当前用户本人相关的预约申请")
     public List<Map<String, Object>> mine() {
         return service.listMine(SecurityUtils.currentUserId());
     }
 
     @GetMapping("/reservations/mine/stats")
+    @Operation(summary = "我的预约统计", description = "查询当前用户本人预约状态统计")
     public Map<String, Object> myStats() {
         return service.getMyStats(SecurityUtils.currentUserId());
     }
 
     @GetMapping("/reservations/{id}")
+    @Operation(summary = "预约详情", description = "按权限查询预约申请详情")
     public Map<String, Object> detail(@PathVariable Long id) {
         SecurityUser user = SecurityUtils.currentUser();
         Map<String, Object> detail = service.getDetail(id);
@@ -86,11 +94,13 @@ public class ReservationController {
     }
 
     @PostMapping("/reservations/{id}/cancel")
+    @Operation(summary = "取消预约", description = "当前用户取消本人有权限操作的预约申请")
     public Map<String, Object> cancel(@PathVariable Long id) {
         return service.cancel(id, SecurityUtils.currentUser());
     }
 
     @PostMapping("/reservations/{id}/complete")
+    @Operation(summary = "完成预约", description = "当前用户将有权限操作的预约标记为完成")
     public Map<String, Object> complete(@PathVariable Long id) {
         return service.complete(id, SecurityUtils.currentUser());
     }

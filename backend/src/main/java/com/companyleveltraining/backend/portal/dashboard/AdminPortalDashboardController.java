@@ -5,6 +5,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -25,6 +27,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
  */
 @RestController
 @RequestMapping("/api/admin/portal/dashboard")
+@Tag(name = "管理员综合服务工作台", description = "管理员综合服务工作台聚合数据、待办统计和首页摘要接口")
 public class AdminPortalDashboardController {
 
     private static final String DASHBOARD_SNAPSHOT_CACHE_KEY = "portal:admin:dashboard:snapshot";
@@ -52,6 +55,7 @@ public class AdminPortalDashboardController {
     }
 
     @GetMapping
+    @Operation(summary = "管理员综合服务工作台", description = "返回管理员工作台统计、待办、通知、资讯和近期预约聚合数据")
     public Map<String, Object> dashboard() {
         SecurityUtils.requireRole("admin");
         SecurityUser admin = SecurityUtils.currentUser();
