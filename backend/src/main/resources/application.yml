@@ -1,11 +1,8 @@
 spring:
   application:
     name: lab-reservation-backend
-  datasource:
-    url: ${DB_URL:jdbc:mysql://mysql6.sqlpub.com:3311/company_level?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true}
-    username: ${DB_USERNAME:super_admin666}
-    password: ${DB_PASSWORD:03cCT9fozmtt7BcT}
-    driver-class-name: com.mysql.cj.jdbc.Driver
+  profiles:
+    default: dev
   jackson:
     time-zone: Asia/Shanghai
 
@@ -14,8 +11,9 @@ server:
 
 security:
   jwt:
-    secret: ${JWT_SECRET:}
     expiration-seconds: ${JWT_EXPIRATION_SECONDS:86400}
+  redis-session:
+    enabled: ${REDIS_AUTH_SESSION_ENABLED:true}
 
 # AI 校园助手配置（可选）。未配置 api-url / api-key 时，后端自动降级为内置规则问答。
 # 密钥仅通过环境变量注入，严禁硬编码：AI_ENABLED=true AI_API_URL=... AI_API_KEY=... AI_MODEL=...
@@ -24,6 +22,27 @@ ai:
   api-url: ${AI_API_URL:}
   api-key: ${AI_API_KEY:}
   model: ${AI_MODEL:gpt-3.5-turbo}
+  require-api-key: ${AI_REQUIRE_API_KEY:true}
+  timeout-seconds: ${AI_TIMEOUT_SECONDS:20}
+
+cache:
+  redis:
+    enabled: ${REDIS_CACHE_ENABLED:true}
+    dashboard-ttl-seconds: ${REDIS_DASHBOARD_TTL_SECONDS:30}
+
+springdoc:
+  api-docs:
+    enabled: ${OPENAPI_ENABLED:true}
+    path: /v3/api-docs
+  swagger-ui:
+    enabled: ${SWAGGER_UI_ENABLED:true}
+    path: /swagger-ui.html
+    tags-sorter: alpha
+    operations-sorter: method
+
+mybatis:
+  configuration:
+    map-underscore-to-camel-case: true
 
 logging:
   level:

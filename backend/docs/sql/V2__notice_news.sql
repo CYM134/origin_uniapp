@@ -4,6 +4,8 @@
 -- 兼容策略：CREATE TABLE IF NOT EXISTS，可重复执行；不修改任何旧表。
 -- =====================================================================
 
+SET NAMES utf8mb4;
+
 -- 通知公告表 -----------------------------------------------------------
 CREATE TABLE IF NOT EXISTS notice (
   id             BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,

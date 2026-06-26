@@ -5,6 +5,8 @@
 -- 依赖：V1（portal_app*）、V2（notice/news）、V3（calendar）已执行。
 -- =====================================================================
 
+SET NAMES utf8mb4;
+
 -- 1) 应用分类 ----------------------------------------------------------
 INSERT IGNORE INTO portal_app_category (category_name, category_code, icon, sort_order, status, remark) VALUES
   ('公共系统',     'public',           'apps',     1,  1, '常用公共服务入口'),

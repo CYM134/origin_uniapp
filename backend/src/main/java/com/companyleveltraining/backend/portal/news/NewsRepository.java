@@ -1,16 +1,14 @@
 package com.companyleveltraining.backend.portal.news;
 
-import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Repository;
 
-import com.companyleveltraining.backend.common.JdbcUtils;
 import com.companyleveltraining.backend.portal.news.dto.NewsCategoryResponse;
 import com.companyleveltraining.backend.portal.news.dto.NewsResponse;
 
@@ -18,82 +16,35 @@ import com.companyleveltraining.backend.portal.news.dto.NewsResponse;
 @Repository
 public class NewsRepository {
 
-    private static final RowMapper<NewsResponse> NEWS_MAPPER = (rs, i) -> new NewsResponse(
-        rs.getLong("id"),
-        rs.getString("news_no"),
-        rs.getString("title"),
-        rs.getString("summary"),
-        rs.getString("content"),
-        JdbcUtils.nullableLong(rs, "category_id"),
-        rs.getString("category_code"),
-        rs.getString("category_name"),
-        rs.getString("cover_image"),
-        rs.getString("author"),
-        rs.getString("status"),
-        rs.getInt("is_top") == 1,
-        rs.getString("publishTime"),
-        JdbcUtils.nullableLong(rs, "publisher_id"),
-        rs.getLong("view_count"),
-        rs.getString("createTime")
-    );
-
-    private static final RowMapper<NewsCategoryResponse> CATEGORY_MAPPER = (rs, i) -> new NewsCategoryResponse(
-        rs.getLong("id"),
-        rs.getString("category_name"),
-        rs.getString("category_code"),
-        rs.getInt("sort_order"),
-        rs.getInt("status")
-    );
-
-    private static final String BASE_SELECT = """
-        SELECT n.id, n.news_no, n.title, n.summary, n.content, n.category_id, n.category_code,
-               c.category_name, n.cover_image, n.author, n.status, n.is_top, n.publisher_id, n.view_count,
-               DATE_FORMAT(n.publish_time, '%Y-%m-%d %H:%i:%s') AS publishTime,
-               DATE_FORMAT(n.created_at, '%Y-%m-%d %H:%i:%s') AS createTime
-        FROM news n
-        LEFT JOIN news_category c ON c.id = n.category_id
-        """;
-
     private final JdbcTemplate jdbcTemplate;
+    private final NewsMapper newsMapper;
 
-    public NewsRepository(JdbcTemplate jdbcTemplate) {
+    public NewsRepository(JdbcTemplate jdbcTemplate, NewsMapper newsMapper) {
         this.jdbcTemplate = jdbcTemplate;
+        this.newsMapper = newsMapper;
     }
 
     public List<NewsCategoryResponse> categories() {
-        return jdbcTemplate.query("""
-            SELECT id, category_name, category_code, sort_order, status
-            FROM news_category WHERE status = 1 ORDER BY sort_order ASC, id ASC
-            """, CATEGORY_MAPPER);
+        return newsMapper.categories().stream()
+            .map(NewsRepository::mapCategory)
+            .toList();
     }
 
     public List<NewsResponse> findPublished(Long categoryId, String keyword) {
-        StringBuilder sql = new StringBuilder(BASE_SELECT)
-            .append(" WHERE n.status = 'published' AND n.deleted_at IS NULL ");
-        List<Object> args = new ArrayList<>();
-        if (categoryId != null) {
-            sql.append(" AND n.category_id = ? ");
-            args.add(categoryId);
-        }
-        if (keyword != null && !keyword.isBlank()) {
-            sql.append(" AND n.title LIKE ? ");
-            args.add("%" + keyword.trim() + "%");
-        }
-        sql.append(" ORDER BY n.is_top DESC, n.publish_time DESC, n.id DESC ");
-        return jdbcTemplate.query(sql.toString(), NEWS_MAPPER, args.toArray());
+        return newsMapper.findPublished(categoryId, normalize(keyword)).stream()
+            .map(NewsRepository::mapNews)
+            .toList();
     }
 
     public List<NewsResponse> findLatest(int limit) {
-        String sql = BASE_SELECT + """
-             WHERE n.status = 'published' AND n.deleted_at IS NULL
-             ORDER BY n.is_top DESC, n.publish_time DESC, n.id DESC LIMIT ?
-            """;
-        return jdbcTemplate.query(sql, NEWS_MAPPER, limit);
+        return newsMapper.findLatest(limit).stream()
+            .map(NewsRepository::mapNews)
+            .toList();
     }
 
     public Optional<NewsResponse> findPublishedById(Long id) {
-        String sql = BASE_SELECT + " WHERE n.id = ? AND n.status = 'published' AND n.deleted_at IS NULL LIMIT 1";
-        return jdbcTemplate.query(sql, NEWS_MAPPER, id).stream().findFirst();
+        return Optional.ofNullable(newsMapper.findPublishedById(id))
+            .map(NewsRepository::mapNews);
     }
 
     public void incrementView(Long id) {
@@ -103,27 +54,14 @@ public class NewsRepository {
     // ---- 管理端 ----
 
     public List<NewsResponse> findAllForAdmin(String status, Long categoryId, String keyword) {
-        StringBuilder sql = new StringBuilder(BASE_SELECT).append(" WHERE n.deleted_at IS NULL ");
-        List<Object> args = new ArrayList<>();
-        if (status != null && !status.isBlank()) {
-            sql.append(" AND n.status = ? ");
-            args.add(status);
-        }
-        if (categoryId != null) {
-            sql.append(" AND n.category_id = ? ");
-            args.add(categoryId);
-        }
-        if (keyword != null && !keyword.isBlank()) {
-            sql.append(" AND n.title LIKE ? ");
-            args.add("%" + keyword.trim() + "%");
-        }
-        sql.append(" ORDER BY n.is_top DESC, n.created_at DESC ");
-        return jdbcTemplate.query(sql.toString(), NEWS_MAPPER, args.toArray());
+        return newsMapper.findAllForAdmin(normalize(status), categoryId, normalize(keyword)).stream()
+            .map(NewsRepository::mapNews)
+            .toList();
     }
 
     public Optional<NewsResponse> findByIdForAdmin(Long id) {
-        String sql = BASE_SELECT + " WHERE n.id = ? AND n.deleted_at IS NULL LIMIT 1";
-        return jdbcTemplate.query(sql, NEWS_MAPPER, id).stream().findFirst();
+        return Optional.ofNullable(newsMapper.findByIdForAdmin(id))
+            .map(NewsRepository::mapNews);
     }
 
     public Long insert(String newsNo, String title, String summary, String content, Long categoryId,
@@ -185,9 +123,93 @@ public class NewsRepository {
         if (categoryId == null) {
             return null;
         }
-        List<String> codes = jdbcTemplate.query(
-            "SELECT category_code FROM news_category WHERE id = ?",
-            (rs, i) -> rs.getString(1), categoryId);
-        return codes.isEmpty() ? null : codes.get(0);
+        return newsMapper.categoryCodeOf(categoryId);
+    }
+
+    private static NewsResponse mapNews(Map<String, Object> row) {
+        return new NewsResponse(
+            longValue(row, "id"),
+            stringValue(row, "newsNo"),
+            stringValue(row, "title"),
+            stringValue(row, "summary"),
+            stringValue(row, "content"),
+            nullableLongValue(row, "categoryId"),
+            stringValue(row, "categoryCode"),
+            stringValue(row, "categoryName"),
+            stringValue(row, "coverImage"),
+            stringValue(row, "author"),
+            stringValue(row, "status"),
+            boolValue(row, "top"),
+            stringValue(row, "publishTime"),
+            nullableLongValue(row, "publisherId"),
+            longValue(row, "viewCount"),
+            stringValue(row, "createTime")
+        );
+    }
+
+    private static NewsCategoryResponse mapCategory(Map<String, Object> row) {
+        return new NewsCategoryResponse(
+            longValue(row, "id"),
+            stringValue(row, "categoryName"),
+            stringValue(row, "categoryCode"),
+            intValue(row, "sortOrder"),
+            intValue(row, "status")
+        );
+    }
+
+    private static String normalize(String value) {
+        return value == null || value.isBlank() ? null : value.trim();
+    }
+
+    private static Object value(Map<String, Object> row, String key) {
+        if (row.containsKey(key)) {
+            return row.get(key);
+        }
+        for (Map.Entry<String, Object> entry : row.entrySet()) {
+            if (entry.getKey().equalsIgnoreCase(key)) {
+                return entry.getValue();
+            }
+        }
+        return null;
+    }
+
+    private static String stringValue(Map<String, Object> row, String key) {
+        Object value = value(row, key);
+        return value == null ? null : String.valueOf(value);
+    }
+
+    private static Long nullableLongValue(Map<String, Object> row, String key) {
+        Object value = value(row, key);
+        if (value == null) {
+            return null;
+        }
+        return value instanceof Number n ? n.longValue() : Long.valueOf(String.valueOf(value));
+    }
+
+    private static Long longValue(Map<String, Object> row, String key) {
+        Long value = nullableLongValue(row, key);
+        return value == null ? 0L : value;
+    }
+
+    private static Integer intValue(Map<String, Object> row, String key) {
+        Object value = value(row, key);
+        if (value == null) {
+            return null;
+        }
+        if (value instanceof Boolean b) {
+            return b ? 1 : 0;
+        }
+        return value instanceof Number n ? n.intValue() : Integer.valueOf(String.valueOf(value));
+    }
+
+    private static boolean boolValue(Map<String, Object> row, String key) {
+        Object value = value(row, key);
+        if (value instanceof Boolean b) {
+            return b;
+        }
+        if (value instanceof Number n) {
+            return n.intValue() != 0;
+        }
+        return value != null && Boolean.parseBoolean(String.valueOf(value));
     }
 }

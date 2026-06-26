@@ -10,6 +10,8 @@ import com.companyleveltraining.backend.auth.dto.StudentRegisterRequest;
 import com.companyleveltraining.backend.auth.dto.TeacherRegisterRequest;
 import com.companyleveltraining.backend.common.BizNoGenerator;
 import com.companyleveltraining.backend.common.BusinessException;
+import com.companyleveltraining.backend.security.RedisTokenSessionService;
+import com.companyleveltraining.backend.security.SecurityUser;
 
 /**
  * 注册、改密、退出等账号相关业务。
@@ -21,13 +23,16 @@ public class RegistrationService {
     private final PasswordEncoder passwordEncoder;
     private final BizNoGenerator bizNoGenerator;
     private final AuditLogService auditLogService;
+    private final RedisTokenSessionService tokenSessionService;
 
     public RegistrationService(AccountRepository accountRepository, PasswordEncoder passwordEncoder,
-                               BizNoGenerator bizNoGenerator, AuditLogService auditLogService) {
+                               BizNoGenerator bizNoGenerator, AuditLogService auditLogService,
+                               RedisTokenSessionService tokenSessionService) {
         this.accountRepository = accountRepository;
         this.passwordEncoder = passwordEncoder;
         this.bizNoGenerator = bizNoGenerator;
         this.auditLogService = auditLogService;
+        this.tokenSessionService = tokenSessionService;
     }
 
     public boolean studentExists(String studentNo) {
@@ -79,11 +84,13 @@ public class RegistrationService {
             throw BusinessException.badRequest("原密码不正确");
         }
         accountRepository.updatePassword(userId, passwordEncoder.encode(req.newPassword()));
+        tokenSessionService.revokeAllSessions(userId);
         auditLogService.record(userId, role, "auth", "change_password", "sys_users", userId, null);
     }
 
-    public void logout(Long userId, String role) {
-        auditLogService.record(userId, role, "auth", "logout", "sys_users", userId, null);
+    public void logout(SecurityUser user) {
+        tokenSessionService.revokeSession(user);
+        auditLogService.record(user.id(), user.role(), "auth", "logout", "sys_users", user.id(), null);
     }
 
     private boolean passwordMatches(String rawPassword, String storedPassword) {

@@ -3,12 +3,12 @@ package com.companyleveltraining.backend.dashboard;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.companyleveltraining.backend.common.SecurityUtils;
+import com.companyleveltraining.backend.portal.dashboard.AdminDashboardMapper;
 
 /**
  * 管理员工作台汇总接口，对应 admin-work 的待办计数（可选增强）。
@@ -17,36 +17,21 @@ import com.companyleveltraining.backend.common.SecurityUtils;
 @RequestMapping("/api/admin/dashboard")
 public class AdminDashboardController {
 
-    private final JdbcTemplate jdbcTemplate;
+    private final AdminDashboardMapper dashboardMapper;
 
-    public AdminDashboardController(JdbcTemplate jdbcTemplate) {
-        this.jdbcTemplate = jdbcTemplate;
+    public AdminDashboardController(AdminDashboardMapper dashboardMapper) {
+        this.dashboardMapper = dashboardMapper;
     }
 
     @GetMapping("/summary")
     public Map<String, Object> summary() {
         SecurityUtils.requireRole("admin");
         Map<String, Object> result = new LinkedHashMap<>();
-        result.put("pendingReservations", count("""
-            SELECT COUNT(*) FROM reservation_applications
-            WHERE deleted_at IS NULL AND (
-              (applicant_role = 'student' AND status = 'teacher_approved')
-              OR (applicant_role = 'teacher' AND status = 'pending'))
-            """));
-        result.put("pendingTeacherReviews", count("""
-            SELECT COUNT(*) FROM reservation_applications
-            WHERE deleted_at IS NULL AND applicant_role = 'student' AND status = 'pending'
-            """));
-        result.put("pendingTeacherRegistrations", count("""
-            SELECT COUNT(*) FROM teacher_registration_applications WHERE status = 'pending'
-            """));
-        result.put("totalLabs", count("SELECT COUNT(*) FROM laboratories WHERE deleted_at IS NULL"));
-        result.put("totalUsers", count("SELECT COUNT(*) FROM sys_users WHERE deleted_at IS NULL AND status <> 'deleted'"));
+        result.put("pendingReservations", dashboardMapper.countPendingReservations());
+        result.put("pendingTeacherReviews", dashboardMapper.countPendingTeacherReviews());
+        result.put("pendingTeacherRegistrations", dashboardMapper.countPendingTeacherRegistrations());
+        result.put("totalLabs", dashboardMapper.countTotalLabs());
+        result.put("totalUsers", dashboardMapper.countTotalUsers());
         return result;
-    }
-
-    private long count(String sql) {
-        Long value = jdbcTemplate.queryForObject(sql, Long.class);
-        return value == null ? 0L : value;
     }
 }

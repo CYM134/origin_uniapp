@@ -1,95 +1,64 @@
 package com.companyleveltraining.backend.portal.notice;
 
-import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Repository;
 
-import com.companyleveltraining.backend.common.JdbcUtils;
 import com.companyleveltraining.backend.portal.notice.dto.NoticeResponse;
 
 /** 通知公告数据访问。日期统一用 DATE_FORMAT 返回字符串，对齐项目其它接口风格。 */
 @Repository
 public class NoticeRepository {
 
-    private static NoticeResponse map(java.sql.ResultSet rs, boolean withRead) throws java.sql.SQLException {
+    private static NoticeResponse map(Map<String, Object> row) {
         return new NoticeResponse(
-            rs.getLong("id"),
-            rs.getString("notice_no"),
-            rs.getString("title"),
-            rs.getString("content"),
-            rs.getString("notice_type"),
-            rs.getString("publish_scope"),
-            rs.getString("target_roles"),
-            rs.getInt("is_top") == 1,
-            rs.getString("status"),
-            rs.getString("publishTime"),
-            JdbcUtils.nullableLong(rs, "publisher_id"),
-            rs.getString("publisher_name"),
-            rs.getLong("view_count"),
-            rs.getString("createTime"),
-            withRead && rs.getInt("read_flag") == 1
+            longValue(row, "id"),
+            stringValue(row, "noticeNo"),
+            stringValue(row, "title"),
+            stringValue(row, "content"),
+            stringValue(row, "noticeType"),
+            stringValue(row, "publishScope"),
+            stringValue(row, "targetRoles"),
+            boolValue(row, "top"),
+            stringValue(row, "status"),
+            stringValue(row, "publishTime"),
+            nullableLongValue(row, "publisherId"),
+            stringValue(row, "publisherName"),
+            longValue(row, "viewCount"),
+            stringValue(row, "createTime"),
+            boolValue(row, "readFlag")
         );
     }
 
-    private static final RowMapper<NoticeResponse> PORTAL_MAPPER = (rs, i) -> map(rs, true);
-    private static final RowMapper<NoticeResponse> ADMIN_MAPPER = (rs, i) -> map(rs, false);
-
-    private static final String PORTAL_SELECT = """
-        SELECT n.id, n.notice_no, n.title, n.content, n.notice_type, n.publish_scope, n.target_roles,
-               n.is_top, n.status, n.publisher_id, n.publisher_name, n.view_count,
-               DATE_FORMAT(n.publish_time, '%Y-%m-%d %H:%i:%s') AS publishTime,
-               DATE_FORMAT(n.created_at, '%Y-%m-%d %H:%i:%s') AS createTime,
-               (r.id IS NOT NULL) AS read_flag
-        FROM notice n
-        LEFT JOIN notice_read r ON r.notice_id = n.id AND r.user_id = ?
-        """;
-
     private final JdbcTemplate jdbcTemplate;
+    private final NoticeMapper noticeMapper;
 
-    public NoticeRepository(JdbcTemplate jdbcTemplate) {
+    public NoticeRepository(JdbcTemplate jdbcTemplate, NoticeMapper noticeMapper) {
         this.jdbcTemplate = jdbcTemplate;
+        this.noticeMapper = noticeMapper;
     }
 
     /** 门户：当前角色可见的已发布公告。 */
     public List<NoticeResponse> findPublishedForRole(String role, Long userId, String keyword) {
-        StringBuilder sql = new StringBuilder(PORTAL_SELECT).append("""
-             WHERE n.status = 'published' AND n.deleted_at IS NULL
-               AND (n.publish_scope = 'all' OR FIND_IN_SET(?, n.target_roles) > 0)
-            """);
-        List<Object> args = new ArrayList<>();
-        args.add(userId);
-        args.add(role);
-        if (keyword != null && !keyword.isBlank()) {
-            sql.append(" AND n.title LIKE ? ");
-            args.add("%" + keyword.trim() + "%");
-        }
-        sql.append(" ORDER BY n.is_top DESC, n.publish_time DESC, n.id DESC ");
-        return jdbcTemplate.query(sql.toString(), PORTAL_MAPPER, args.toArray());
+        return noticeMapper.findPublishedForRole(role, userId, normalize(keyword)).stream()
+            .map(NoticeRepository::map)
+            .toList();
     }
 
     public List<NoticeResponse> findLatestForRole(String role, Long userId, int limit) {
-        String sql = PORTAL_SELECT + """
-             WHERE n.status = 'published' AND n.deleted_at IS NULL
-               AND (n.publish_scope = 'all' OR FIND_IN_SET(?, n.target_roles) > 0)
-             ORDER BY n.is_top DESC, n.publish_time DESC, n.id DESC
-             LIMIT ?
-            """;
-        return jdbcTemplate.query(sql, PORTAL_MAPPER, userId, role, limit);
+        return noticeMapper.findLatestForRole(role, userId, limit).stream()
+            .map(NoticeRepository::map)
+            .toList();
     }
 
     public Optional<NoticeResponse> findPublishedById(String role, Long userId, Long id) {
-        String sql = PORTAL_SELECT + """
-             WHERE n.id = ? AND n.status = 'published' AND n.deleted_at IS NULL
-               AND (n.publish_scope = 'all' OR FIND_IN_SET(?, n.target_roles) > 0)
-             LIMIT 1
-            """;
-        return jdbcTemplate.query(sql, PORTAL_MAPPER, userId, id, role).stream().findFirst();
+        return Optional.ofNullable(noticeMapper.findPublishedById(role, userId, id))
+            .map(NoticeRepository::map);
     }
 
     public void markRead(Long noticeId, Long userId) {
@@ -102,32 +71,15 @@ public class NoticeRepository {
 
     // ---- 管理端 ----
 
-    private static final String ADMIN_SELECT = """
-        SELECT n.id, n.notice_no, n.title, n.content, n.notice_type, n.publish_scope, n.target_roles,
-               n.is_top, n.status, n.publisher_id, n.publisher_name, n.view_count,
-               DATE_FORMAT(n.publish_time, '%Y-%m-%d %H:%i:%s') AS publishTime,
-               DATE_FORMAT(n.created_at, '%Y-%m-%d %H:%i:%s') AS createTime
-        FROM notice n
-        """;
-
     public List<NoticeResponse> findAllForAdmin(String status, String keyword) {
-        StringBuilder sql = new StringBuilder(ADMIN_SELECT).append(" WHERE n.deleted_at IS NULL ");
-        List<Object> args = new ArrayList<>();
-        if (status != null && !status.isBlank()) {
-            sql.append(" AND n.status = ? ");
-            args.add(status);
-        }
-        if (keyword != null && !keyword.isBlank()) {
-            sql.append(" AND n.title LIKE ? ");
-            args.add("%" + keyword.trim() + "%");
-        }
-        sql.append(" ORDER BY n.is_top DESC, n.created_at DESC ");
-        return jdbcTemplate.query(sql.toString(), ADMIN_MAPPER, args.toArray());
+        return noticeMapper.findAllForAdmin(normalize(status), normalize(keyword)).stream()
+            .map(NoticeRepository::map)
+            .toList();
     }
 
     public Optional<NoticeResponse> findByIdForAdmin(Long id) {
-        String sql = ADMIN_SELECT + " WHERE n.id = ? AND n.deleted_at IS NULL LIMIT 1";
-        return jdbcTemplate.query(sql, ADMIN_MAPPER, id).stream().findFirst();
+        return Optional.ofNullable(noticeMapper.findByIdForAdmin(id))
+            .map(NoticeRepository::map);
     }
 
     public Long insert(String noticeNo, String title, String content, String noticeType,
@@ -183,5 +135,50 @@ public class NoticeRepository {
     public int softDelete(Long id) {
         return jdbcTemplate.update(
             "UPDATE notice SET deleted_at = CURRENT_TIMESTAMP(3) WHERE id = ? AND deleted_at IS NULL", id);
+    }
+
+    private static String normalize(String value) {
+        return value == null || value.isBlank() ? null : value.trim();
+    }
+
+    private static Object value(Map<String, Object> row, String key) {
+        if (row.containsKey(key)) {
+            return row.get(key);
+        }
+        for (Map.Entry<String, Object> entry : row.entrySet()) {
+            if (entry.getKey().equalsIgnoreCase(key)) {
+                return entry.getValue();
+            }
+        }
+        return null;
+    }
+
+    private static String stringValue(Map<String, Object> row, String key) {
+        Object value = value(row, key);
+        return value == null ? null : String.valueOf(value);
+    }
+
+    private static Long nullableLongValue(Map<String, Object> row, String key) {
+        Object value = value(row, key);
+        if (value == null) {
+            return null;
+        }
+        return value instanceof Number n ? n.longValue() : Long.valueOf(String.valueOf(value));
+    }
+
+    private static Long longValue(Map<String, Object> row, String key) {
+        Long value = nullableLongValue(row, key);
+        return value == null ? 0L : value;
+    }
+
+    private static boolean boolValue(Map<String, Object> row, String key) {
+        Object value = value(row, key);
+        if (value instanceof Boolean b) {
+            return b;
+        }
+        if (value instanceof Number n) {
+            return n.intValue() != 0;
+        }
+        return value != null && Boolean.parseBoolean(String.valueOf(value));
     }
 }

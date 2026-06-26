@@ -9,6 +9,7 @@ import io.jsonwebtoken.security.Keys;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.Date;
+import java.util.UUID;
 import javax.crypto.SecretKey;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,11 +35,13 @@ public class JwtService {
         this.expirationSeconds = expirationSeconds;
     }
 
-    public String generateToken(UserAccount user) {
+    public GeneratedToken generateToken(UserAccount user) {
         Instant now = Instant.now();
         Instant expiresAt = now.plusSeconds(expirationSeconds);
+        String tokenId = UUID.randomUUID().toString();
 
-        return Jwts.builder()
+        String accessToken = Jwts.builder()
+            .id(tokenId)
             .subject(String.valueOf(user.id()))
             .claim("accountNo", user.accountNo())
             .claim("role", user.role())
@@ -55,6 +58,7 @@ public class JwtService {
             .expiration(Date.from(expiresAt))
             .signWith(signingKey)
             .compact();
+        return new GeneratedToken(accessToken, tokenId);
     }
 
     public boolean isTokenValid(String token) {
@@ -80,7 +84,8 @@ public class JwtService {
             claims.get("college", String.class),
             claims.get("major", String.class),
             claims.get("department", String.class),
-            claims.get("positionTitle", String.class)
+            claims.get("positionTitle", String.class),
+            claims.getId()
         );
     }
 
@@ -119,5 +124,8 @@ public class JwtService {
         } catch (Exception ex) {
             return secret.getBytes(StandardCharsets.UTF_8);
         }
+    }
+
+    public record GeneratedToken(String accessToken, String tokenId) {
     }
 }

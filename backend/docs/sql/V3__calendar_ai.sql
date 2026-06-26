@@ -3,6 +3,8 @@
 -- 兼容策略：CREATE TABLE IF NOT EXISTS，可重复执行；不修改任何旧表。
 -- =====================================================================
 
+SET NAMES utf8mb4;
+
 -- 日历事件表 -----------------------------------------------------------
 CREATE TABLE IF NOT EXISTS calendar_event (
   id                    BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,

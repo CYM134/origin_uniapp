@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 
 import com.companyleveltraining.backend.audit.AuditLogService;
 import com.companyleveltraining.backend.common.BusinessException;
+import com.companyleveltraining.backend.security.RedisTokenSessionService;
 
 /**
  * 管理员用户管理业务，对应 admin-system-management 的「用户管理」Tab：
@@ -31,12 +32,14 @@ public class AdminUserService {
     private final JdbcTemplate jdbcTemplate;
     private final PasswordEncoder passwordEncoder;
     private final AuditLogService auditLogService;
+    private final RedisTokenSessionService tokenSessionService;
 
     public AdminUserService(JdbcTemplate jdbcTemplate, PasswordEncoder passwordEncoder,
-                            AuditLogService auditLogService) {
+                            AuditLogService auditLogService, RedisTokenSessionService tokenSessionService) {
         this.jdbcTemplate = jdbcTemplate;
         this.passwordEncoder = passwordEncoder;
         this.auditLogService = auditLogService;
+        this.tokenSessionService = tokenSessionService;
     }
 
     public List<Map<String, Object>> list(String keyword, String role) {
@@ -110,6 +113,8 @@ public class AdminUserService {
 
     public Map<String, Object> update(Long id, Map<String, Object> body, Long operatorId) {
         requireExists(id);
+        String newRole = str(body.get("role"));
+        String newStatus = str(body.get("status"));
         jdbcTemplate.update("""
             UPDATE sys_users SET
               real_name = COALESCE(?, real_name),
@@ -118,8 +123,11 @@ public class AdminUserService {
               phone = COALESCE(?, phone),
               email = COALESCE(?, email)
             WHERE id = ?
-            """, str(body.get("name")), str(body.get("role")), str(body.get("status")),
+            """, str(body.get("name")), newRole, newStatus,
             str(body.get("phone")), str(body.get("email")), id);
+        if (newRole != null || newStatus != null) {
+            tokenSessionService.revokeAllSessions(id);
+        }
         auditLogService.record(operatorId, "admin", "user", "update", "sys_users", id, null);
         return getById(id);
     }
@@ -131,6 +139,9 @@ public class AdminUserService {
             target = "active".equals(user.get("status")) ? "disabled" : "active";
         }
         jdbcTemplate.update("UPDATE sys_users SET status = ? WHERE id = ?", target, id);
+        if (!"active".equals(target)) {
+            tokenSessionService.revokeAllSessions(id);
+        }
         auditLogService.record(operatorId, "admin", "user", "toggle_status", "sys_users", id, null);
         return getById(id);
     }
@@ -139,6 +150,7 @@ public class AdminUserService {
         requireExists(id);
         jdbcTemplate.update("UPDATE sys_users SET password_hash = ? WHERE id = ?",
             passwordEncoder.encode(DEFAULT_PASSWORD), id);
+        tokenSessionService.revokeAllSessions(id);
         auditLogService.record(operatorId, "admin", "user", "reset_password", "sys_users", id, null);
     }
 
@@ -147,6 +159,7 @@ public class AdminUserService {
         jdbcTemplate.update("""
             UPDATE sys_users SET status = 'deleted', deleted_at = CURRENT_TIMESTAMP(3) WHERE id = ?
             """, id);
+        tokenSessionService.revokeAllSessions(id);
         auditLogService.record(operatorId, "admin", "user", "delete", "sys_users", id, null);
     }
 

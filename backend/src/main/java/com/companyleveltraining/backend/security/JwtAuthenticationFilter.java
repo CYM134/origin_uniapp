@@ -22,10 +22,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private static final String STATUS_ACTIVE = "active";
 
     private final JwtService jwtService;
+    private final RedisTokenSessionService tokenSessionService;
     private final UserAccountRepository userAccountRepository;
 
-    public JwtAuthenticationFilter(JwtService jwtService, UserAccountRepository userAccountRepository) {
+    public JwtAuthenticationFilter(JwtService jwtService, RedisTokenSessionService tokenSessionService,
+                                   UserAccountRepository userAccountRepository) {
         this.jwtService = jwtService;
+        this.tokenSessionService = tokenSessionService;
         this.userAccountRepository = userAccountRepository;
     }
 
@@ -53,6 +56,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         // 回库按 id 校验账号当前状态：禁用/删除/不存在的账号即便持有未过期 token 也不再放行，
         // 让请求落到未认证 -> RestAuthenticationEntryPoint 返回 401。
         if (!isAccountActive(user.id())) {
+            filterChain.doFilter(request, response);
+            return;
+        }
+        if (!tokenSessionService.isSessionActive(user)) {
             filterChain.doFilter(request, response);
             return;
         }

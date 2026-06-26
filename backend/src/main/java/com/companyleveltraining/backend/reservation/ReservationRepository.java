@@ -10,126 +10,53 @@ import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Repository;
 
 /**
- * 预约申请仓储。读操作统一通过 BASE_SELECT 返回「前端字段形状」的 Map，写操作覆盖创建与各状态流转。
+ * 预约申请仓储。读操作委托 MyBatis Mapper，写操作覆盖创建与各状态流转。
  */
 @Repository
 public class ReservationRepository {
 
-    /** 统一查询：列别名直接对齐前端各页 mock 字段名，并用 CASE 计算 statusText / applicantType。 */
-    private static final String BASE_SELECT = """
-        SELECT
-          ra.id,
-          ra.application_no AS applicationNo,
-          ra.applicant_role AS applicantRole,
-          ra.applicant_user_id AS applicantUserId,
-          ra.applicant_no AS applicantNo,
-          ra.applicant_no AS studentId,
-          ra.applicant_name AS applicant,
-          ra.applicant_name AS applicantName,
-          ra.applicant_name AS studentName,
-          ra.applicant_name AS teacherName,
-          ra.applicant_phone AS contact,
-          ra.applicant_phone AS phone,
-          ra.applicant_phone AS applicantPhone,
-          ra.lab_id AS labId,
-          ra.lab_name_snapshot AS labName,
-          ra.schedule_id AS scheduleId,
-          ra.reserve_date AS date,
-          ra.start_time AS startTime,
-          ra.end_time AS endTime,
-          ra.time_slot_label AS timeSlot,
-          ra.participant_count AS studentCount,
-          ra.application_type AS applicationType,
-          ra.application_type_name AS applicationTypeName,
-          ra.title,
-          ra.purpose,
-          ra.instructor_name AS teacher,
-          ra.requirements,
-          ra.emergency_contact_name AS emergencyContact,
-          ra.emergency_contact_phone AS emergencyPhone,
-          ra.course_name AS courseName,
-          ra.course_type AS courseType,
-          ra.remark,
-          ra.status,
-          CASE ra.status
-            WHEN 'draft' THEN '草稿'
-            WHEN 'pending' THEN '待审核'
-            WHEN 'teacher_approved' THEN '待管理员审核'
-            WHEN 'approved' THEN '已通过'
-            WHEN 'rejected' THEN '已拒绝'
-            WHEN 'cancelled' THEN '已取消'
-            WHEN 'completed' THEN '已完成'
-            ELSE ra.status END AS statusText,
-          CASE WHEN ra.applicant_role = 'student' THEN '学生' ELSE '教师' END AS applicantType,
-          ra.is_completed AS isCompleted,
-          ra.submitted_at AS submitTime,
-          ra.submitted_at AS applyTime,
-          ra.teacher_review_user_id AS teacherReviewerId,
-          ra.teacher_review_name AS teacherReviewerName,
-          ra.teacher_review_at AS teacherReviewTime,
-          ra.teacher_review_comment AS teacherReviewReason,
-          ra.admin_review_user_id AS adminReviewerId,
-          ra.admin_review_name AS adminReviewerName,
-          ra.admin_review_at AS adminReviewTime,
-          ra.admin_review_at AS approvalTime,
-          ra.admin_review_comment AS adminReviewComment,
-          ra.reject_reason AS rejectReason,
-          ra.cancelled_at AS cancelTime,
-          ra.completed_at AS completedTime,
-          ra.created_at AS createTime
-        FROM reservation_applications ra
-        WHERE ra.deleted_at IS NULL AND ra.status <> 'draft'
-        """;
-
     private final JdbcTemplate jdbcTemplate;
+    private final ReservationMapper reservationMapper;
 
-    public ReservationRepository(JdbcTemplate jdbcTemplate) {
+    public ReservationRepository(JdbcTemplate jdbcTemplate, ReservationMapper reservationMapper) {
         this.jdbcTemplate = jdbcTemplate;
+        this.reservationMapper = reservationMapper;
     }
 
     // ---- 读 ----
 
     public List<Map<String, Object>> findByApplicant(Long userId) {
-        return jdbcTemplate.queryForList(
-            BASE_SELECT + " AND ra.applicant_user_id = ? ORDER BY ra.submitted_at DESC, ra.id DESC", userId);
+        return reservationMapper.findByApplicant(userId);
     }
 
     public List<Map<String, Object>> findStudentPendingForTeacher() {
-        return jdbcTemplate.queryForList(
-            BASE_SELECT + " AND ra.applicant_role = 'student' AND ra.status = 'pending'"
-            + " ORDER BY ra.submitted_at ASC");
+        return reservationMapper.findStudentPendingForTeacher();
     }
 
     public List<Map<String, Object>> findReviewedByTeacher(Long teacherUserId) {
-        return jdbcTemplate.queryForList(
-            BASE_SELECT + " AND ra.teacher_review_user_id = ? ORDER BY ra.teacher_review_at DESC", teacherUserId);
+        return reservationMapper.findReviewedByTeacher(teacherUserId);
     }
 
     /** 任务中心：等待管理员终审的申请（学生 teacher_approved + 教师 pending）。 */
     public List<Map<String, Object>> findAdminPending() {
-        return jdbcTemplate.queryForList(BASE_SELECT
-            + " AND ((ra.applicant_role = 'student' AND ra.status = 'teacher_approved')"
-            + " OR (ra.applicant_role = 'teacher' AND ra.status = 'pending'))"
-            + " ORDER BY ra.submitted_at ASC");
+        return reservationMapper.findAdminPending();
     }
 
     /** 任务中心：由该管理员终审过的申请。 */
     public List<Map<String, Object>> findReviewedByAdmin(Long adminUserId) {
-        return jdbcTemplate.queryForList(
-            BASE_SELECT + " AND ra.admin_review_user_id = ? ORDER BY ra.admin_review_at DESC", adminUserId);
+        return reservationMapper.findReviewedByAdmin(adminUserId);
     }
 
     public List<Map<String, Object>> findAllForAdmin() {
-        return jdbcTemplate.queryForList(BASE_SELECT + " ORDER BY ra.submitted_at DESC, ra.id DESC");
+        return reservationMapper.findAllForAdmin();
     }
 
     public List<Map<String, Object>> findApprovalRecords() {
-        return jdbcTemplate.queryForList(
-            BASE_SELECT + " AND ra.status IN ('approved','rejected') ORDER BY ra.admin_review_at DESC, ra.id DESC");
+        return reservationMapper.findApprovalRecords();
     }
 
     public Optional<Map<String, Object>> findById(Long id) {
-        return jdbcTemplate.queryForList(BASE_SELECT + " AND ra.id = ? LIMIT 1", id).stream().findFirst();
+        return Optional.ofNullable(reservationMapper.findById(id));
     }
 
     /** 取流转所需的内部状态信息。 */

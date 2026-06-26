@@ -72,7 +72,7 @@ public class AuthController {
     @PostMapping("/logout")
     public Map<String, Object> logout() {
         SecurityUser user = SecurityUtils.currentUser();
-        registrationService.logout(user.id(), user.role());
+        registrationService.logout(user);
         return Map.of("success", true, "message", "已退出登录");
     }
 }

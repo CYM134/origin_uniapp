@@ -1,0 +1,9 @@
+backend/target
+origin_uniapp/node_modules
+origin_uniapp/unpackage
+origin_uniapp/dist
+origin_uniapp/.hbuilderx
+*.log
+.idea
+.vscode
+.DS_Store

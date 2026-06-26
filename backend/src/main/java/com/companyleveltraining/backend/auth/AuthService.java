@@ -4,6 +4,7 @@ import com.companyleveltraining.backend.auth.dto.LoginRequest;
 import com.companyleveltraining.backend.auth.dto.LoginResponse;
 import com.companyleveltraining.backend.auth.dto.UserProfileResponse;
 import com.companyleveltraining.backend.security.JwtService;
+import com.companyleveltraining.backend.security.RedisTokenSessionService;
 import com.companyleveltraining.backend.security.SecurityUser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -21,17 +22,20 @@ public class AuthService {
     private final AuthAsyncService authAsyncService;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
+    private final RedisTokenSessionService tokenSessionService;
 
     public AuthService(
         UserAccountRepository userAccountRepository,
         AuthAsyncService authAsyncService,
         PasswordEncoder passwordEncoder,
-        JwtService jwtService
+        JwtService jwtService,
+        RedisTokenSessionService tokenSessionService
     ) {
         this.userAccountRepository = userAccountRepository;
         this.authAsyncService = authAsyncService;
         this.passwordEncoder = passwordEncoder;
         this.jwtService = jwtService;
+        this.tokenSessionService = tokenSessionService;
     }
 
     public LoginResponse login(LoginRequest request) {
@@ -46,10 +50,11 @@ public class AuthService {
         }
 
         authAsyncService.updateLoginSuccessAsync(user.id());
-        String token = jwtService.generateToken(user);
+        JwtService.GeneratedToken token = jwtService.generateToken(user);
+        tokenSessionService.createSession(user, token.tokenId(), jwtService.getExpirationSeconds());
 
         return new LoginResponse(
-            token,
+            token.accessToken(),
             jwtService.getExpirationSeconds(),
             toUserProfileResponse(user)
         );

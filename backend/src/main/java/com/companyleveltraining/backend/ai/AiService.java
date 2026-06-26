@@ -1,23 +1,16 @@
 package com.companyleveltraining.backend.ai;
 
-import java.net.URI;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
-import java.time.Duration;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+import com.companyleveltraining.backend.ai.model.AiModelClient;
+import com.companyleveltraining.backend.ai.model.AiPromptBuilder;
 import com.companyleveltraining.backend.ai.dto.AiChatRequest;
 import com.companyleveltraining.backend.common.BusinessException;
 import com.companyleveltraining.backend.security.SecurityUser;
-import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
  * AI 校园助手业务。
@@ -27,31 +20,17 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 @Service
 public class AiService {
 
-    private static final Logger log = LoggerFactory.getLogger(AiService.class);
-
     private final AiRepository repository;
     private final AiContextService contextService;
-    private final ObjectMapper objectMapper;
-    private final HttpClient httpClient = HttpClient.newBuilder()
-        .connectTimeout(Duration.ofSeconds(5)).build();
+    private final AiModelClient modelClient;
+    private final AiPromptBuilder promptBuilder;
 
-    private final boolean enabled;
-    private final String apiUrl;
-    private final String apiKey;
-    private final String model;
-
-    public AiService(AiRepository repository, AiContextService contextService, ObjectMapper objectMapper,
-                     @Value("${ai.enabled:false}") boolean enabled,
-                     @Value("${ai.api-url:}") String apiUrl,
-                     @Value("${ai.api-key:}") String apiKey,
-                     @Value("${ai.model:gpt-3.5-turbo}") String model) {
+    public AiService(AiRepository repository, AiContextService contextService,
+                     AiModelClient modelClient, AiPromptBuilder promptBuilder) {
         this.repository = repository;
         this.contextService = contextService;
-        this.objectMapper = objectMapper;
-        this.enabled = enabled;
-        this.apiUrl = apiUrl;
-        this.apiKey = apiKey;
-        this.model = model;
+        this.modelClient = modelClient;
+        this.promptBuilder = promptBuilder;
     }
 
     public Map<String, Object> chat(SecurityUser user, AiChatRequest req) {
@@ -66,10 +45,10 @@ public class AiService {
         AiContextService.AiContext context = contextService.build(user);
         String source = "fallback";
         String reply;
-        if (modelConfigured()) {
-            String modelReply = tryModel(req.message(), context);
-            if (modelReply != null) {
-                reply = modelReply;
+        if (modelClient.available()) {
+            var modelReply = modelClient.chat(promptBuilder.build(req.message(), context));
+            if (modelReply.isPresent()) {
+                reply = modelReply.get();
                 source = "model";
             } else {
                 reply = ruleBasedReply(req.message(), context);
@@ -84,6 +63,7 @@ public class AiService {
         result.put("conversationId", conversationId);
         result.put("reply", reply);
         result.put("source", source);
+        result.put("modelProvider", "model".equals(source) ? modelClient.provider() : "fallback");
         result.put("contextIncluded", true);
         return result;
     }
@@ -100,45 +80,6 @@ public class AiService {
         result.put("conversationId", conversationId);
         result.put("messages", repository.listMessages(conversationId));
         return result;
-    }
-
-    private boolean modelConfigured() {
-        return enabled && apiUrl != null && !apiUrl.isBlank() && apiKey != null && !apiKey.isBlank();
-    }
-
-    /** 调用 OpenAI 兼容接口，任何异常都返回 null 以触发降级。 */
-    private String tryModel(String question, AiContextService.AiContext context) {
-        try {
-            Map<String, Object> payload = new LinkedHashMap<>();
-            payload.put("model", model);
-            payload.put("messages", List.of(
-                Map.of("role", "system", "content",
-                    "你是校园综合服务平台的智能助手，请用简体中文简洁回答校园服务、实验室预约、通知公告等问题。"
-                        + "当用户询问实际数据（如我的预约、待办、未读消息、最新公告、近期日程）时，"
-                        + "只能依据下面的【当前业务上下文】回答；上下文没有的信息要说明暂时无法确认，不要编造。"
-                        + "\n\n【当前业务上下文】\n" + context.prompt()),
-                Map.of("role", "user", "content", question)
-            ));
-            String body = objectMapper.writeValueAsString(payload);
-            HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(apiUrl))
-                .timeout(Duration.ofSeconds(20))
-                .header("Content-Type", "application/json")
-                .header("Authorization", "Bearer " + apiKey)
-                .POST(HttpRequest.BodyPublishers.ofString(body))
-                .build();
-            HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
-            if (response.statusCode() / 100 != 2) {
-                log.warn("AI 模型接口返回非 2xx: {}", response.statusCode());
-                return null;
-            }
-            var json = objectMapper.readTree(response.body());
-            var content = json.path("choices").path(0).path("message").path("content");
-            return content.isMissingNode() ? null : content.asText();
-        } catch (Exception ex) {
-            log.warn("AI 模型接口调用失败，降级为内置问答: {}", ex.getMessage());
-            return null;
-        }
     }
 
     /** 内置规则问答：覆盖平台常见问题，保证未接入模型时仍可用。 */

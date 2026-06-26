@@ -17,7 +17,8 @@ public record SecurityUser(
     String college,
     String major,
     String department,
-    String positionTitle
+    String positionTitle,
+    String tokenId
 ) {
     public Collection<? extends GrantedAuthority> getAuthorities() {
         return List.of(new SimpleGrantedAuthority("ROLE_" + role.toUpperCase()));

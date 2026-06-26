@@ -5,6 +5,8 @@
 -- 字段/索引风格对齐现有 schema.sql（BIGINT UNSIGNED 主键、DATETIME(3)、utf8mb4）。
 -- =====================================================================
 
+SET NAMES utf8mb4;
+
 -- 应用分类表 -----------------------------------------------------------
 CREATE TABLE IF NOT EXISTS portal_app_category (
   id            BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,

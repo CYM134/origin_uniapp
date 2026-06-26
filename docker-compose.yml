@@ -1,0 +1,98 @@
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: campus-mysql
+    restart: unless-stopped
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_0900_ai_ci
+      - --default-time-zone=+08:00
+    environment:
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-campus_service}
+      MYSQL_USER: ${MYSQL_USER:-campus}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-campus_pwd}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root_pwd}
+      TZ: Asia/Shanghai
+    ports:
+      - "${MYSQL_PORT:-3306}:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+      - ./backend/docs/schema.sql:/docker-entrypoint-initdb.d/00_schema.sql:ro
+      - ./backend/docs/sql/V1__portal_app.sql:/docker-entrypoint-initdb.d/01_portal_app.sql:ro
+      - ./backend/docs/sql/V2__notice_news.sql:/docker-entrypoint-initdb.d/02_notice_news.sql:ro
+      - ./backend/docs/sql/V3__calendar_ai.sql:/docker-entrypoint-initdb.d/03_calendar_ai.sql:ro
+      - ./backend/docs/sql/V4__init_portal_data.sql:/docker-entrypoint-initdb.d/04_init_portal_data.sql:ro
+      - ./backend/docs/sql/V5__fix_portal_seed_encoding.sql:/docker-entrypoint-initdb.d/05_fix_portal_seed_encoding.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p${MYSQL_ROOT_PASSWORD:-root_pwd} --silent"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+  redis:
+    image: redis:7-alpine
+    container_name: campus-redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: campus-backend
+    restart: unless-stopped
+    environment:
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-prod}
+      SERVER_PORT: 8080
+      DB_URL: jdbc:mysql://mysql:3306/${MYSQL_DATABASE:-campus_service}?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
+      DB_USERNAME: ${MYSQL_USER:-campus}
+      DB_PASSWORD: ${MYSQL_PASSWORD:-campus_pwd}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_CACHE_ENABLED: ${REDIS_CACHE_ENABLED:-true}
+      REDIS_DASHBOARD_TTL_SECONDS: ${REDIS_DASHBOARD_TTL_SECONDS:-30}
+      REDIS_AUTH_SESSION_ENABLED: ${REDIS_AUTH_SESSION_ENABLED:-true}
+      OPENAPI_ENABLED: ${OPENAPI_ENABLED:-true}
+      SWAGGER_UI_ENABLED: ${SWAGGER_UI_ENABLED:-true}
+      JWT_SECRET: ${JWT_SECRET:-please-change-this-jwt-secret-at-least-32-chars}
+      JWT_EXPIRATION_SECONDS: ${JWT_EXPIRATION_SECONDS:-86400}
+      AI_ENABLED: ${AI_ENABLED:-false}
+      AI_API_URL: ${AI_API_URL:-}
+      AI_API_KEY: ${AI_API_KEY:-}
+      AI_MODEL: ${AI_MODEL:-gpt-3.5-turbo}
+      AI_REQUIRE_API_KEY: ${AI_REQUIRE_API_KEY:-true}
+      AI_TIMEOUT_SECONDS: ${AI_TIMEOUT_SECONDS:-20}
+      TZ: Asia/Shanghai
+    ports:
+      - "${BACKEND_PORT:-8080}:8080"
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  nginx:
+    image: nginx:1.27-alpine
+    container_name: campus-nginx
+    restart: unless-stopped
+    ports:
+      - "${NGINX_PORT:-80}:80"
+    volumes:
+      - ./deploy/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ${NGINX_HTML_DIR:-./deploy/html}:/usr/share/nginx/html:ro
+    depends_on:
+      - backend
+
+volumes:
+  mysql-data:
+  redis-data:

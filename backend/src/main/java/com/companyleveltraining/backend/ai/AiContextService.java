@@ -6,7 +6,6 @@ import java.util.Map;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 
 import com.companyleveltraining.backend.security.SecurityUser;
@@ -21,10 +20,10 @@ public class AiContextService {
 
     private static final Logger log = LoggerFactory.getLogger(AiContextService.class);
 
-    private final JdbcTemplate jdbcTemplate;
+    private final AiContextMapper contextMapper;
 
-    public AiContextService(JdbcTemplate jdbcTemplate) {
-        this.jdbcTemplate = jdbcTemplate;
+    public AiContextService(AiContextMapper contextMapper) {
+        this.contextMapper = contextMapper;
     }
 
     public AiContext build(SecurityUser user) {
@@ -50,42 +49,14 @@ public class AiContextService {
     private String reservationSummary(SecurityUser user) {
         try {
             if ("admin".equals(user.role())) {
-                long pending = count("""
-                    SELECT COUNT(*) FROM reservation_applications
-                    WHERE deleted_at IS NULL AND (
-                      (applicant_role = 'student' AND status = 'teacher_approved')
-                      OR (applicant_role = 'teacher' AND status = 'pending'))
-                    """);
-                List<Map<String, Object>> recent = jdbcTemplate.queryForList("""
-                    SELECT application_no AS applicationNo, applicant_name AS applicantName,
-                           lab_name_snapshot AS labName, reserve_date AS reserveDate,
-                           TIME_FORMAT(start_time, '%H:%i') AS startTime,
-                           TIME_FORMAT(end_time, '%H:%i') AS endTime,
-                           status
-                    FROM reservation_applications
-                    WHERE deleted_at IS NULL AND status <> 'draft'
-                    ORDER BY submitted_at DESC, id DESC
-                    LIMIT 5
-                    """);
+                long pending = contextMapper.countAdminPendingReservations();
+                List<Map<String, Object>> recent = contextMapper.findRecentReservationsForAdmin();
                 return "预约摘要：当前等待管理员处理的预约 " + pending + " 条。最近预约："
                     + formatReservations(recent) + "。";
             }
 
-            List<Map<String, Object>> mine = jdbcTemplate.queryForList("""
-                SELECT application_no AS applicationNo, lab_name_snapshot AS labName, reserve_date AS reserveDate,
-                       TIME_FORMAT(start_time, '%H:%i') AS startTime,
-                       TIME_FORMAT(end_time, '%H:%i') AS endTime,
-                       status
-                FROM reservation_applications
-                WHERE deleted_at IS NULL AND status <> 'draft' AND applicant_user_id = ?
-                ORDER BY submitted_at DESC, id DESC
-                LIMIT 5
-                """, user.id());
-            long active = count("""
-                SELECT COUNT(*) FROM reservation_applications
-                WHERE deleted_at IS NULL AND applicant_user_id = ?
-                  AND status IN ('pending','teacher_approved','approved')
-                """, user.id());
+            List<Map<String, Object>> mine = contextMapper.findRecentReservationsByApplicant(user.id());
+            long active = contextMapper.countActiveReservationsByApplicant(user.id());
             return "预约摘要：我的进行中预约 " + active + " 条。最近我的预约：" + formatReservations(mine) + "。";
         } catch (Exception ex) {
             log.warn("生成预约上下文失败: {}", ex.getMessage());
@@ -96,30 +67,16 @@ public class AiContextService {
     private String taskSummary(SecurityUser user) {
         try {
             if ("admin".equals(user.role())) {
-                long reservationTodos = count("""
-                    SELECT COUNT(*) FROM reservation_applications
-                    WHERE deleted_at IS NULL AND (
-                      (applicant_role = 'student' AND status = 'teacher_approved')
-                      OR (applicant_role = 'teacher' AND status = 'pending'))
-                    """);
-                long teacherRegistrations = count("""
-                    SELECT COUNT(*) FROM teacher_registration_applications WHERE status = 'pending'
-                    """);
+                long reservationTodos = contextMapper.countAdminPendingReservations();
+                long teacherRegistrations = contextMapper.countPendingTeacherRegistrations();
                 return "待办摘要：预约待终审 " + reservationTodos + " 条，教师注册待审核 "
                     + teacherRegistrations + " 条。";
             }
             if ("teacher".equals(user.role())) {
-                long reviews = count("""
-                    SELECT COUNT(*) FROM reservation_applications
-                    WHERE deleted_at IS NULL AND applicant_role = 'student' AND status = 'pending'
-                    """);
+                long reviews = contextMapper.countStudentPendingTeacherReviews();
                 return "待办摘要：学生预约待教师初审 " + reviews + " 条。";
             }
-            long myPending = count("""
-                SELECT COUNT(*) FROM reservation_applications
-                WHERE deleted_at IS NULL AND applicant_user_id = ?
-                  AND status IN ('pending','teacher_approved')
-                """, user.id());
+            long myPending = contextMapper.countPendingReservationsByApplicant(user.id());
             return "待办摘要：我的预约待审批 " + myPending + " 条。";
         } catch (Exception ex) {
             log.warn("生成待办上下文失败: {}", ex.getMessage());
@@ -129,15 +86,8 @@ public class AiContextService {
 
     private String messageSummary(SecurityUser user) {
         try {
-            long unread = count("SELECT COUNT(*) FROM notifications WHERE recipient_user_id = ? AND is_read = 0", user.id());
-            List<Map<String, Object>> recent = jdbcTemplate.queryForList("""
-                SELECT title, content, is_read AS isRead,
-                       DATE_FORMAT(created_at, '%Y-%m-%d %H:%i') AS createTime
-                FROM notifications
-                WHERE recipient_user_id = ?
-                ORDER BY created_at DESC
-                LIMIT 3
-                """, user.id());
+            long unread = contextMapper.countUnreadMessages(user.id());
+            List<Map<String, Object>> recent = contextMapper.findRecentMessages(user.id());
             return "消息摘要：未读消息 " + unread + " 条。最近消息：" + formatTitleList(recent, "createTime") + "。";
         } catch (Exception ex) {
             log.warn("生成消息上下文失败: {}", ex.getMessage());
@@ -148,35 +98,12 @@ public class AiContextService {
     private String calendarSummary(SecurityUser user) {
         try {
             List<String> items = new ArrayList<>();
-            List<Map<String, Object>> events = jdbcTemplate.queryForList("""
-                SELECT title, location,
-                       DATE_FORMAT(start_time, '%Y-%m-%d %H:%i') AS startTime,
-                       DATE_FORMAT(end_time, '%Y-%m-%d %H:%i') AS endTime
-                FROM calendar_event
-                WHERE user_id = ? AND start_time >= CURRENT_TIMESTAMP(3)
-                ORDER BY start_time ASC
-                LIMIT 3
-                """, user.id());
+            List<Map<String, Object>> events = contextMapper.findUpcomingCalendarEvents(user.id());
             for (Map<String, Object> ev : events) {
                 items.add(summaryLine(ev.get("title"), ev.get("startTime"), ev.get("location")));
             }
 
-            List<Map<String, Object>> reservations = jdbcTemplate.queryForList("""
-                SELECT CONCAT(lab_name_snapshot, ' · ',
-                       CASE status
-                         WHEN 'pending' THEN '待审核'
-                         WHEN 'teacher_approved' THEN '待管理员审核'
-                         WHEN 'approved' THEN '已通过'
-                         ELSE status END) AS title,
-                       lab_name_snapshot AS location,
-                       DATE_FORMAT(CONCAT(reserve_date, ' ', start_time), '%Y-%m-%d %H:%i') AS startTime
-                FROM reservation_applications
-                WHERE applicant_user_id = ? AND deleted_at IS NULL
-                  AND status IN ('pending','teacher_approved','approved')
-                  AND CONCAT(reserve_date, ' ', end_time) >= CURRENT_TIMESTAMP(3)
-                ORDER BY reserve_date ASC, start_time ASC
-                LIMIT 3
-                """, user.id());
+            List<Map<String, Object>> reservations = contextMapper.findUpcomingReservationEvents(user.id());
             for (Map<String, Object> r : reservations) {
                 items.add(summaryLine(r.get("title"), r.get("startTime"), r.get("location")));
             }
@@ -189,15 +116,7 @@ public class AiContextService {
 
     private String noticeSummary(SecurityUser user) {
         try {
-            List<Map<String, Object>> notices = jdbcTemplate.queryForList("""
-                SELECT title, publisher_name AS publisherName,
-                       DATE_FORMAT(publish_time, '%Y-%m-%d %H:%i') AS publishTime
-                FROM notice
-                WHERE status = 'published' AND deleted_at IS NULL
-                  AND (publish_scope = 'all' OR FIND_IN_SET(?, target_roles) > 0)
-                ORDER BY is_top DESC, publish_time DESC, id DESC
-                LIMIT 3
-                """, user.role());
+            List<Map<String, Object>> notices = contextMapper.findVisibleNotices(user.role());
             return "公告摘要：最新可见公告：" + formatTitleList(notices, "publishTime") + "。";
         } catch (Exception ex) {
             log.warn("生成公告上下文失败: {}", ex.getMessage());
@@ -240,11 +159,6 @@ public class AiContextService {
             line += "@" + suffix;
         }
         return line;
-    }
-
-    private long count(String sql, Object... args) {
-        Long value = jdbcTemplate.queryForObject(sql, Long.class, args);
-        return value == null ? 0L : value;
     }
 
     private String roleText(String role) {
