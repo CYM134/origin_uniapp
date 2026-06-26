@@ -2,7 +2,10 @@
   <view class="page">
     <!-- 顶部 accent 渐变 header -->
     <view class="hd">
-      <text class="hd-title">管理员工作台</text>
+      <text class="hd-title">综合服务工作台</text>
+      <view class="hd-logout" @tap="logout">
+        <text class="hd-logout-text">退出</text>
+      </view>
     </view>
 
     <view class="body">
@@ -65,8 +68,11 @@
             <text class="section-title">管理入口</text>
           </view>
           <view class="entry-grid">
-            <view class="entry-cell" v-for="(en, idx) in entries" :key="idx" @tap="goEntry(en.url)">
-              <text class="entry-emoji">{{ en.emoji }}</text>
+            <view class="entry-cell" :class="{ 'entry-alert': en.alert }" v-for="(en, idx) in entries" :key="idx" @tap="goEntry(en.url)">
+              <view class="entry-icon-wrap">
+                <text class="entry-emoji">{{ en.emoji }}</text>
+                <view v-if="en.badge" class="entry-badge">{{ en.badge > 99 ? '99+' : en.badge }}</view>
+              </view>
               <text class="entry-text">{{ en.text }}</text>
             </view>
           </view>
@@ -134,6 +140,7 @@
 import { ref, computed } from 'vue';
 import { onLoad, onShow, onPullDownRefresh } from '@dcloudio/uni-app';
 import { getAdminPortalDashboard } from '@/api/portal';
+import { logout as logoutAuth } from '@/api/auth';
 import { getStoredUser } from '@/api/storage';
 
 const loading = ref(false);
@@ -200,14 +207,33 @@ const statusBars = computed(() => {
   });
 });
 
-const entries = [
-  { emoji: '📱', text: '应用管理', url: '/pages/admin-app-manage/admin-app-manage' },
-  { emoji: '📢', text: '通知管理', url: '/pages/admin-notice-manage/admin-notice-manage' },
-  { emoji: '📰', text: '资讯管理', url: '/pages/admin-news-manage/admin-news-manage' },
-  { emoji: '🔬', text: '实验室管理', url: '/pages/admin-lab-management/admin-lab-management' },
-  { emoji: '👥', text: '用户管理', url: '/pages/admin-system-management/admin-system-management' },
-  { emoji: '✅', text: '审批', url: '/pages/admin-reservation-approval/admin-reservation-approval' }
-];
+const entries = computed(() => {
+  const s = summary.value || {};
+  const pendingReservations = Number(s.pendingReservations) || 0;
+  const pendingTeacherReviews = Number(s.pendingTeacherReviews) || 0;
+  const pendingReservationApprovals = pendingReservations + pendingTeacherReviews;
+  const pendingTeacherRegistrations = Number(s.pendingTeacherRegistrations) || 0;
+  return [
+    { emoji: '📱', text: '应用管理', url: '/pages/admin-app-manage/admin-app-manage' },
+    { emoji: '📢', text: '通知管理', url: '/pages/admin-notice-manage/admin-notice-manage' },
+    { emoji: '📰', text: '资讯管理', url: '/pages/admin-news-manage/admin-news-manage' },
+    {
+      emoji: '🔬',
+      text: '实验室管理',
+      url: '/pages/admin-work/admin-work',
+      badge: pendingReservationApprovals,
+      alert: pendingReservationApprovals > 0
+    },
+    {
+      emoji: '👨‍🏫',
+      text: '注册审核',
+      url: '/pages/admin-teacher-registration/admin-teacher-registration',
+      badge: pendingTeacherRegistrations,
+      alert: pendingTeacherRegistrations > 0
+    },
+    { emoji: '👥', text: '用户管理', url: '/pages/admin-system-management/admin-system-management' }
+  ];
+});
 
 const statusText = (st: any): string => STATUS_TEXT[st] || STATUS_TEXT.pending;
 
@@ -246,6 +272,19 @@ const goEntry = (url: string) => {
 };
 const goNoticeManage = () => uni.navigateTo({ url: '/pages/admin-notice-manage/admin-notice-manage' });
 const goNewsManage = () => uni.navigateTo({ url: '/pages/admin-news-manage/admin-news-manage' });
+
+const logout = () => {
+  uni.showModal({
+    title: '确认退出',
+    content: '确定要退出登录吗？',
+    success: (res) => {
+      if (!res.confirm) return;
+      logoutAuth();
+      uni.showToast({ title: '已退出登录', icon: 'success' });
+      uni.reLaunch({ url: '/pages/login-select/login-select' });
+    }
+  });
+};
 
 onLoad(() => {
   user.value = getStoredUser() || {};

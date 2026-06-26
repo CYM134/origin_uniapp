@@ -70,14 +70,6 @@
                     <text class="function-title">已办流程</text>
                     <text class="function-desc">查看已处理申请</text>
                 </view>
-
-                <view class="function-item" @tap="logout">
-                    <view class="function-icon">
-                        <image src="/static/images/icons/teacher-logout.svg" mode="aspectFit"></image>
-                    </view>
-                    <text class="function-title">退出登录</text>
-                    <text class="function-desc">退出当前的账号</text>
-                </view>
             </view>
 
             <!-- 快捷操作 -->
@@ -111,7 +103,7 @@
 import { ref } from 'vue';
 import { onLoad, onShow, onPullDownRefresh } from '@dcloudio/uni-app';
 import navigationBar from '@/components/navigation-bar/navigation-bar.vue';
-import { fetchCurrentUser, logout as logoutAuth } from '@/api/auth';
+import { fetchCurrentUser } from '@/api/auth';
 import { getStoredRole, getStoredUser, hasCompleteUserProfile } from '@/api/storage';
 import { getPendingReviewCount, getUnreadCount } from '@/api/teacher';
 // pages/teacher-work/teacher-work.ts
@@ -246,40 +238,6 @@ onPullDownRefresh(() => {
         uni.stopPullDownRefresh();
     }, 1000);
 });
-
-/**
- * 退出登录
- */
-const logout = () => {
-    uni.showModal({
-        title: '确认退出',
-        content: '确定要退出登录吗？',
-        success: (res) => {
-            if (res.confirm) {
-                try {
-                    logoutAuth();
-                    uni.showToast({
-                        title: '已退出登录',
-                        icon: 'success'
-                    });
-
-                    // 返回登录选择页面
-                    uni.reLaunch({
-                        url: '/pages/login-select/login-select'
-                    });
-                } catch (error) {
-                    console.log('CatchClause', error);
-                    console.log('CatchClause', error);
-                    console.error('退出登录失败:', error);
-                    uni.showToast({
-                        title: '退出失败',
-                        icon: 'error'
-                    });
-                }
-            }
-        }
-    });
-};
 
 /**
  * 跳转到个人信息页面

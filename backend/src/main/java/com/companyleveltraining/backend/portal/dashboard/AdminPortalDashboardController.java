@@ -56,6 +56,9 @@ public class AdminPortalDashboardController {
             SELECT COUNT(*) FROM reservation_applications
             WHERE deleted_at IS NULL AND applicant_role = 'student' AND status = 'pending'
             """);
+        long pendingTeacherRegistrations = count("""
+            SELECT COUNT(*) FROM teacher_registration_applications WHERE status = 'pending'
+            """);
         long todayReservations = count("""
             SELECT COUNT(*) FROM reservation_applications
             WHERE deleted_at IS NULL AND reserve_date = CURDATE()
@@ -79,6 +82,7 @@ public class AdminPortalDashboardController {
 
         summary.put("pendingReservations", pendingReservations);
         summary.put("pendingTeacherReviews", pendingTeacherReviews);
+        summary.put("pendingTeacherRegistrations", pendingTeacherRegistrations);
         summary.put("todayReservations", todayReservations);
         summary.put("weekReservations", weekReservations);
         summary.put("totalLabs", totalLabs);

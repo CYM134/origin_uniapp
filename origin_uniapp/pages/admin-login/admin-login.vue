@@ -131,7 +131,7 @@ const login = async () => {
         uni.hideLoading();
 
         uni.reLaunch({
-            url: '/pages/admin-work/admin-work',
+            url: '/pages/admin-workbench/admin-workbench',
             success: () => {
                 uni.showToast({
                     title: '登录成功',

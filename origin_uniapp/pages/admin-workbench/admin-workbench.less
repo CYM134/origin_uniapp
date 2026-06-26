@@ -16,12 +16,27 @@
 .hd {
   padding: 60rpx 32rpx 32rpx;
   background: linear-gradient(135deg, @accent 0%, @accent-dark 100%);
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
 
   .hd-title {
     color: #fff;
     font-size: 40rpx;
     font-weight: 700;
   }
+}
+
+.hd-logout {
+  padding: 8rpx 20rpx;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 999rpx;
+  flex-shrink: 0;
+}
+
+.hd-logout-text {
+  color: #fff;
+  font-size: 24rpx;
 }
 
 .body {
@@ -263,6 +278,10 @@
   flex-direction: column;
   align-items: center;
 
+  .entry-icon-wrap {
+    position: relative;
+  }
+
   .entry-emoji {
     width: 84rpx;
     height: 84rpx;
@@ -272,6 +291,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
+    border: 2rpx solid transparent;
   }
 
   .entry-text {
@@ -279,6 +299,36 @@
     font-size: 24rpx;
     color: @text;
   }
+}
+
+.entry-cell.entry-alert {
+  .entry-emoji {
+    background: #FEE2E2;
+    border-color: #FCA5A5;
+    box-shadow: 0 8rpx 20rpx rgba(220, 38, 38, 0.18);
+  }
+
+  .entry-text {
+    color: #DC2626;
+    font-weight: 700;
+  }
+}
+
+.entry-badge {
+  position: absolute;
+  top: -12rpx;
+  right: -12rpx;
+  min-width: 32rpx;
+  height: 32rpx;
+  padding: 0 8rpx;
+  border-radius: 999rpx;
+  background: #DC2626;
+  color: #fff;
+  font-size: 20rpx;
+  line-height: 32rpx;
+  text-align: center;
+  border: 3rpx solid #fff;
+  box-sizing: border-box;
 }
 
 .entry-cell:active {

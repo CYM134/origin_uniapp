@@ -62,17 +62,6 @@
                     </view>
                 </view>
 
-                <!-- 教师注册审核 -->
-                <view class="function-card" @tap="navigateToTeacherRegistration">
-                    <view class="card-icon">
-                        <image src="/static/images/icons/teacher-icon.png" mode="aspectFit"></image>
-                    </view>
-                    <view class="card-content">
-                        <text class="card-title">注册审核</text>
-                        <text class="card-desc">审核教师账号注册申请</text>
-                    </view>
-                </view>
-
                 <!-- 系统管理 -->
                 <view class="function-card" @tap="navigateToSystemManagement">
                     <view class="card-icon">
@@ -84,16 +73,6 @@
                     </view>
                 </view>
 
-                <!-- 退出登录 -->
-                <view class="function-card" @tap="logout">
-                    <view class="card-icon">
-                        <image src="/static/images/icons/logout.png" mode="aspectFit"></image>
-                    </view>
-                    <view class="card-content">
-                        <text class="card-title">退出登录</text>
-                        <text class="card-desc">退出管理员账号</text>
-                    </view>
-                </view>
             </view>
 
             <view class="footer">
@@ -107,7 +86,7 @@
 import { ref } from 'vue';
 import { onLoad } from '@dcloudio/uni-app';
 import navigationBar from '@/components/navigation-bar/navigation-bar.vue';
-import { fetchCurrentUser, logout as logoutAuth } from '@/api/auth';
+import { fetchCurrentUser } from '@/api/auth';
 import { getStoredRole, getStoredUser, hasCompleteUserProfile } from '@/api/storage';
 import { getDashboardSummary } from '@/api/admin';
 
@@ -202,15 +181,6 @@ const navigateToApprovalRecords = () => {
     });
 };
 
-const navigateToTeacherRegistration = () => {
-    uni.navigateTo({
-        url: '../admin-teacher-registration/admin-teacher-registration',
-        fail: () => {
-            uni.showToast({ title: '功能开发中', icon: 'none', duration: 2000 });
-        }
-    });
-};
-
 const navigateToSystemManagement = () => {
     uni.navigateTo({
         url: '../admin-system-management/admin-system-management',
@@ -220,24 +190,6 @@ const navigateToSystemManagement = () => {
     });
 };
 
-const logout = () => {
-    uni.showModal({
-        title: '确认退出',
-        content: '确定要退出登录吗？',
-        success: (res) => {
-            if (res.confirm) {
-                try {
-                    logoutAuth();
-                    uni.showToast({ title: '已退出登录', icon: 'success' });
-                    uni.reLaunch({ url: '/pages/login-select/login-select' });
-                } catch (error) {
-                    console.error('退出登录失败', error);
-                    uni.showToast({ title: '退出失败', icon: 'error' });
-                }
-            }
-        }
-    });
-};
 </script>
 <style lang="less">
 @import './admin-work.less';

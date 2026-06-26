@@ -156,7 +156,7 @@ const login = async () => {
         saveAuthSession(result.accessToken, result.user);
         uni.hideLoading();
         uni.reLaunch({
-            url: '/pages/teacher-work/teacher-work',
+            url: '/pages/portal-home/portal-home',
             success: () => {
                 setTimeout(() => {
                     uni.showToast({

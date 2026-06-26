@@ -54,16 +54,24 @@
   margin-top: 10rpx;
 }
 
-.hd-msg {
-  position: relative;
-  padding: 8rpx 20rpx;
-  background: rgba(255, 255, 255, 0.2);
-  border-radius: 999rpx;
+.hd-actions {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
   margin-left: 20rpx;
   flex-shrink: 0;
 }
 
-.hd-msg-icon {
+.hd-msg,
+.hd-logout {
+  position: relative;
+  padding: 8rpx 20rpx;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 999rpx;
+}
+
+.hd-msg-icon,
+.hd-logout-text {
   color: #fff;
   font-size: 24rpx;
 }

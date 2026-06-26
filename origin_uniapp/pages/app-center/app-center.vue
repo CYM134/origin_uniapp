@@ -150,6 +150,13 @@ function iconChar(app: any): string {
   return name ? name.charAt(0) : '应';
 }
 
+function getReservationManagementUrl() {
+  const r = role.value;
+  if (r === 'teacher') return '/pages/teacher-work/teacher-work';
+  if (r === 'student') return '/pages/student-work/student-work';
+  return '/pages/admin-work/admin-work';
+}
+
 async function toggleFavorite(app: any) {
   const next = !app?.favorite;
   try {
@@ -191,9 +198,7 @@ function openApp(app: any) {
   const path = app?.routePath || '';
 
   if (path === '/lab/reservation') {
-    url = r === 'teacher'
-      ? '/pages/teacher-reservation-apply/teacher-reservation-apply'
-      : '/pages/student-reservation-apply/student-reservation-apply';
+    url = getReservationManagementUrl();
   } else if (path === '/schedule') {
     url = r === 'teacher'
       ? '/pages/teacher-schedule-preview/teacher-schedule-preview'

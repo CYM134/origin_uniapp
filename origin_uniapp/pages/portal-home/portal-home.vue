@@ -6,9 +6,14 @@
         <text class="hd-title">校园综合服务平台</text>
         <text class="hd-sub">欢迎，{{ userName }}（{{ roleName }}）</text>
       </view>
-      <view class="hd-msg" @tap="goMessages">
-        <text class="hd-msg-icon">消息</text>
-        <view v-if="unreadMessages > 0" class="hd-badge">{{ unreadMessages > 99 ? '99+' : unreadMessages }}</view>
+      <view class="hd-actions">
+        <view class="hd-msg" @tap="goMessages">
+          <text class="hd-msg-icon">消息</text>
+          <view v-if="unreadMessages > 0" class="hd-badge">{{ unreadMessages > 99 ? '99+' : unreadMessages }}</view>
+        </view>
+        <view class="hd-logout" @tap="logout">
+          <text class="hd-logout-text">退出</text>
+        </view>
       </view>
     </view>
 
@@ -21,7 +26,7 @@
         <view class="quick-row">
           <view class="quick-item" @tap="goReservation">
             <text class="quick-emoji">🔬</text>
-            <text class="quick-text">实验室预约</text>
+            <text class="quick-text">实验室预约管理</text>
           </view>
           <view class="quick-item" @tap="goAppCenter">
             <text class="quick-emoji">📱</text>
@@ -145,6 +150,7 @@
 import { ref, computed } from 'vue';
 import { onLoad, onShow, onPullDownRefresh } from '@dcloudio/uni-app';
 import { getPortalHome, visitApp } from '@/api/portal';
+import { logout as logoutAuth } from '@/api/auth';
 import { getStoredUser, getStoredRole } from '@/api/storage';
 
 const loading = ref(false);
@@ -179,6 +185,13 @@ const appGlyph = (app: any): string => {
 const fmtTime = (t: any): string => {
   if (!t) return '';
   return String(t).replace('T', ' ').slice(0, 16);
+};
+
+const getReservationManagementUrl = () => {
+  const role = getStoredRole();
+  if (role === 'teacher') return '/pages/teacher-work/teacher-work';
+  if (role === 'student') return '/pages/student-work/student-work';
+  return '/pages/admin-work/admin-work';
 };
 
 const loadHome = async () => {
@@ -216,9 +229,7 @@ const openApp = (app: any) => {
   let url = '';
   switch (path) {
     case '/lab/reservation':
-      url = role === 'teacher'
-        ? '/pages/teacher-reservation-apply/teacher-reservation-apply'
-        : '/pages/student-reservation-apply/student-reservation-apply';
+      url = getReservationManagementUrl();
       break;
     case '/portal/apps':
       url = '/pages/app-center/app-center';
@@ -268,11 +279,8 @@ const openApp = (app: any) => {
 
 // ====== 快捷入口 / 区块导航 ======
 const goReservation = () => {
-  const role = getStoredRole();
   uni.navigateTo({
-    url: role === 'teacher'
-      ? '/pages/teacher-reservation-apply/teacher-reservation-apply'
-      : '/pages/student-reservation-apply/student-reservation-apply'
+    url: getReservationManagementUrl()
   });
 };
 const goAppCenter = () => uni.navigateTo({ url: '/pages/app-center/app-center' });
@@ -282,6 +290,19 @@ const goTasks = () => uni.navigateTo({ url: '/pages/task-center/task-center' });
 const goNews = () => uni.navigateTo({ url: '/pages/news-list/news-list' });
 const goMessages = () => uni.navigateTo({ url: '/pages/message-center/message-center' });
 const goAi = () => uni.navigateTo({ url: '/pages/ai-assistant/ai-assistant' });
+
+const logout = () => {
+  uni.showModal({
+    title: '确认退出',
+    content: '确定要退出登录吗？',
+    success: (res) => {
+      if (!res.confirm) return;
+      logoutAuth();
+      uni.showToast({ title: '已退出登录', icon: 'success' });
+      uni.reLaunch({ url: '/pages/login-select/login-select' });
+    }
+  });
+};
 
 const openNotice = (n: any) => {
   if (!n?.id) return;

@@ -155,7 +155,7 @@ const login = async () => {
         saveAuthSession(result.accessToken, result.user);
         uni.hideLoading();
         uni.reLaunch({
-            url: '/pages/student-work/student-work',
+            url: '/pages/portal-home/portal-home',
             success: () => {
                 uni.showToast({
                     title: '登录成功',
