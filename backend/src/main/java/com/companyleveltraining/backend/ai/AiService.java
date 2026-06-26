@@ -30,6 +30,7 @@ public class AiService {
     private static final Logger log = LoggerFactory.getLogger(AiService.class);
 
     private final AiRepository repository;
+    private final AiContextService contextService;
     private final ObjectMapper objectMapper;
     private final HttpClient httpClient = HttpClient.newBuilder()
         .connectTimeout(Duration.ofSeconds(5)).build();
@@ -39,12 +40,13 @@ public class AiService {
     private final String apiKey;
     private final String model;
 
-    public AiService(AiRepository repository, ObjectMapper objectMapper,
+    public AiService(AiRepository repository, AiContextService contextService, ObjectMapper objectMapper,
                      @Value("${ai.enabled:false}") boolean enabled,
                      @Value("${ai.api-url:}") String apiUrl,
                      @Value("${ai.api-key:}") String apiKey,
                      @Value("${ai.model:gpt-3.5-turbo}") String model) {
         this.repository = repository;
+        this.contextService = contextService;
         this.objectMapper = objectMapper;
         this.enabled = enabled;
         this.apiUrl = apiUrl;
@@ -61,18 +63,19 @@ public class AiService {
         }
         repository.addMessage(conversationId, "user", req.message());
 
+        AiContextService.AiContext context = contextService.build(user);
         String source = "fallback";
         String reply;
         if (modelConfigured()) {
-            String modelReply = tryModel(req.message());
+            String modelReply = tryModel(req.message(), context);
             if (modelReply != null) {
                 reply = modelReply;
                 source = "model";
             } else {
-                reply = ruleBasedReply(req.message());
+                reply = ruleBasedReply(req.message(), context);
             }
         } else {
-            reply = ruleBasedReply(req.message());
+            reply = ruleBasedReply(req.message(), context);
         }
 
         repository.addMessage(conversationId, "assistant", reply);
@@ -81,6 +84,7 @@ public class AiService {
         result.put("conversationId", conversationId);
         result.put("reply", reply);
         result.put("source", source);
+        result.put("contextIncluded", true);
         return result;
     }
 
@@ -103,13 +107,16 @@ public class AiService {
     }
 
     /** 调用 OpenAI 兼容接口，任何异常都返回 null 以触发降级。 */
-    private String tryModel(String question) {
+    private String tryModel(String question, AiContextService.AiContext context) {
         try {
             Map<String, Object> payload = new LinkedHashMap<>();
             payload.put("model", model);
             payload.put("messages", List.of(
                 Map.of("role", "system", "content",
-                    "你是校园综合服务平台的智能助手，请用简体中文简洁回答校园服务、实验室预约、通知公告等问题。"),
+                    "你是校园综合服务平台的智能助手，请用简体中文简洁回答校园服务、实验室预约、通知公告等问题。"
+                        + "当用户询问实际数据（如我的预约、待办、未读消息、最新公告、近期日程）时，"
+                        + "只能依据下面的【当前业务上下文】回答；上下文没有的信息要说明暂时无法确认，不要编造。"
+                        + "\n\n【当前业务上下文】\n" + context.prompt()),
                 Map.of("role", "user", "content", question)
             ));
             String body = objectMapper.writeValueAsString(payload);
@@ -135,7 +142,12 @@ public class AiService {
     }
 
     /** 内置规则问答：覆盖平台常见问题，保证未接入模型时仍可用。 */
-    private String ruleBasedReply(String q) {
+    private String ruleBasedReply(String q, AiContextService.AiContext context) {
+        String contextual = contextualReply(q, context);
+        if (contextual != null) {
+            return contextual;
+        }
+
         String s = q == null ? "" : q.toLowerCase();
         if (contains(q, "预约") && (contains(q, "怎么") || contains(q, "如何") || contains(q, "流程"))) {
             return "实验室预约流程：在「实验室预约」中选择可用实验室与时间段，填写用途与人数后提交。"
@@ -170,8 +182,49 @@ public class AiService {
             + "应用中心与收藏、通知公告与消息中心等。请换一种方式描述您的问题，我会尽力解答。";
     }
 
+    private String contextualReply(String q, AiContextService.AiContext context) {
+        if (q == null || q.isBlank()) {
+            return null;
+        }
+        boolean asksActualData = containsAny(q, "我", "我的", "多少", "几个", "有没有", "当前", "现在", "今天",
+            "明天", "最近", "最新", "未读", "待处理", "待审核", "待审批", "待办", "状态");
+
+        if (containsAny(q, "消息", "未读", "通知提醒") && asksActualData) {
+            return context.messageSummary();
+        }
+        if (containsAny(q, "日程", "日历", "安排", "今天", "明天") && asksActualData) {
+            return context.calendarSummary();
+        }
+        if (containsAny(q, "公告", "通知公告", "资讯", "新闻") && asksActualData) {
+            return context.noticeSummary();
+        }
+        if (containsAny(q, "待办", "待处理", "审批", "审核", "注册审核", "未审批", "未审核") && asksActualData) {
+            return context.taskSummary();
+        }
+        if (contains(q, "预约") && asksActualData) {
+            return context.reservationSummary();
+        }
+        if (containsAny(q, "我的数据", "当前数据", "实际情况", "概况", "汇总")) {
+            return String.join("\n", context.reservationSummary(), context.taskSummary(),
+                context.messageSummary(), context.calendarSummary(), context.noticeSummary());
+        }
+        return null;
+    }
+
     private boolean contains(String text, String kw) {
         return text != null && text.contains(kw);
+    }
+
+    private boolean containsAny(String text, String... keywords) {
+        if (text == null) {
+            return false;
+        }
+        for (String keyword : keywords) {
+            if (text.contains(keyword)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private String summarize(String message) {
