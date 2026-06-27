@@ -1,7 +1,7 @@
 ﻿<template>
     <view class="page-wrapper">
         <!-- admin-work.wxml -->
-        <navigation-bar title="实验室管理" :back="true" color="white" background="#F5A623"></navigation-bar>
+        <app-navigation-bar title="实验室管理" :back="true" color="white" background="#F5A623"></app-navigation-bar>
         <view class="container">
             <view class="welcome">
                 <text>欢迎管理员：{{ username }}</text>
@@ -75,7 +75,7 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import { onLoad } from '@dcloudio/uni-app';
-import navigationBar from '@/components/navigation-bar/navigation-bar.vue';
+import appNavigationBar from '@/components/app-navigation-bar/app-navigation-bar.vue';
 import { fetchCurrentUser } from '@/api/auth';
 import { getStoredRole, getStoredUser, hasCompleteUserProfile } from '@/api/storage';
 import { getDashboardSummary } from '@/api/admin';

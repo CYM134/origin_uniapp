@@ -24,6 +24,7 @@ services:
       - ./backend/docs/sql/V4__init_portal_data.sql:/docker-entrypoint-initdb.d/04_init_portal_data.sql:ro
       - ./backend/docs/sql/V5__fix_portal_seed_encoding.sql:/docker-entrypoint-initdb.d/05_fix_portal_seed_encoding.sql:ro
       - ./backend/docs/sql/V6__repair_service.sql:/docker-entrypoint-initdb.d/06_repair_service.sql:ro
+      - ./backend/docs/sql/V7__course_schedule_accounts.sql:/docker-entrypoint-initdb.d/07_course_schedule_accounts.sql:ro
     healthcheck:
       test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p${MYSQL_ROOT_PASSWORD:-root_pwd} --silent"]
       interval: 10s
@@ -89,6 +90,7 @@ services:
     restart: unless-stopped
     environment:
       SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-prod}
+      SQL_MIGRATION_ENABLED: ${SQL_MIGRATION_ENABLED:-true}
       SERVER_PORT: 8080
       DB_URL: jdbc:mysql://mysql:3306/${MYSQL_DATABASE:-campus_service}?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
       DB_USERNAME: ${MYSQL_USER:-campus}

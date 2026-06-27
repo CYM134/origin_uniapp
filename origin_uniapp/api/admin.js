@@ -84,6 +84,23 @@ export function getImportBatch(id) {
     return request({ url: `/api/admin/schedule/import-batches/${id}`, method: 'GET' });
 }
 
+export function getScheduleItems(params = {}) {
+    const q = buildQuery(params);
+    return request({ url: `/api/admin/schedule/items${q ? '?' + q : ''}`, method: 'GET' });
+}
+
+export function createScheduleItem(payload) {
+    return request({ url: '/api/admin/schedule/items', method: 'POST', data: payload });
+}
+
+export function updateScheduleItem(id, payload) {
+    return request({ url: `/api/admin/schedule/items/${id}`, method: 'PUT', data: payload });
+}
+
+export function deleteScheduleItem(id) {
+    return request({ url: `/api/admin/schedule/items/${id}`, method: 'DELETE' });
+}
+
 export function listImportBatches() {
     return request({ url: '/api/admin/schedule/import-batches', method: 'GET' });
 }
@@ -98,10 +115,6 @@ export function getExportTask(id) {
 
 export function downloadScheduleTemplate() {
     return downloadWithAuth('/api/admin/schedule/template', '课表导入模板.xlsx');
-}
-
-export function downloadScheduleDemoExcel() {
-    return downloadWithAuth('/api/admin/schedule/demo-excel', '课表示例数据.xlsx');
 }
 
 export function downloadScheduleExcel(payload) {

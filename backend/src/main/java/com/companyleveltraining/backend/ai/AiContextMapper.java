@@ -122,4 +122,96 @@ public interface AiContextMapper {
         LIMIT 3
         """)
     List<Map<String, Object>> findVisibleNotices(@Param("role") String role);
+
+    @Select("""
+        SELECT cs.course_name AS courseName, l.name AS labName,
+               COALESCE(t.real_name, cs.teacher_name_snapshot) AS teacherName,
+               DATE_FORMAT(cs.schedule_date, '%Y-%m-%d') AS scheduleDate,
+               TIME_FORMAT(cs.start_time, '%H:%i') AS startTime,
+               TIME_FORMAT(cs.end_time, '%H:%i') AS endTime,
+               cs.status
+        FROM course_schedules cs
+        JOIN laboratories l ON l.id = cs.lab_id
+        LEFT JOIN sys_users t ON t.id = cs.teacher_user_id
+        WHERE cs.deleted_at IS NULL
+          AND cs.schedule_date >= CURDATE()
+        ORDER BY cs.schedule_date ASC, cs.start_time ASC
+        LIMIT 5
+        """)
+    List<Map<String, Object>> findUpcomingSchedulesForAdmin();
+
+    @Select("""
+        SELECT cs.course_name AS courseName, l.name AS labName,
+               COALESCE(t.real_name, cs.teacher_name_snapshot) AS teacherName,
+               DATE_FORMAT(cs.schedule_date, '%Y-%m-%d') AS scheduleDate,
+               TIME_FORMAT(cs.start_time, '%H:%i') AS startTime,
+               TIME_FORMAT(cs.end_time, '%H:%i') AS endTime,
+               cs.status
+        FROM course_schedules cs
+        JOIN laboratories l ON l.id = cs.lab_id
+        LEFT JOIN sys_users t ON t.id = cs.teacher_user_id
+        WHERE cs.deleted_at IS NULL
+          AND cs.teacher_user_id = #{userId}
+          AND cs.schedule_date >= CURDATE()
+        ORDER BY cs.schedule_date ASC, cs.start_time ASC
+        LIMIT 5
+        """)
+    List<Map<String, Object>> findUpcomingSchedulesForTeacher(@Param("userId") Long userId);
+
+    @Select("""
+        SELECT cs.course_name AS courseName, l.name AS labName,
+               COALESCE(t.real_name, cs.teacher_name_snapshot) AS teacherName,
+               DATE_FORMAT(cs.schedule_date, '%Y-%m-%d') AS scheduleDate,
+               TIME_FORMAT(cs.start_time, '%H:%i') AS startTime,
+               TIME_FORMAT(cs.end_time, '%H:%i') AS endTime,
+               cs.status
+        FROM course_schedule_students css
+        JOIN course_schedules cs ON cs.id = css.schedule_id
+        JOIN laboratories l ON l.id = cs.lab_id
+        LEFT JOIN sys_users t ON t.id = cs.teacher_user_id
+        WHERE cs.deleted_at IS NULL
+          AND css.student_user_id = #{userId}
+          AND cs.schedule_date >= CURDATE()
+        ORDER BY cs.schedule_date ASC, cs.start_time ASC
+        LIMIT 5
+        """)
+    List<Map<String, Object>> findUpcomingSchedulesForStudent(@Param("userId") Long userId);
+
+    @Select("""
+        SELECT id, name
+        FROM laboratories
+        WHERE deleted_at IS NULL AND status = 'active'
+        ORDER BY id ASC
+        LIMIT 3
+        """)
+    List<Map<String, Object>> findActiveLabsForAvailability();
+
+    @Select("""
+        SELECT
+          (
+            SELECT COUNT(*)
+            FROM reservation_applications
+            WHERE lab_id = #{labId}
+              AND reserve_date = #{date}
+              AND deleted_at IS NULL
+              AND status IN ('pending','teacher_approved','approved')
+              AND start_time < #{endTime}
+              AND end_time > #{startTime}
+          )
+          +
+          (
+            SELECT COUNT(*)
+            FROM course_schedules
+            WHERE lab_id = #{labId}
+              AND schedule_date = #{date}
+              AND deleted_at IS NULL
+              AND status <> 'cancelled'
+              AND start_time < #{endTime}
+              AND end_time > #{startTime}
+          )
+        """)
+    long countLabOccupiedSlots(@Param("labId") Long labId,
+                               @Param("date") String date,
+                               @Param("startTime") String startTime,
+                               @Param("endTime") String endTime);
 }

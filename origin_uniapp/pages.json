@@ -2,7 +2,7 @@
 	"easycom": {
 		"autoscan": true,
 		"custom": {
-			"^navigation-bar$": "@/components/navigation-bar/navigation-bar.vue",
+			"^app-navigation-bar$": "@/components/app-navigation-bar/app-navigation-bar.vue",
 			"^mp-weixin-page-header$": "@/components/mp-weixin-page-header/mp-weixin-page-header.vue"
 		}
 	},

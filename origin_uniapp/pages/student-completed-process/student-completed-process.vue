@@ -5,7 +5,7 @@
         <mp-weixin-page-header title="已办流程" color="white" background="#3B82F6" />
         <!-- #endif -->
         <!-- #ifndef MP-WEIXIN -->
-        <navigation-bar title="已办流程" :back="true" color="white" background="#3B82F6" />
+        <app-navigation-bar title="已办流程" :back="true" color="white" background="#3B82F6" />
         <!-- #endif -->
 
         <view class="container">
@@ -270,7 +270,7 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import { onLoad, onShow, onPullDownRefresh } from '@dcloudio/uni-app';
-import navigationBar from '@/components/navigation-bar/navigation-bar.vue';
+import appNavigationBar from '@/components/app-navigation-bar/app-navigation-bar.vue';
 import { getMyReservations, completeReservation, getReservationDetail } from '@/api/student';
 // pages/student-completed-process/student-completed-process.ts
 

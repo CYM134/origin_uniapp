@@ -5,7 +5,7 @@
         <mp-weixin-page-header title="教师注册" color="white" background="#10B981" />
         <!-- #endif -->
         <!-- #ifndef MP-WEIXIN -->
-        <navigation-bar title="教师注册" :back="true" color="white" background="#10B981"></navigation-bar>
+        <app-navigation-bar title="教师注册" :back="true" color="white" background="#10B981"></app-navigation-bar>
         <!-- #endif -->
         <view class="container">
             <view class="logo-container">
@@ -130,7 +130,7 @@
 
 <script setup lang="ts">
 import { ref } from 'vue';
-import navigationBar from '@/components/navigation-bar/navigation-bar.vue';
+import appNavigationBar from '@/components/app-navigation-bar/app-navigation-bar.vue';
 import { registerTeacher, checkTeacherExists } from '@/api/teacher';
 // pages/teacher-register/teacher-register.ts
 

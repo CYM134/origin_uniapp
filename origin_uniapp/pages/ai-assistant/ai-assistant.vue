@@ -99,9 +99,9 @@ const sending = ref(false);
 const scrollTop = ref(0);
 
 const quickQuestions = ref<string[]>([
-    '如何预约实验室',
-    '预约审批流程',
-    '预约规则'
+    '查询我的待办业务',
+    '查询课表',
+    '查询实验室空余时间段'
 ]);
 
 // 通过不断变化的高度配合 anchor 触发滚动到底部
@@ -118,8 +118,7 @@ const scrollToBottom = () => {
 const pushWelcome = () => {
     messages.value.push({
         role: 'assistant',
-        content:
-            '您好，我是校园综合服务平台智能助手，可以问我：如何预约实验室、预约审批流程、如何收藏应用等。'
+        content: '有什么我可以帮助你的？'
     });
     scrollToBottom();
 };

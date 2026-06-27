@@ -9,6 +9,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.companyleveltraining.backend.common.SecurityUtils;
+
 /**
  * 课表预览接口（学生/教师共用），对应 student-schedule-preview / teacher-schedule-preview 的日视图与周视图。
  */
@@ -25,14 +27,14 @@ public class CourseScheduleController {
     @GetMapping
     public List<Map<String, Object>> byDate(@RequestParam String date,
                                             @RequestParam(required = false) Long labId) {
-        return service.findByDate(date, labId);
+        return service.findByDate(date, labId, SecurityUtils.currentUser());
     }
 
     @GetMapping("/week")
     public List<Map<String, Object>> byWeek(@RequestParam String startDate,
                                             @RequestParam String endDate,
                                             @RequestParam(required = false) Long labId) {
-        return service.findByRange(startDate, endDate, labId);
+        return service.findByRange(startDate, endDate, labId, SecurityUtils.currentUser());
     }
 
     @GetMapping("/{id}")

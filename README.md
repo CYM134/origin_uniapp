@@ -351,7 +351,10 @@ backend/docs/sql/V3__calendar_ai.sql
 backend/docs/sql/V4__init_portal_data.sql
 backend/docs/sql/V5__fix_portal_seed_encoding.sql
 backend/docs/sql/V6__repair_service.sql
+backend/docs/sql/V7__course_schedule_accounts.sql
 ```
+
+后端启动时也会自动扫描并执行 `backend/docs/sql/*.sql` 中尚未记录的增量脚本，执行记录保存在 `app_schema_migrations` 表。该能力默认开启，可通过 `.env` 中的 `SQL_MIGRATION_ENABLED=false` 关闭。
 
 如果修改了初始化 SQL，但数据库数据卷已经存在，MySQL 不会自动重复执行初始化脚本。需要清空数据卷后重新启动：
 

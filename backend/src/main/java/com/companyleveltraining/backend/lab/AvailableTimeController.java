@@ -39,11 +39,23 @@ public class AvailableTimeController {
         List<Map<String, Object>> result = new ArrayList<>();
         for (String[] slot : SLOTS) {
             Integer count = jdbcTemplate.queryForObject("""
-                SELECT COUNT(*) FROM reservation_applications
-                WHERE lab_id = ? AND reserve_date = ? AND deleted_at IS NULL
-                  AND status IN ('pending','teacher_approved','approved')
-                  AND start_time < ? AND end_time > ?
-                """, Integer.class, id, date, slot[2], slot[1]);
+                SELECT
+                  (
+                    SELECT COUNT(*)
+                    FROM reservation_applications
+                    WHERE lab_id = ? AND reserve_date = ? AND deleted_at IS NULL
+                      AND status IN ('pending','teacher_approved','approved')
+                      AND start_time < ? AND end_time > ?
+                  )
+                  +
+                  (
+                    SELECT COUNT(*)
+                    FROM course_schedules
+                    WHERE lab_id = ? AND schedule_date = ? AND deleted_at IS NULL
+                      AND status <> 'cancelled'
+                      AND start_time < ? AND end_time > ?
+                  )
+                """, Integer.class, id, date, slot[2], slot[1], id, date, slot[2], slot[1]);
             boolean available = count == null || count == 0;
             result.add(Map.of(
                 "timeSlot", slot[0],

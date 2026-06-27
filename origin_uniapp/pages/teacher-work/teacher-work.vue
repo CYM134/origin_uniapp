@@ -1,7 +1,7 @@
 <template>
     <view class="page-wrapper">
         <!-- pages/teacher-work/teacher-work.wxml -->
-        <navigation-bar title="实验室预约管理" :back="true" color="white" background="#10B981"></navigation-bar>
+        <app-navigation-bar title="实验室预约管理" :back="true" color="white" background="#10B981"></app-navigation-bar>
         <view class="container">
             <!-- 欢迎信息 -->
             <view class="welcome-section">
@@ -112,7 +112,7 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import { onLoad, onShow, onPullDownRefresh } from '@dcloudio/uni-app';
-import navigationBar from '@/components/navigation-bar/navigation-bar.vue';
+import appNavigationBar from '@/components/app-navigation-bar/app-navigation-bar.vue';
 import { fetchCurrentUser } from '@/api/auth';
 import { getStoredRole, getStoredUser, hasCompleteUserProfile } from '@/api/storage';
 import { getPendingReviewCount, getUnreadCount } from '@/api/teacher';

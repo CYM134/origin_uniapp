@@ -131,5 +131,5 @@ onMounted(() => {
 </script>
 
 <style lang="less">
-@import './navigation-bar.less';
+@import './app-navigation-bar.less';
 </style>

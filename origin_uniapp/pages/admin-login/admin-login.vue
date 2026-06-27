@@ -5,7 +5,7 @@
         <mp-weixin-page-header title="管理员登录" color="white" background="#F5A623" />
         <!-- #endif -->
         <!-- #ifndef MP-WEIXIN -->
-        <navigation-bar title="管理员登录" :back="true" color="white" background="#F5A623"></navigation-bar>
+        <app-navigation-bar title="管理员登录" :back="true" color="white" background="#F5A623"></app-navigation-bar>
         <!-- #endif -->
         <view class="container">
             <view class="logo-container">
@@ -51,7 +51,7 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import { onLoad } from '@dcloudio/uni-app';
-import navigationBar from '@/components/navigation-bar/navigation-bar.vue';
+import appNavigationBar from '@/components/app-navigation-bar/app-navigation-bar.vue';
 import { loginByPassword } from '@/api/auth';
 import { saveAuthSession } from '@/api/storage';
 

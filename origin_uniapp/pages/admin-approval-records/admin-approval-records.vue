@@ -5,7 +5,7 @@
         <mp-weixin-page-header title="审批记录" color="white" background="#F5A623" />
         <!-- #endif -->
         <!-- #ifndef MP-WEIXIN -->
-        <navigation-bar title="审批记录" :back="true" color="white" background="#F5A623"></navigation-bar>
+        <app-navigation-bar title="审批记录" :back="true" color="white" background="#F5A623"></app-navigation-bar>
         <!-- #endif -->
 
         <view class="container">
@@ -333,7 +333,7 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import { onMounted } from 'vue';
-import navigationBar from '@/components/navigation-bar/navigation-bar.vue';
+import appNavigationBar from '@/components/app-navigation-bar/app-navigation-bar.vue';
 import { getApprovalRecords, getApprovalStats, getReservationDetail, getLabs } from '@/api/admin';
 // admin-approval-records.ts
 

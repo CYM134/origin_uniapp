@@ -1,5 +1,7 @@
 package com.companyleveltraining.backend.ai;
 
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -19,6 +21,14 @@ import com.companyleveltraining.backend.security.SecurityUser;
 public class AiContextService {
 
     private static final Logger log = LoggerFactory.getLogger(AiContextService.class);
+    private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ISO_LOCAL_DATE;
+    private static final String[][] STANDARD_SLOTS = {
+        {"08:00-10:00", "08:00:00", "10:00:00"},
+        {"10:00-12:00", "10:00:00", "12:00:00"},
+        {"14:00-16:00", "14:00:00", "16:00:00"},
+        {"16:00-18:00", "16:00:00", "18:00:00"},
+        {"19:00-21:00", "19:00:00", "21:00:00"}
+    };
 
     private final AiContextMapper contextMapper;
 
@@ -33,6 +43,8 @@ public class AiContextService {
         String taskSummary = taskSummary(user);
         String messageSummary = messageSummary(user);
         String calendarSummary = calendarSummary(user);
+        String scheduleSummary = scheduleSummary(user);
+        String availabilitySummary = availabilitySummary();
         String noticeSummary = noticeSummary(user);
 
         String prompt = String.join("\n",
@@ -41,9 +53,12 @@ public class AiContextService {
             taskSummary,
             messageSummary,
             calendarSummary,
+            scheduleSummary,
+            availabilitySummary,
             noticeSummary
         );
-        return new AiContext(prompt, reservationSummary, taskSummary, messageSummary, calendarSummary, noticeSummary);
+        return new AiContext(prompt, reservationSummary, taskSummary, messageSummary, calendarSummary,
+            scheduleSummary, availabilitySummary, noticeSummary);
     }
 
     private String reservationSummary(SecurityUser user) {
@@ -124,6 +139,58 @@ public class AiContextService {
         }
     }
 
+    private String scheduleSummary(SecurityUser user) {
+        try {
+            List<Map<String, Object>> rows;
+            if ("admin".equals(user.role())) {
+                rows = contextMapper.findUpcomingSchedulesForAdmin();
+                return "课表摘要：近期平台课表：" + formatSchedules(rows) + "。";
+            }
+            if ("teacher".equals(user.role())) {
+                rows = contextMapper.findUpcomingSchedulesForTeacher(user.id());
+                return "课表摘要：我近期的授课安排：" + formatSchedules(rows) + "。";
+            }
+            rows = contextMapper.findUpcomingSchedulesForStudent(user.id());
+            return "课表摘要：我近期的课程安排：" + formatSchedules(rows) + "。";
+        } catch (Exception ex) {
+            log.warn("生成课表上下文失败: {}", ex.getMessage());
+            return "课表摘要：暂时无法读取课表数据。";
+        }
+    }
+
+    private String availabilitySummary() {
+        try {
+            List<Map<String, Object>> labs = contextMapper.findActiveLabsForAvailability();
+            if (labs.isEmpty()) {
+                return "实验室空余时间摘要：暂无可用实验室。";
+            }
+            LocalDate today = LocalDate.now();
+            List<String> days = List.of(today.format(DATE_FORMATTER), today.plusDays(1).format(DATE_FORMATTER));
+            List<String> lines = new ArrayList<>();
+            for (Map<String, Object> lab : labs) {
+                Long labId = toLongObj(lab.get("id"));
+                if (labId == null) {
+                    continue;
+                }
+                String labName = safeObj(lab.get("name"), "实验室");
+                for (String day : days) {
+                    List<String> freeSlots = new ArrayList<>();
+                    for (String[] slot : STANDARD_SLOTS) {
+                        long occupied = contextMapper.countLabOccupiedSlots(labId, day, slot[1], slot[2]);
+                        if (occupied == 0) {
+                            freeSlots.add(slot[0]);
+                        }
+                    }
+                    lines.add(labName + " " + day + "空余：" + (freeSlots.isEmpty() ? "暂无" : String.join("、", freeSlots)));
+                }
+            }
+            return "实验室空余时间摘要：" + (lines.isEmpty() ? "暂无可确认数据" : String.join("；", lines)) + "。";
+        } catch (Exception ex) {
+            log.warn("生成实验室空余时间上下文失败: {}", ex.getMessage());
+            return "实验室空余时间摘要：暂时无法读取实验室空余时间数据。";
+        }
+    }
+
     private String formatReservations(List<Map<String, Object>> rows) {
         if (rows.isEmpty()) {
             return "暂无";
@@ -146,6 +213,20 @@ public class AiContextService {
         List<String> items = new ArrayList<>();
         for (Map<String, Object> row : rows) {
             items.add(summaryLine(row.get("title"), row.get(timeKey), row.get("publisherName")));
+        }
+        return String.join("；", items);
+    }
+
+    private String formatSchedules(List<Map<String, Object>> rows) {
+        if (rows.isEmpty()) {
+            return "暂无";
+        }
+        List<String> items = new ArrayList<>();
+        for (Map<String, Object> row : rows) {
+            items.add(safeObj(row.get("scheduleDate"), "-") + " " + safeObj(row.get("startTime"), "")
+                + "-" + safeObj(row.get("endTime"), "") + " " + safeObj(row.get("courseName"), "课程")
+                + " @" + safeObj(row.get("labName"), "实验室") + "，教师" + safeObj(row.get("teacherName"), "-")
+                + "，" + scheduleStatusLabel(safeObj(row.get("status"), "")));
         }
         return String.join("；", items);
     }
@@ -182,6 +263,17 @@ public class AiContextService {
         };
     }
 
+    private String scheduleStatusLabel(String status) {
+        return switch (status) {
+            case "available" -> "可预约";
+            case "full" -> "已满员";
+            case "ongoing" -> "进行中";
+            case "cancelled" -> "已取消";
+            case "scheduled" -> "仅供查看";
+            default -> status == null || status.isBlank() ? "未知状态" : status;
+        };
+    }
+
     private String safe(String primary, String fallback) {
         return primary == null || primary.isBlank() ? fallback : primary;
     }
@@ -194,12 +286,28 @@ public class AiContextService {
         return s.isBlank() ? fallback : s;
     }
 
+    private Long toLongObj(Object value) {
+        if (value instanceof Number n) {
+            return n.longValue();
+        }
+        if (value == null || String.valueOf(value).isBlank()) {
+            return null;
+        }
+        try {
+            return Long.parseLong(String.valueOf(value));
+        } catch (NumberFormatException ex) {
+            return null;
+        }
+    }
+
     public record AiContext(
         String prompt,
         String reservationSummary,
         String taskSummary,
         String messageSummary,
         String calendarSummary,
+        String scheduleSummary,
+        String availabilitySummary,
         String noticeSummary
     ) {
     }

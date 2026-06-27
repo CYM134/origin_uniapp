@@ -8,9 +8,11 @@ import java.util.Map;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -73,6 +75,46 @@ public class AdminScheduleController {
         return service.getImportBatchById(id);
     }
 
+    @GetMapping("/items")
+    public List<Map<String, Object>> listSchedules(@RequestParam(required = false) Long semesterId,
+                                                   @RequestParam(required = false) String keyword) {
+        SecurityUtils.requireRole("admin");
+        return service.listManagedSchedules(semesterId, keyword);
+    }
+
+    @GetMapping("/items/{id}")
+    public Map<String, Object> getSchedule(@PathVariable Long id) {
+        SecurityUtils.requireRole("admin");
+        return service.getManagedSchedule(id);
+    }
+
+    @PostMapping("/items")
+    public Map<String, Object> createSchedule(@RequestBody Map<String, Object> body) {
+        SecurityUtils.requireRole("admin");
+        Map<String, Object> item = service.createManagedSchedule(body);
+        auditLogService.record(SecurityUtils.currentUserId(), "admin", "schedule", "create",
+            "course_schedules", toLong(item.get("id")), null);
+        return item;
+    }
+
+    @PutMapping("/items/{id}")
+    public Map<String, Object> updateSchedule(@PathVariable Long id, @RequestBody Map<String, Object> body) {
+        SecurityUtils.requireRole("admin");
+        Map<String, Object> item = service.updateManagedSchedule(id, body);
+        auditLogService.record(SecurityUtils.currentUserId(), "admin", "schedule", "update",
+            "course_schedules", id, null);
+        return item;
+    }
+
+    @DeleteMapping("/items/{id}")
+    public Map<String, Object> deleteSchedule(@PathVariable Long id) {
+        SecurityUtils.requireRole("admin");
+        service.deleteManagedSchedule(id);
+        auditLogService.record(SecurityUtils.currentUserId(), "admin", "schedule", "delete",
+            "course_schedules", id, null);
+        return Map.of("success", true);
+    }
+
     @PostMapping("/export-tasks")
     public Map<String, Object> createExport(@RequestBody Map<String, Object> body) {
         SecurityUtils.requireRole("admin");
@@ -92,12 +134,6 @@ public class AdminScheduleController {
     public ResponseEntity<byte[]> downloadTemplate() {
         SecurityUtils.requireRole("admin");
         return excelResponse("课表导入模板.xlsx", service.buildImportTemplate());
-    }
-
-    @GetMapping("/demo-excel")
-    public ResponseEntity<byte[]> downloadDemoExcel() {
-        SecurityUtils.requireRole("admin");
-        return excelResponse("课表示例数据.xlsx", service.buildDemoScheduleExcel());
     }
 
     @GetMapping("/export-excel")

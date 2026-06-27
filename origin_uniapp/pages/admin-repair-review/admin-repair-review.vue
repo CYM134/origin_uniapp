@@ -1,6 +1,6 @@
 <template>
   <view class="page-wrapper">
-    <navigation-bar title="报修审核" :back="true" color="white" background="#F5A623"></navigation-bar>
+    <app-navigation-bar title="报修审核" :back="true" color="white" background="#F5A623"></app-navigation-bar>
     <view class="container">
       <view class="tabs">
         <view
@@ -79,7 +79,7 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import { onLoad, onShow, onPullDownRefresh } from '@dcloudio/uni-app';
-import navigationBar from '@/components/navigation-bar/navigation-bar.vue';
+import appNavigationBar from '@/components/app-navigation-bar/app-navigation-bar.vue';
 import { getAdminRepairs, getAdminRepairDetail, approveRepair, rejectRepair } from '@/api/repair';
 
 const tabs = [

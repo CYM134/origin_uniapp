@@ -9,6 +9,7 @@ import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
@@ -35,6 +36,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.companyleveltraining.backend.common.BizNoGenerator;
 import com.companyleveltraining.backend.common.BusinessException;
+import com.companyleveltraining.backend.security.SecurityUser;
 
 /**
  * 课表查询与导入/导出。预览查询返回「前端字段形状」的 Map，同时满足学生页与教师页字段。
@@ -93,29 +95,253 @@ public class ScheduleService {
         this.bizNoGenerator = bizNoGenerator;
     }
 
-    public List<Map<String, Object>> findByDate(String date, Long labId) {
+    public List<Map<String, Object>> findByDate(String date, Long labId, SecurityUser user) {
+        QueryParts parts = scheduleUserFilter(user);
+        List<Object> args = new ArrayList<>();
+        args.add(date);
+        String sql = BASE_SELECT + " AND cs.schedule_date = ?";
         if (labId != null) {
-            return jdbcTemplate.queryForList(
-                BASE_SELECT + " AND cs.schedule_date = ? AND cs.lab_id = ? ORDER BY cs.start_time", date, labId);
+            sql += " AND cs.lab_id = ?";
+            args.add(labId);
         }
-        return jdbcTemplate.queryForList(
-            BASE_SELECT + " AND cs.schedule_date = ? ORDER BY cs.start_time", date);
+        sql += parts.sql() + " ORDER BY cs.start_time";
+        args.addAll(parts.args());
+        return jdbcTemplate.queryForList(sql, args.toArray());
     }
 
-    public List<Map<String, Object>> findByRange(String startDate, String endDate, Long labId) {
+    public List<Map<String, Object>> findByRange(String startDate, String endDate, Long labId, SecurityUser user) {
+        QueryParts parts = scheduleUserFilter(user);
+        List<Object> args = new ArrayList<>();
+        args.add(startDate);
+        args.add(endDate);
+        String sql = BASE_SELECT + " AND cs.schedule_date BETWEEN ? AND ?";
         if (labId != null) {
-            return jdbcTemplate.queryForList(
-                BASE_SELECT + " AND cs.schedule_date BETWEEN ? AND ? AND cs.lab_id = ? ORDER BY cs.schedule_date, cs.start_time",
-                startDate, endDate, labId);
+            sql += " AND cs.lab_id = ?";
+            args.add(labId);
         }
-        return jdbcTemplate.queryForList(
-            BASE_SELECT + " AND cs.schedule_date BETWEEN ? AND ? ORDER BY cs.schedule_date, cs.start_time",
-            startDate, endDate);
+        sql += parts.sql() + " ORDER BY cs.schedule_date, cs.start_time";
+        args.addAll(parts.args());
+        return jdbcTemplate.queryForList(sql, args.toArray());
     }
 
     public Map<String, Object> findById(Long id) {
         return jdbcTemplate.queryForList(BASE_SELECT + " AND cs.id = ? LIMIT 1", id).stream().findFirst()
             .orElseThrow(() -> BusinessException.notFound("课程不存在"));
+    }
+
+    public List<Map<String, Object>> listManagedSchedules(Long semesterId, String keyword) {
+        List<Object> args = new ArrayList<>();
+        StringBuilder sql = new StringBuilder("""
+            SELECT
+              cs.id,
+              cs.schedule_no AS scheduleNo,
+              cs.semester_id AS semesterId,
+              sem.semester_name AS semesterName,
+              cs.lab_id AS labId,
+              l.name AS labName,
+              cs.teacher_user_id AS teacherUserId,
+              tu.account_no AS teacherAccountNo,
+              COALESCE(tu.real_name, cs.teacher_name_snapshot) AS teacherName,
+              cs.course_name AS courseName,
+              cs.course_type AS courseType,
+              DATE_FORMAT(cs.schedule_date, '%Y-%m-%d') AS scheduleDate,
+              cs.weekday,
+              DATE_FORMAT(cs.start_time, '%H:%i') AS startTime,
+              DATE_FORMAT(cs.end_time, '%H:%i') AS endTime,
+              cs.time_slot_label AS timeSlot,
+              cs.planned_student_count AS plannedStudentCount,
+              cs.current_student_count AS currentStudentCount,
+              cs.max_student_count AS maxStudentCount,
+              cs.status,
+              cs.can_reserve AS canReserve,
+              cs.description,
+              cs.remark,
+              (
+                SELECT GROUP_CONCAT(stu.id ORDER BY stu.id)
+                FROM course_schedule_students css
+                JOIN sys_users stu ON stu.id = css.student_user_id
+                WHERE css.schedule_id = cs.id
+              ) AS studentUserIds,
+              (
+                SELECT GROUP_CONCAT(stu.account_no ORDER BY stu.id SEPARATOR ',')
+                FROM course_schedule_students css
+                JOIN sys_users stu ON stu.id = css.student_user_id
+                WHERE css.schedule_id = cs.id
+              ) AS studentAccountNos,
+              (
+                SELECT GROUP_CONCAT(CONCAT(stu.account_no, ' ', stu.real_name) ORDER BY stu.id SEPARATOR '、')
+                FROM course_schedule_students css
+                JOIN sys_users stu ON stu.id = css.student_user_id
+                WHERE css.schedule_id = cs.id
+              ) AS studentNames
+            FROM course_schedules cs
+            JOIN academic_semesters sem ON sem.id = cs.semester_id
+            JOIN laboratories l ON l.id = cs.lab_id
+            LEFT JOIN sys_users tu ON tu.id = cs.teacher_user_id
+            WHERE cs.deleted_at IS NULL
+            """);
+        if (semesterId != null) {
+            sql.append(" AND cs.semester_id = ? ");
+            args.add(semesterId);
+        }
+        if (keyword != null && !keyword.isBlank()) {
+            sql.append("""
+                 AND (
+                   cs.course_name LIKE ? OR l.name LIKE ? OR tu.real_name LIKE ? OR tu.account_no LIKE ?
+                   OR EXISTS (
+                     SELECT 1
+                     FROM course_schedule_students css
+                     JOIN sys_users stu ON stu.id = css.student_user_id
+                     WHERE css.schedule_id = cs.id
+                       AND (stu.account_no LIKE ? OR stu.real_name LIKE ?)
+                   )
+                 )
+                """);
+            String like = "%" + keyword.trim() + "%";
+            args.add(like);
+            args.add(like);
+            args.add(like);
+            args.add(like);
+            args.add(like);
+            args.add(like);
+        }
+        sql.append(" ORDER BY cs.schedule_date DESC, cs.start_time ASC, cs.id DESC LIMIT 200");
+        return jdbcTemplate.queryForList(sql.toString(), args.toArray());
+    }
+
+    public Map<String, Object> getManagedSchedule(Long id) {
+        return jdbcTemplate.queryForList("""
+            SELECT * FROM (
+              SELECT
+                cs.id,
+                cs.schedule_no AS scheduleNo,
+                cs.semester_id AS semesterId,
+                sem.semester_name AS semesterName,
+                cs.lab_id AS labId,
+                l.name AS labName,
+                cs.teacher_user_id AS teacherUserId,
+                tu.account_no AS teacherAccountNo,
+                COALESCE(tu.real_name, cs.teacher_name_snapshot) AS teacherName,
+                cs.course_name AS courseName,
+                cs.course_type AS courseType,
+                DATE_FORMAT(cs.schedule_date, '%Y-%m-%d') AS scheduleDate,
+                cs.weekday,
+                DATE_FORMAT(cs.start_time, '%H:%i') AS startTime,
+                DATE_FORMAT(cs.end_time, '%H:%i') AS endTime,
+                cs.time_slot_label AS timeSlot,
+                cs.planned_student_count AS plannedStudentCount,
+                cs.current_student_count AS currentStudentCount,
+                cs.max_student_count AS maxStudentCount,
+                cs.status,
+                cs.can_reserve AS canReserve,
+                cs.description,
+                cs.remark,
+                (
+                  SELECT GROUP_CONCAT(stu.id ORDER BY stu.id)
+                  FROM course_schedule_students css
+                  JOIN sys_users stu ON stu.id = css.student_user_id
+                  WHERE css.schedule_id = cs.id
+                ) AS studentUserIds,
+                (
+                  SELECT GROUP_CONCAT(stu.account_no ORDER BY stu.id SEPARATOR ',')
+                  FROM course_schedule_students css
+                  JOIN sys_users stu ON stu.id = css.student_user_id
+                  WHERE css.schedule_id = cs.id
+                ) AS studentAccountNos,
+                (
+                  SELECT GROUP_CONCAT(CONCAT(stu.account_no, ' ', stu.real_name) ORDER BY stu.id SEPARATOR '、')
+                  FROM course_schedule_students css
+                  JOIN sys_users stu ON stu.id = css.student_user_id
+                  WHERE css.schedule_id = cs.id
+                ) AS studentNames
+              FROM course_schedules cs
+              JOIN academic_semesters sem ON sem.id = cs.semester_id
+              JOIN laboratories l ON l.id = cs.lab_id
+              LEFT JOIN sys_users tu ON tu.id = cs.teacher_user_id
+              WHERE cs.deleted_at IS NULL AND cs.id = ?
+            ) t
+            """, id).stream().findFirst()
+            .orElseThrow(() -> BusinessException.notFound("course schedule not found"));
+    }
+
+    @Transactional
+    public Map<String, Object> createManagedSchedule(Map<String, Object> body) {
+        ScheduleForm form = parseScheduleForm(body);
+        var keyHolder = new org.springframework.jdbc.support.GeneratedKeyHolder();
+        String scheduleNo = bizNoGenerator.generate("CS");
+        jdbcTemplate.update(connection -> {
+            var ps = connection.prepareStatement("""
+                INSERT INTO course_schedules
+                  (schedule_no, semester_id, lab_id, teacher_user_id, teacher_name_snapshot, course_name,
+                   course_type, schedule_date, weekday, start_time, end_time, time_slot_label,
+                   planned_student_count, current_student_count, max_student_count, status, can_reserve,
+                   description, remark)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """, new String[] {"id"});
+            ps.setString(1, scheduleNo);
+            ps.setLong(2, form.semesterId());
+            ps.setLong(3, form.labId());
+            ps.setObject(4, form.teacherUserId());
+            ps.setString(5, form.teacherName());
+            ps.setString(6, form.courseName());
+            ps.setString(7, form.courseType());
+            ps.setObject(8, form.scheduleDate());
+            ps.setInt(9, form.weekday());
+            ps.setTime(10, Time.valueOf(form.startTime()));
+            ps.setTime(11, Time.valueOf(form.endTime()));
+            ps.setString(12, form.timeSlot());
+            ps.setInt(13, form.plannedStudentCount());
+            ps.setInt(14, form.studentUserIds().size());
+            ps.setInt(15, form.maxStudentCount());
+            ps.setString(16, form.status());
+            ps.setInt(17, form.canReserve() ? 1 : 0);
+            ps.setString(18, form.description());
+            ps.setString(19, form.remark());
+            return ps;
+        }, keyHolder);
+        Long id = keyHolder.getKey().longValue();
+        replaceScheduleStudents(id, form.studentUserIds());
+        return getManagedSchedule(id);
+    }
+
+    @Transactional
+    public Map<String, Object> updateManagedSchedule(Long id, Map<String, Object> body) {
+        requireScheduleExists(id);
+        ScheduleForm form = parseScheduleForm(body);
+        jdbcTemplate.update("""
+            UPDATE course_schedules SET
+              semester_id = ?,
+              lab_id = ?,
+              teacher_user_id = ?,
+              teacher_name_snapshot = ?,
+              course_name = ?,
+              course_type = ?,
+              schedule_date = ?,
+              weekday = ?,
+              start_time = ?,
+              end_time = ?,
+              time_slot_label = ?,
+              planned_student_count = ?,
+              current_student_count = ?,
+              max_student_count = ?,
+              status = ?,
+              can_reserve = ?,
+              description = ?,
+              remark = ?
+            WHERE id = ? AND deleted_at IS NULL
+            """, form.semesterId(), form.labId(), form.teacherUserId(), form.teacherName(), form.courseName(),
+            form.courseType(), form.scheduleDate(), form.weekday(), Time.valueOf(form.startTime()),
+            Time.valueOf(form.endTime()), form.timeSlot(), form.plannedStudentCount(), form.studentUserIds().size(),
+            form.maxStudentCount(), form.status(), form.canReserve() ? 1 : 0, form.description(), form.remark(), id);
+        replaceScheduleStudents(id, form.studentUserIds());
+        return getManagedSchedule(id);
+    }
+
+    @Transactional
+    public void deleteManagedSchedule(Long id) {
+        requireScheduleExists(id);
+        jdbcTemplate.update("DELETE FROM course_schedule_students WHERE schedule_id = ?", id);
+        jdbcTemplate.update("UPDATE course_schedules SET deleted_at = CURRENT_TIMESTAMP(3) WHERE id = ?", id);
     }
 
     public Map<String, Object> createImportBatch(Long semesterId, String fileName, Long fileSize, Long operatorId) {
@@ -230,33 +456,6 @@ public class ScheduleService {
             return writeWorkbook(workbook);
         } catch (IOException ex) {
             throw BusinessException.badRequest("生成课表模板失败");
-        }
-    }
-
-    public byte[] buildDemoScheduleExcel() {
-        try (Workbook workbook = new XSSFWorkbook()) {
-            Sheet sheet = workbook.createSheet("课表示例");
-            CellStyle headerStyle = createHeaderStyle(workbook);
-            Row header = sheet.createRow(0);
-            for (int i = 0; i < IMPORT_HEADERS.length; i++) {
-                Cell cell = header.createCell(i);
-                cell.setCellValue(IMPORT_HEADERS[i]);
-                cell.setCellStyle(headerStyle);
-            }
-
-            String[][] rows = {
-                {"数据结构与算法", "3", "互联网+新商科实验室", "张教授", "2026-09-08", "08:00", "09:50", "08:00-09:50", "30", "40", "理论课", "可预约", "是", "链表、树与图的算法实验", "示例课表"},
-                {"计算机网络实验", "1", "国际课程实验室", "李老师", "2026-09-08", "10:00", "11:50", "10:00-11:50", "28", "35", "实验课", "仅供查看", "否", "网络协议抓包与分析", "示例课表"},
-                {"数据库系统实验", "5", "402实验室", "张教授", "2026-09-09", "14:00", "15:50", "14:00-15:50", "32", "40", "实验课", "可预约", "是", "SQL 建模与查询优化", "示例课表"},
-                {"软件工程实践", "2", "IBC实验中心", "陈老师", "2026-09-10", "16:00", "17:50", "16:00-17:50", "24", "30", "实践课", "可预约", "是", "项目迭代与协作演练", "示例课表"}
-            };
-            for (int i = 0; i < rows.length; i++) {
-                writeStringRow(sheet.createRow(i + 1), rows[i]);
-            }
-            autosizeColumns(sheet, IMPORT_HEADERS.length);
-            return writeWorkbook(workbook);
-        } catch (IOException ex) {
-            throw BusinessException.badRequest("生成课表示例失败");
         }
     }
 
@@ -388,6 +587,257 @@ public class ScheduleService {
             FROM schedule_export_tasks WHERE id = ? LIMIT 1
             """, id).stream().findFirst()
             .orElseThrow(() -> BusinessException.notFound("导出任务不存在"));
+    }
+
+    private QueryParts scheduleUserFilter(SecurityUser user) {
+        if (user == null || "admin".equals(user.role())) {
+            return new QueryParts("", List.of());
+        }
+        if ("teacher".equals(user.role())) {
+            return new QueryParts(" AND cs.teacher_user_id = ? ", List.of(user.id()));
+        }
+        if ("student".equals(user.role())) {
+            return new QueryParts("""
+                 AND EXISTS (
+                   SELECT 1
+                   FROM course_schedule_students css
+                   WHERE css.schedule_id = cs.id AND css.student_user_id = ?
+                 )
+                """, List.of(user.id()));
+        }
+        return new QueryParts(" AND 1 = 0 ", List.of());
+    }
+
+    private ScheduleForm parseScheduleForm(Map<String, Object> body) {
+        Long semesterId = requireLong(body.get("semesterId"), "semesterId");
+        Long labId = requireLong(body.get("labId"), "labId");
+        ensureSemesterExists(semesterId);
+        ensureLabExists(labId);
+
+        String courseName = requireString(body.get("courseName"), "courseName");
+        LocalDate date = parseDateString(requireString(body.get("scheduleDate"), "scheduleDate"));
+        LocalTime start = parseTimeString(requireString(body.get("startTime"), "startTime"));
+        LocalTime end = parseTimeString(requireString(body.get("endTime"), "endTime"));
+        if (!end.isAfter(start)) {
+            throw BusinessException.badRequest("endTime must be later than startTime");
+        }
+
+        Long teacherUserId = resolveTeacherId(body);
+        String teacherName = teacherUserId == null ? blankToNull(str(body.get("teacherName"))) : userName(teacherUserId);
+        List<Long> studentIds = resolveStudentIds(body);
+        int planned = positiveInt(body.get("plannedStudentCount"), Math.max(studentIds.size(), 0));
+        int max = positiveInt(body.get("maxStudentCount"), Math.max(planned, studentIds.size()));
+        if (max < planned) {
+            max = planned;
+        }
+        if (max < studentIds.size()) {
+            max = studentIds.size();
+        }
+        boolean canReserve = toBool(body.get("canReserve"));
+        String status = normalizeStatus(str(body.get("status")), canReserve);
+        if ("full".equals(status) || "cancelled".equals(status)) {
+            canReserve = false;
+        }
+        return new ScheduleForm(
+            semesterId,
+            labId,
+            teacherUserId,
+            teacherName,
+            courseName,
+            blankToNull(str(body.get("courseType"))),
+            date,
+            date.getDayOfWeek().getValue(),
+            start,
+            end,
+            defaultTimeSlot(body.get("timeSlot"), start, end),
+            planned,
+            max,
+            status,
+            canReserve,
+            blankToNull(str(body.get("description"))),
+            blankToNull(str(body.get("remark"))),
+            studentIds
+        );
+    }
+
+    private void ensureLabExists(Long labId) {
+        Integer count = jdbcTemplate.queryForObject(
+            "SELECT COUNT(*) FROM laboratories WHERE id = ? AND deleted_at IS NULL AND status <> 'deleted'",
+            Integer.class, labId);
+        if (count == null || count == 0) {
+            throw BusinessException.badRequest("lab does not exist");
+        }
+    }
+
+    private void requireScheduleExists(Long id) {
+        Integer count = jdbcTemplate.queryForObject(
+            "SELECT COUNT(*) FROM course_schedules WHERE id = ? AND deleted_at IS NULL", Integer.class, id);
+        if (count == null || count == 0) {
+            throw BusinessException.notFound("course schedule not found");
+        }
+    }
+
+    private Long resolveTeacherId(Map<String, Object> body) {
+        Long teacherUserId = optionalLong(body.get("teacherUserId"));
+        String accountNo = blankToNull(str(body.get("teacherAccountNo")));
+        if (teacherUserId == null && accountNo != null) {
+            teacherUserId = findUserIdByAccount("teacher", accountNo);
+        }
+        if (teacherUserId == null) {
+            return null;
+        }
+        requireUserRole(teacherUserId, "teacher");
+        return teacherUserId;
+    }
+
+    private List<Long> resolveStudentIds(Map<String, Object> body) {
+        List<Long> result = new ArrayList<>();
+        Object rawIds = body.get("studentUserIds");
+        if (rawIds instanceof Iterable<?> values) {
+            for (Object value : values) {
+                Long id = optionalLong(value);
+                if (id != null && !result.contains(id)) {
+                    requireUserRole(id, "student");
+                    result.add(id);
+                }
+            }
+        }
+        String accountNos = blankToNull(str(body.get("studentAccountNos")));
+        if (accountNos != null) {
+            for (String part : Arrays.asList(accountNos.split("[,，;；\\s]+"))) {
+                String accountNo = part.trim();
+                if (accountNo.isBlank()) {
+                    continue;
+                }
+                Long id = findUserIdByAccount("student", accountNo);
+                if (!result.contains(id)) {
+                    result.add(id);
+                }
+            }
+        }
+        return result;
+    }
+
+    private Long findUserIdByAccount(String role, String accountNo) {
+        try {
+            return jdbcTemplate.queryForObject("""
+                SELECT id
+                FROM sys_users
+                WHERE role = ? AND account_no = ? AND deleted_at IS NULL AND status <> 'deleted'
+                LIMIT 1
+                """, Long.class, role, accountNo);
+        } catch (EmptyResultDataAccessException ex) {
+            throw BusinessException.badRequest(role + " account does not exist: " + accountNo);
+        }
+    }
+
+    private void requireUserRole(Long userId, String role) {
+        Integer count = jdbcTemplate.queryForObject("""
+            SELECT COUNT(*)
+            FROM sys_users
+            WHERE id = ? AND role = ? AND deleted_at IS NULL AND status <> 'deleted'
+            """, Integer.class, userId, role);
+        if (count == null || count == 0) {
+            throw BusinessException.badRequest(role + " user does not exist");
+        }
+    }
+
+    private String userName(Long userId) {
+        return jdbcTemplate.queryForObject("SELECT real_name FROM sys_users WHERE id = ?", String.class, userId);
+    }
+
+    private void replaceScheduleStudents(Long scheduleId, List<Long> studentIds) {
+        jdbcTemplate.update("DELETE FROM course_schedule_students WHERE schedule_id = ?", scheduleId);
+        for (Long studentId : studentIds) {
+            Map<String, Object> user = jdbcTemplate.queryForMap("""
+                SELECT account_no, real_name
+                FROM sys_users
+                WHERE id = ? AND role = 'student' AND deleted_at IS NULL AND status <> 'deleted'
+                """, studentId);
+            jdbcTemplate.update("""
+                INSERT INTO course_schedule_students
+                  (schedule_id, student_user_id, student_account_no, student_name_snapshot)
+                VALUES (?, ?, ?, ?)
+                """, scheduleId, studentId, user.get("account_no"), user.get("real_name"));
+        }
+    }
+
+    private Long requireLong(Object value, String fieldName) {
+        Long parsed = optionalLong(value);
+        if (parsed == null || parsed <= 0) {
+            throw BusinessException.badRequest(fieldName + " is required");
+        }
+        return parsed;
+    }
+
+    private Long optionalLong(Object value) {
+        if (value instanceof Number n) {
+            return n.longValue();
+        }
+        if (value == null || String.valueOf(value).isBlank()) {
+            return null;
+        }
+        try {
+            return Math.round(Double.parseDouble(String.valueOf(value).replace(",", "")));
+        } catch (NumberFormatException ex) {
+            return null;
+        }
+    }
+
+    private int positiveInt(Object value, int defaultValue) {
+        if (value == null || String.valueOf(value).isBlank()) {
+            return Math.max(defaultValue, 0);
+        }
+        try {
+            return Math.max((int) Math.round(Double.parseDouble(String.valueOf(value))), 0);
+        } catch (NumberFormatException ex) {
+            return Math.max(defaultValue, 0);
+        }
+    }
+
+    private String requireString(Object value, String fieldName) {
+        String text = str(value);
+        if (text == null || text.isBlank()) {
+            throw BusinessException.badRequest(fieldName + " is required");
+        }
+        return text.trim();
+    }
+
+    private LocalDate parseDateString(String value) {
+        try {
+            return LocalDate.parse(value.trim(), DateTimeFormatter.ISO_LOCAL_DATE);
+        } catch (DateTimeParseException ex) {
+            throw BusinessException.badRequest("scheduleDate must be yyyy-MM-dd");
+        }
+    }
+
+    private LocalTime parseTimeString(String value) {
+        String normalized = value.trim();
+        for (DateTimeFormatter parser : List.of(
+            DateTimeFormatter.ofPattern("H:mm"),
+            DateTimeFormatter.ofPattern("HH:mm"),
+            DateTimeFormatter.ofPattern("H:mm:ss"),
+            DateTimeFormatter.ofPattern("HH:mm:ss")
+        )) {
+            try {
+                return LocalTime.parse(normalized, parser).withSecond(0).withNano(0);
+            } catch (DateTimeParseException ignored) {
+                // try next format
+            }
+        }
+        throw BusinessException.badRequest("time must be HH:mm");
+    }
+
+    private String defaultTimeSlot(Object raw, LocalTime start, LocalTime end) {
+        String value = blankToNull(str(raw));
+        if (value != null) {
+            return value;
+        }
+        return TIME_FORMATTER.format(start) + "-" + TIME_FORMATTER.format(end);
+    }
+
+    private String str(Object value) {
+        return value == null ? null : String.valueOf(value);
     }
 
     private List<ParsedSchedule> parseImportWorkbook(InputStream input, List<String> errors) {
@@ -815,6 +1265,31 @@ public class ScheduleService {
             return n.intValue() != 0;
         }
         return Boolean.parseBoolean(String.valueOf(value));
+    }
+
+    private record QueryParts(String sql, List<Object> args) {
+    }
+
+    private record ScheduleForm(
+        Long semesterId,
+        Long labId,
+        Long teacherUserId,
+        String teacherName,
+        String courseName,
+        String courseType,
+        LocalDate scheduleDate,
+        int weekday,
+        LocalTime startTime,
+        LocalTime endTime,
+        String timeSlot,
+        int plannedStudentCount,
+        int maxStudentCount,
+        String status,
+        boolean canReserve,
+        String description,
+        String remark,
+        List<Long> studentUserIds
+    ) {
     }
 
     private record ParsedSchedule(

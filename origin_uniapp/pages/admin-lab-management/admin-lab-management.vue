@@ -5,7 +5,7 @@
         <mp-weixin-page-header title="实验室信息管理" color="white" background="#F5A623" />
         <!-- #endif -->
         <!-- #ifndef MP-WEIXIN -->
-        <navigation-bar title="实验室信息管理" :back="true" color="white" background="#F5A623"></navigation-bar>
+        <app-navigation-bar title="实验室信息管理" :back="true" color="white" background="#F5A623"></app-navigation-bar>
         <!-- #endif -->
         <view class="container">
             <view class="header">
@@ -163,7 +163,7 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import { onMounted } from 'vue';
-import navigationBar from '@/components/navigation-bar/navigation-bar.vue';
+import appNavigationBar from '@/components/app-navigation-bar/app-navigation-bar.vue';
 import { getLabs, createLab, updateLab, deleteLab as deleteLabApi } from '@/api/admin';
 // admin-lab-management.ts
 

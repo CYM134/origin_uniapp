@@ -5,7 +5,7 @@
         <mp-weixin-page-header title="课表预览" color="white" background="#3B82F6" />
         <!-- #endif -->
         <!-- #ifndef MP-WEIXIN -->
-        <navigation-bar title="课表预览" :back="true" color="white" background="#3B82F6"></navigation-bar>
+        <app-navigation-bar title="课表预览" :back="true" color="white" background="#3B82F6"></app-navigation-bar>
         <!-- #endif -->
 
         <view class="container">
@@ -257,7 +257,7 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import { onLoad, onShow, onPullDownRefresh } from '@dcloudio/uni-app';
-import navigationBar from '@/components/navigation-bar/navigation-bar.vue';
+import appNavigationBar from '@/components/app-navigation-bar/app-navigation-bar.vue';
 import { getCourseSchedulesByDate, getCourseSchedulesByWeek, getLabs } from '@/api/student';
 // pages/student-schedule-preview/student-schedule-preview.ts
 

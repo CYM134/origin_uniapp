@@ -45,7 +45,11 @@ public class AiService {
         AiContextService.AiContext context = contextService.build(user);
         String source = "fallback";
         String reply;
-        if (modelClient.available()) {
+        String directReply = contextualReply(req.message(), context);
+        if (directReply != null) {
+            reply = directReply;
+            source = "context";
+        } else if (modelClient.available()) {
             var modelReply = modelClient.chat(promptBuilder.build(req.message(), context));
             if (modelReply.isPresent()) {
                 reply = modelReply.get();
@@ -116,8 +120,7 @@ public class AiService {
                 + "可单条标记已读或一键全部已读。";
         }
         if (contains(q, "你好") || contains(q, "hello") || s.contains("hi")) {
-            return "您好，我是校园综合服务平台智能助手。您可以问我：如何预约实验室、预约审批流程、"
-                + "如何收藏应用、在哪里查看通知和消息等问题。";
+            return "有什么我可以帮助你的？";
         }
         return "我可以帮您了解校园综合服务平台的功能，例如：实验室预约与审批流程、预约规则、"
             + "应用中心与收藏、通知公告与消息中心等。请换一种方式描述您的问题，我会尽力解答。";
@@ -130,6 +133,13 @@ public class AiService {
         boolean asksActualData = containsAny(q, "我", "我的", "多少", "几个", "有没有", "当前", "现在", "今天",
             "明天", "最近", "最新", "未读", "待处理", "待审核", "待审批", "待办", "状态");
 
+        if (containsAny(q, "课表", "课程安排", "上课安排", "授课安排")) {
+            return context.scheduleSummary();
+        }
+        if (containsAny(q, "空余", "空闲", "可用时间", "可预约时间", "空余时间段", "课余时间", "时间段")
+            && containsAny(q, "实验室", "教室", "实验间")) {
+            return context.availabilitySummary();
+        }
         if (containsAny(q, "消息", "未读", "通知提醒") && asksActualData) {
             return context.messageSummary();
         }
@@ -147,7 +157,8 @@ public class AiService {
         }
         if (containsAny(q, "我的数据", "当前数据", "实际情况", "概况", "汇总")) {
             return String.join("\n", context.reservationSummary(), context.taskSummary(),
-                context.messageSummary(), context.calendarSummary(), context.noticeSummary());
+                context.messageSummary(), context.calendarSummary(), context.scheduleSummary(),
+                context.availabilitySummary(), context.noticeSummary());
         }
         return null;
     }

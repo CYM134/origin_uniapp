@@ -5,7 +5,7 @@
         <mp-weixin-page-header title="实验室预约系统" :back="false" color="#ffffff" background="#4F46E5" />
         <!-- #endif -->
         <!-- #ifndef MP-WEIXIN -->
-        <navigation-bar title="实验室预约系统" :back="false" color="#ffffff" background="#4F46E5"></navigation-bar>
+        <app-navigation-bar title="实验室预约系统" :back="false" color="#ffffff" background="#4F46E5"></app-navigation-bar>
         <!-- #endif -->
         <view class="container">
             <view class="selection-content">
@@ -41,7 +41,7 @@
 </template>
 
 <script setup lang="ts">
-import navigationBar from '@/components/navigation-bar/navigation-bar.vue';
+import appNavigationBar from '@/components/app-navigation-bar/app-navigation-bar.vue';
 // login-select.ts
 
 // 跳转到管理员登录页面
