@@ -29,14 +29,16 @@ public class MenuCatalog {
         new MenuDef("message_center",  "消息中心",     "message",   "/pages/message-center/message-center",           7,  all()),
         new MenuDef("calendar",        "我的日历",     "calendar",  "/pages/calendar/calendar",                       8,  all()),
         new MenuDef("ai_assistant",    "AI 校园助手",  "ai",        "/pages/ai-assistant/ai-assistant",               9,  all()),
-        new MenuDef("personal_center", "个人中心",     "user",      "/pages/student-personal-info/student-personal-info", 10, all()),
+        new MenuDef("repair_service",  "报修服务",     "tools",     "/pages/repair-service/repair-service",           10, all()),
+        new MenuDef("personal_center", "个人中心",     "user",      "/pages/student-personal-info/student-personal-info", 11, all()),
         new MenuDef("admin_workbench", "管理员工作台", "dashboard", "/pages/admin-workbench/admin-workbench",          20, roles("admin")),
         new MenuDef("notice_manage",   "通知公告管理", "notice",    "/pages/admin-notice-manage/admin-notice-manage", 21, roles("admin")),
         new MenuDef("news_manage",     "校园资讯管理", "news",      "/pages/admin-news-manage/admin-news-manage",     22, roles("admin")),
         new MenuDef("app_manage",      "应用管理",     "apps",      "/pages/admin-app-manage/admin-app-manage",       23, roles("admin")),
         new MenuDef("lab_manage",      "实验室管理",   "flask",     "/pages/admin-lab-management/admin-lab-management", 24, roles("admin")),
-        new MenuDef("user_manage",     "用户管理",     "user",      "/pages/admin-system-management/admin-system-management", 25, roles("admin")),
-        new MenuDef("system",          "系统管理",     "setting",   "/pages/admin-system-management/admin-system-management", 26, roles("admin"))
+        new MenuDef("repair_review",   "报修审核",     "tools",     "/pages/admin-repair-review/admin-repair-review", 25, roles("admin")),
+        new MenuDef("user_manage",     "用户管理",     "user",      "/pages/admin-system-management/admin-system-management", 26, roles("admin")),
+        new MenuDef("system",          "系统管理",     "setting",   "/pages/admin-system-management/admin-system-management", 27, roles("admin"))
     );
 
     /** 按钮权限：角色 -> 可见按钮编码集合。 */
@@ -59,6 +61,7 @@ public class MenuCatalog {
         Set<String> codes = new LinkedHashSet<>();
         // 所有登录用户都可提交预约、收藏应用
         codes.add("reservation:submit");
+        codes.add("repair:submit");
         codes.add("app:favorite");
         if ("teacher".equals(role) || "admin".equals(role)) {
             codes.add("reservation:approve");
@@ -79,6 +82,8 @@ public class MenuCatalog {
             codes.add("user:create");
             codes.add("user:edit");
             codes.add("user:disable");
+            codes.add("repair:approve");
+            codes.add("repair:reject");
             codes.add("role:grant");
             codes.add("menu:grant");
         }

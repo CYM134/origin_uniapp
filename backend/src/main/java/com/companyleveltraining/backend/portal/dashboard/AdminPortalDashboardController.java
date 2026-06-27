@@ -80,6 +80,7 @@ public class AdminPortalDashboardController {
         long pendingReservations = dashboardMapper.countPendingReservations();
         long pendingTeacherReviews = dashboardMapper.countPendingTeacherReviews();
         long pendingTeacherRegistrations = dashboardMapper.countPendingTeacherRegistrations();
+        long pendingRepairs = dashboardMapper.countPendingRepairs();
         long todayReservations = dashboardMapper.countTodayReservations();
         long weekReservations = dashboardMapper.countWeekReservations();
         long totalLabs = dashboardMapper.countTotalLabs();
@@ -93,6 +94,7 @@ public class AdminPortalDashboardController {
         summary.put("pendingReservations", pendingReservations);
         summary.put("pendingTeacherReviews", pendingTeacherReviews);
         summary.put("pendingTeacherRegistrations", pendingTeacherRegistrations);
+        summary.put("pendingRepairs", pendingRepairs);
         summary.put("todayReservations", todayReservations);
         summary.put("weekReservations", weekReservations);
         summary.put("totalLabs", totalLabs);

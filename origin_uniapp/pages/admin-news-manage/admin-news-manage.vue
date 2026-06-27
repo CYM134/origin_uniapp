@@ -1,6 +1,10 @@
 <template>
   <view class="page">
     <view class="hd">
+      <view class="hd-back" @tap="goBack">
+        <text class="hd-back-ico">‹</text>
+        <text class="hd-back-txt">返回</text>
+      </view>
       <view class="hd-top">
         <text class="hd-title">校园资讯管理</text>
         <view class="hd-add" @tap="openCreate"><text>新增资讯</text></view>
@@ -144,6 +148,8 @@ import {
   deleteNews
 } from '@/api/portal';
 import { getStoredUser } from '@/api/storage';
+
+const goBack = () => uni.navigateBack({ delta: 1 });
 
 interface NewsCategory {
   id: any;

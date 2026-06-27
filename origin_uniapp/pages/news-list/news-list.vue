@@ -1,6 +1,10 @@
 <template>
   <view class="page">
     <view class="hd">
+      <view class="hd-back" @tap="goBack">
+        <text class="hd-back-ico">‹</text>
+        <text class="hd-back-txt">返回</text>
+      </view>
       <text class="hd-title">校园资讯</text>
       <view class="search-box">
         <input
@@ -86,6 +90,8 @@ import { ref } from 'vue';
 import { onLoad, onShow, onPullDownRefresh } from '@dcloudio/uni-app';
 import { getNewsCategories, getNewsList } from '@/api/portal';
 import { getStoredRole } from '@/api/storage';
+
+const goBack = () => uni.navigateBack({ delta: 1 });
 
 interface NewsCategory {
   id: any;

@@ -1,6 +1,10 @@
 <template>
     <view class="page">
         <view class="hd">
+            <view class="hd-back" @tap="goBack">
+                <text class="hd-back-ico">‹</text>
+                <text class="hd-back-txt">返回</text>
+            </view>
             <text class="hd-title">消息中心</text>
             <view class="hd-action" @tap="onMarkAll">
                 <text>全部已读</text>
@@ -63,6 +67,8 @@
 import { ref, computed } from 'vue';
 import { onShow } from '@dcloudio/uni-app';
 import { getMessages, getMessageUnreadCount, markMessageRead, markAllMessagesRead } from '@/api/portal';
+
+const goBack = () => uni.navigateBack({ delta: 1 });
 
 const loading = ref(false);
 const messages = ref<any[]>([]);

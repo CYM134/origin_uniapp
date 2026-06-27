@@ -1,6 +1,10 @@
 <template>
   <view class="page">
     <view class="hd">
+      <view class="hd-back" @tap="goBack">
+        <text class="hd-back-ico">‹</text>
+        <text class="hd-back-txt">返回</text>
+      </view>
       <text class="hd-title">应用中心</text>
       <text class="hd-sub">汇聚校园全部应用服务</text>
     </view>
@@ -88,6 +92,8 @@ import {
   visitApp,
 } from '@/api/portal';
 import { getStoredRole } from '@/api/storage';
+
+const goBack = () => uni.navigateBack({ delta: 1 });
 
 const loading = ref(false);
 const categories = ref<any[]>([]);
@@ -189,6 +195,9 @@ function openApp(app: any) {
     '/messages': '/pages/message-center/message-center',
     '/calendar': '/pages/calendar/calendar',
     '/ai/assistant': '/pages/ai-assistant/ai-assistant',
+    '/repair': r === 'admin'
+      ? '/pages/admin-repair-review/admin-repair-review'
+      : '/pages/repair-service/repair-service',
     '/admin/dashboard': '/pages/admin-workbench/admin-workbench',
     '/system/users': '/pages/admin-system-management/admin-system-management',
     '/admin/apps': '/pages/admin-app-manage/admin-app-manage',

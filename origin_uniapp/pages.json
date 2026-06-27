@@ -205,6 +205,13 @@
 			}
 		},
 		{
+			"path": "pages/repair-service/repair-service",
+			"style": {
+				"navigationStyle": "custom",
+				"enablePullDownRefresh": true
+			}
+		},
+		{
 			"path": "pages/admin-workbench/admin-workbench",
 			"style": {
 				"navigationStyle": "custom",
@@ -227,6 +234,13 @@
 			"path": "pages/admin-news-manage/admin-news-manage",
 			"style": {
 				"navigationStyle": "custom"
+			}
+		},
+		{
+			"path": "pages/admin-repair-review/admin-repair-review",
+			"style": {
+				"navigationStyle": "custom",
+				"enablePullDownRefresh": true
 			}
 		}
 	],

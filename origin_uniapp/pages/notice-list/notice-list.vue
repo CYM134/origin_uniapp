@@ -1,6 +1,10 @@
 <template>
   <view class="page">
     <view class="hd">
+      <view class="hd-back" @tap="goBack">
+        <text class="hd-back-ico">‹</text>
+        <text class="hd-back-txt">返回</text>
+      </view>
       <text class="hd-title">通知公告</text>
       <view class="search">
         <input
@@ -54,6 +58,8 @@
 import { ref } from 'vue';
 import { onLoad, onShow, onPullDownRefresh } from '@dcloudio/uni-app';
 import { getNotices } from '@/api/portal';
+
+const goBack = () => uni.navigateBack({ delta: 1 });
 
 const loading = ref(false);
 const keyword = ref('');

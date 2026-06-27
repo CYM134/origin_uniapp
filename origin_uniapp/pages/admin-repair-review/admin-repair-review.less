@@ -1,0 +1,221 @@
+@accent: #F5A623;
+@text: #1F2937;
+@muted: #6B7280;
+@border: #E5E7EB;
+
+.container {
+  flex: 1;
+  background: #F8F9FC;
+  padding: 24rpx;
+  box-sizing: border-box;
+}
+
+.tabs {
+  display: flex;
+  gap: 12rpx;
+  overflow-x: auto;
+  margin-bottom: 24rpx;
+}
+
+.tab {
+  flex-shrink: 0;
+  padding: 16rpx 28rpx;
+  border-radius: 999rpx;
+  background: #fff;
+  color: @muted;
+  font-size: 26rpx;
+  font-weight: 700;
+}
+
+.tab.active {
+  color: #fff;
+  background: @accent;
+}
+
+.repair-list {
+  display: flex;
+  flex-direction: column;
+  gap: 20rpx;
+}
+
+.repair-card,
+.dialog {
+  background: #fff;
+  border-radius: 24rpx;
+  box-shadow: 0 8rpx 24rpx rgba(15, 23, 42, 0.05);
+}
+
+.repair-card {
+  padding: 26rpx;
+  border: 1rpx solid @border;
+}
+
+.card-head,
+.meta,
+.card-actions,
+.dialog-hd,
+.dialog-actions,
+.detail-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14rpx;
+}
+
+.repair-no,
+.meta,
+.desc,
+.empty {
+  color: @muted;
+}
+
+.repair-no {
+  font-size: 24rpx;
+}
+
+.title {
+  display: block;
+  margin-top: 14rpx;
+  color: @text;
+  font-size: 31rpx;
+  font-weight: 800;
+}
+
+.meta {
+  justify-content: flex-start;
+  flex-wrap: wrap;
+  margin-top: 12rpx;
+  font-size: 24rpx;
+}
+
+.desc {
+  display: block;
+  margin-top: 12rpx;
+  font-size: 26rpx;
+  line-height: 1.6;
+}
+
+.status {
+  padding: 6rpx 18rpx;
+  border-radius: 999rpx;
+  font-size: 22rpx;
+  font-weight: 800;
+}
+
+.status-pending { color: #D97706; background: #FEF3C7; }
+.status-approved { color: #059669; background: #D1FAE5; }
+.status-rejected { color: #DC2626; background: #FEE2E2; }
+.status-cancelled { color: #6B7280; background: #F3F4F6; }
+
+.card-actions,
+.dialog-actions {
+  justify-content: flex-end;
+  margin-top: 20rpx;
+}
+
+.action {
+  margin: 0;
+  height: 64rpx;
+  line-height: 64rpx;
+  border-radius: 999rpx;
+  padding: 0 30rpx;
+  font-size: 26rpx;
+  font-weight: 800;
+}
+
+.approve {
+  color: #fff;
+  background: #10B981;
+}
+
+.reject,
+.submit-reject {
+  color: #fff;
+  background: #EF4444;
+}
+
+.empty {
+  text-align: center;
+  padding: 100rpx 0;
+  font-size: 28rpx;
+}
+
+.mask {
+  position: fixed;
+  left: 0;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 99;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 32rpx;
+}
+
+.dialog {
+  width: 100%;
+  max-height: 82vh;
+  overflow-y: auto;
+  padding: 28rpx;
+  box-sizing: border-box;
+}
+
+.dialog.small {
+  max-height: none;
+}
+
+.dialog-title {
+  color: @text;
+  font-size: 32rpx;
+  font-weight: 800;
+}
+
+.dialog-close {
+  color: @muted;
+  font-size: 42rpx;
+}
+
+.detail-row,
+.detail-block {
+  padding: 18rpx 0;
+  border-bottom: 1rpx solid #F3F4F6;
+  color: @text;
+  font-size: 26rpx;
+}
+
+.detail-block {
+  display: flex;
+  flex-direction: column;
+  gap: 10rpx;
+}
+
+.label {
+  color: @muted;
+  font-weight: 700;
+  margin-right: 16rpx;
+}
+
+.reason-input {
+  width: 100%;
+  min-height: 180rpx;
+  margin: 24rpx 0;
+  box-sizing: border-box;
+  padding: 20rpx;
+  background: #F8FAFC;
+  border: 1rpx solid @border;
+  border-radius: 16rpx;
+}
+
+.submit-reject {
+  height: 78rpx;
+  line-height: 78rpx;
+  border-radius: 999rpx;
+  font-size: 28rpx;
+  font-weight: 800;
+}
+
+.ph {
+  color: #9CA3AF;
+}

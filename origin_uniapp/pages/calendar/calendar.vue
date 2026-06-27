@@ -1,7 +1,14 @@
 <template>
   <view class="page">
     <view class="hd">
+      <view class="hd-back" @tap="goBack">
+        <text class="hd-back-ico">‹</text>
+        <text class="hd-back-txt">返回</text>
+      </view>
       <text class="hd-title">我的日历</text>
+      <view class="hd-export" @tap="exportMonth">
+        <text>导出本月</text>
+      </view>
       <view class="month-bar">
         <text class="month-nav" @tap="prevMonth">‹ 上月</text>
         <text class="month-label" @tap="thisMonth">{{ monthLabel }}</text>
@@ -133,7 +140,9 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue';
 import { onLoad, onShow, onPullDownRefresh } from '@dcloudio/uni-app';
-import { getCalendarEvents, createCalendarEvent, deleteCalendarEvent } from '@/api/portal';
+import { getCalendarEvents, createCalendarEvent, deleteCalendarEvent, downloadCalendarExcel } from '@/api/portal';
+
+const goBack = () => uni.navigateBack({ delta: 1 });
 
 const loading = ref(false);
 const submitting = ref(false);
@@ -256,6 +265,19 @@ const nextMonth = () => {
 const thisMonth = () => {
   cursor.value = new Date();
   loadEvents();
+};
+
+const exportMonth = async () => {
+  const { startDate, endDate } = monthRange();
+  try {
+    uni.showLoading({ title: '导出中...' });
+    await downloadCalendarExcel(startDate, endDate, `我的日历-${monthLabel.value}.xlsx`);
+    uni.hideLoading();
+    uni.showToast({ title: '下载已开始', icon: 'success' });
+  } catch (e: any) {
+    uni.hideLoading();
+    uni.showToast({ title: e?.data?.message || '导出失败', icon: 'none' });
+  }
 };
 
 // 删除（仅 editable）

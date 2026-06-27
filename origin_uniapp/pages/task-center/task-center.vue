@@ -1,6 +1,10 @@
 <template>
   <view class="page">
     <view class="hd">
+      <view class="hd-back" @tap="goBack">
+        <text class="hd-back-ico">‹</text>
+        <text class="hd-back-txt">返回</text>
+      </view>
       <text class="hd-title">任务中心</text>
     </view>
 
@@ -95,6 +99,8 @@ import {
 } from '@/api/portal';
 import { getStoredRole } from '@/api/storage';
 
+const goBack = () => uni.navigateBack({ delta: 1 });
+
 const role = ref(getStoredRole() || '');
 const loading = ref(false);
 const stats = ref<any>({ todo: 0, done: 0, mine: 0, taskTypes: [] });
@@ -105,7 +111,7 @@ const tabs = [
   { key: 'todo', name: '待办' },
   { key: 'done', name: '已办' },
   { key: 'mine', name: '我发起的' },
-];
+] as const;
 
 const canApprove = computed(() => role.value === 'teacher' || role.value === 'admin');
 

@@ -1,6 +1,7 @@
 <template>
     <view class="page-wrapper">
         <!-- pages/teacher-work/teacher-work.wxml -->
+        <navigation-bar title="实验室预约管理" :back="true" color="white" background="#10B981"></navigation-bar>
         <view class="container">
             <!-- 欢迎信息 -->
             <view class="welcome-section">
@@ -50,6 +51,15 @@
                     </view>
                     <text class="function-title">预约申请</text>
                     <text class="function-desc">申请实验室使用</text>
+                </view>
+
+                <!-- 报修服务 -->
+                <view class="function-item" @tap="goToRepair">
+                    <view class="function-icon">
+                        <image src="/static/images/icons/warning.svg" mode="aspectFit"></image>
+                    </view>
+                    <text class="function-title">报修服务</text>
+                    <text class="function-desc">提交设备与环境报修</text>
                 </view>
 
                 <!-- 待办流程 -->
@@ -263,6 +273,12 @@ const goToSchedulePreview = () => {
 const goToReservation = () => {
     uni.navigateTo({
         url: '/pages/teacher-reservation-apply/teacher-reservation-apply'
+    });
+};
+
+const goToRepair = () => {
+    uni.navigateTo({
+        url: '/pages/repair-service/repair-service'
     });
 };
 

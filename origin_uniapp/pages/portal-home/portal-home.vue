@@ -252,6 +252,11 @@ const openApp = (app: any) => {
     case '/ai/assistant':
       url = '/pages/ai-assistant/ai-assistant';
       break;
+    case '/repair':
+      url = role === 'admin'
+        ? '/pages/admin-repair-review/admin-repair-review'
+        : '/pages/repair-service/repair-service';
+      break;
     case '/admin/dashboard':
       url = '/pages/admin-workbench/admin-workbench';
       break;

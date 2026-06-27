@@ -11,6 +11,13 @@ spring:
       password: ${REDIS_PASSWORD:}
       database: ${REDIS_DATABASE:0}
       timeout: ${REDIS_TIMEOUT:2s}
+  rabbitmq:
+    host: ${RABBITMQ_HOST:localhost}
+    port: ${RABBITMQ_PORT:5672}
+    username: ${RABBITMQ_USERNAME:campus}
+    password: ${RABBITMQ_PASSWORD:campus_mq_pwd}
+    virtual-host: ${RABBITMQ_VIRTUAL_HOST:/}
+    connection-timeout: ${RABBITMQ_CONNECTION_TIMEOUT:3s}
 
 security:
   jwt:

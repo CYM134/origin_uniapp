@@ -1,10 +1,15 @@
 package com.companyleveltraining.backend.portal.calendar;
 
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
 
 import jakarta.validation.Valid;
 
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -24,6 +29,9 @@ import com.companyleveltraining.backend.portal.calendar.dto.CalendarEventSaveReq
 @RequestMapping("/api/portal/calendar")
 public class CalendarController {
 
+    private static final MediaType EXCEL_MEDIA_TYPE = MediaType.parseMediaType(
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+
     private final CalendarService service;
 
     public CalendarController(CalendarService service) {
@@ -39,6 +47,16 @@ public class CalendarController {
     @GetMapping("/upcoming")
     public List<CalendarEventResponse> upcoming(@RequestParam(defaultValue = "5") int limit) {
         return service.upcoming(SecurityUtils.currentUserId(), Math.min(Math.max(limit, 1), 20));
+    }
+
+    @GetMapping("/export")
+    public ResponseEntity<byte[]> export(@RequestParam String startDate, @RequestParam String endDate) {
+        String fileName = "我的日历-" + startDate + "-" + endDate + ".xlsx";
+        String encoded = URLEncoder.encode(fileName, StandardCharsets.UTF_8).replace("+", "%20");
+        return ResponseEntity.ok()
+            .contentType(EXCEL_MEDIA_TYPE)
+            .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename*=UTF-8''" + encoded)
+            .body(service.exportExcel(SecurityUtils.currentUserId(), startDate, endDate));
     }
 
     @PostMapping("/events")

@@ -1,6 +1,10 @@
 <template>
   <view class="page">
     <view class="hd">
+      <view class="hd-back" @tap="goBack">
+        <text class="hd-back-ico">‹</text>
+        <text class="hd-back-txt">返回</text>
+      </view>
       <view class="hd-row">
         <text class="hd-title">通知公告管理</text>
         <view class="hd-btn" @tap="openCreate">
@@ -203,6 +207,8 @@ import {
   deleteNotice
 } from '@/api/portal';
 import { getStoredUser, getStoredRole } from '@/api/storage';
+
+const goBack = () => uni.navigateBack({ delta: 1 });
 
 const loading = ref(false);
 const submitting = ref(false);

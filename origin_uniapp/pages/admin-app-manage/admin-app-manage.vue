@@ -2,6 +2,10 @@
   <view class="page">
     <!-- 顶部 header -->
     <view class="hd">
+      <view class="hd-back" @tap="goBack">
+        <text class="hd-back-ico">‹</text>
+        <text class="hd-back-txt">返回</text>
+      </view>
       <view class="hd-row">
         <view class="hd-texts">
           <text class="hd-title">应用管理</text>
@@ -226,6 +230,8 @@ import {
   setAppStatus,
   deleteApp,
 } from '@/api/portal';
+
+const goBack = () => uni.navigateBack({ delta: 1 });
 
 const loading = ref(false);
 const submitting = ref(false);

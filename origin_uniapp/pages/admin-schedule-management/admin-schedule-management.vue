@@ -21,7 +21,7 @@
                     <view class="section-title">选择学期</view>
                     <view class="custom-picker" @tap="showSemesterPicker">
                         <view class="picker">
-                            <text class="picker-text">{{ semesters[semesterIndex] }}</text>
+                            <text class="picker-text">{{ semesters[semesterIndex] || '请选择学期' }}</text>
                             <image class="arrow-icon" src="/static/images/icons/导入.png"></image>
                         </view>
                     </view>
@@ -58,6 +58,7 @@
                 <view class="button-group">
                     <button class="primary-btn" @tap="importSchedule" :disabled="!importFile">开始导入</button>
                     <button class="secondary-btn" @tap="previewTemplate">下载模板</button>
+                    <button class="secondary-btn" @tap="downloadDemo">下载示例课表</button>
                 </view>
             </view>
 
@@ -67,7 +68,7 @@
                     <view class="section-title">选择学期</view>
                     <view class="custom-picker" @tap="showExportSemesterPicker">
                         <view class="picker">
-                            <text class="picker-text">{{ semesters[exportSemesterIndex] }}</text>
+                            <text class="picker-text">{{ semesters[exportSemesterIndex] || '请选择学期' }}</text>
                         </view>
                     </view>
                 </view>
@@ -78,10 +79,6 @@
                         <label class="format-item">
                             <radio value="excel" :checked="exportFormat === 'excel'" />
                             <text>Excel格式(.xlsx)</text>
-                        </label>
-                        <label class="format-item">
-                            <radio value="pdf" :checked="exportFormat === 'pdf'" />
-                            <text>PDF格式(.pdf)</text>
                         </label>
                     </radio-group>
                 </view>
@@ -99,7 +96,7 @@
                         </label>
                         <label class="option-item">
                             <checkbox value="includeStudents" :checked="exportOptions.includeStudents" />
-                            <text>包含学生名单</text>
+                            <text>包含学生人数</text>
                         </label>
                     </checkbox-group>
                 </view>
@@ -134,7 +131,7 @@
                             <image :src="importSuccess ? '/static/images/icons/success.png' : '/static/images/icons/error.png'"></image>
                         </view>
                         <view class="result-message">{{ resultMessage }}</view>
-                        <view class="result-details" v-if="!importSuccess">
+                        <view class="result-details" v-if="errorDetails">
                             <text>错误详情：</text>
                             <text>{{ errorDetails }}</text>
                         </view>
@@ -195,21 +192,28 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted } from "vue";
-import navigationBar from "@/components/navigation-bar/navigation-bar.vue";
-import { getSemesters, createImportBatch, getImportBatch, createExportTask } from "@/api/admin";
+import { ref, reactive, onMounted } from 'vue';
+import navigationBar from '@/components/navigation-bar/navigation-bar.vue';
+import {
+    getSemesters,
+    importScheduleExcel,
+    downloadScheduleTemplate,
+    downloadScheduleDemoExcel,
+    downloadScheduleExcel
+} from '@/api/admin';
+
 const activeTab = ref("import");
-const semesters = ref([]);
-const semesterList = ref([]);
+const semesters = ref<string[]>([]);
+const semesterList = ref<any[]>([]);
 const loadSemesters = async () => {
     try {
         const list = await getSemesters();
         const arr = Array.isArray(list) ? list : [];
         semesterList.value = arr;
-        semesters.value = arr.map((item) => item.semesterName);
+        semesters.value = arr.map((item: any) => item.semesterName);
         if (semesterIndex.value >= semesters.value.length) semesterIndex.value = 0;
         if (exportSemesterIndex.value >= semesters.value.length) exportSemesterIndex.value = 0;
-    } catch (err) {
+    } catch (err: any) {
         semesterList.value = [];
         semesters.value = [];
         uni.showToast({ title: err?.data?.message || "加载失败", icon: "none" });
@@ -222,7 +226,7 @@ const showSemesterPickerModal = ref(false);
 const showExportSemesterPickerModal = ref(false);
 const tempSemesterIndex = ref(0);
 const tempExportSemesterIndex = ref(0);
-const importFile = ref(null);
+const importFile = ref<any>(null);
 const showProgressModal = ref(false);
 const importProgress = ref(0);
 const progressStatus = ref("准备导入...");
@@ -243,12 +247,185 @@ const onExportSemesterPickerChange = (e) => { tempExportSemesterIndex.value = e.
 const confirmExportSemesterPicker = () => { exportSemesterIndex.value = tempExportSemesterIndex.value; showExportSemesterPickerModal.value = false; };
 const onFormatChange = (e) => { exportFormat.value = e.detail.value; };
 const onExportOptionsChange = (e) => { const values = e.detail.value; exportOptions.includeRooms = values.includes("includeRooms"); exportOptions.includeTeachers = values.includes("includeTeachers"); exportOptions.includeStudents = values.includes("includeStudents"); };
-const chooseFile = () => { uni.showToast({ title: "选择文件功能开发中", icon: "none" }); setTimeout(() => { importFile.value = { name: "2023-2024-1学期课表.xlsx", size: "256KB", path: "temp/2023-2024-1.xlsx" }; }, 1000); };
-const previewTemplate = () => { uni.showToast({ title: "模板下载功能开发中", icon: "none" }); };
-const importSchedule = async () => { if (!importFile.value) { uni.showToast({ title: "请先选择文件", icon: "none" }); return; } showProgressModal.value = true; importProgress.value = 0; progressStatus.value = "准备导入..."; try { const semester = semesterList.value[semesterIndex.value]; const batch = await createImportBatch({ semesterId: semester?.id, fileName: importFile.value.name }); importProgress.value = 100; progressStatus.value = "完成导入..."; const success = batch?.status ? batch.status === "success" || batch.status === "completed" : true; setTimeout(() => { showProgressModal.value = false; showImportResult(success, batch); }, 500); } catch (err) { showProgressModal.value = false; showImportResult(false, { errorDetail: err?.data?.message || "加载失败" }); } };
-const showImportResult = (success, batch) => { let message = ""; let errDetails = ""; if (success) { message = (batch && batch.message) || "课表导入成功！"; } else { message = (batch && batch.message) || "课表导入失败"; errDetails = (batch && (batch.errorDetail || batch.errorDetails || batch.message)) || "导入失败，请检查Excel文件格式是否正确，并确保所有必填字段已填写。"; } showResultModal.value = true; importSuccess.value = success; resultMessage.value = message; errorDetails.value = errDetails; };
+
+const selectedImportSemester = () => semesterList.value[semesterIndex.value];
+const selectedExportSemester = () => semesterList.value[exportSemesterIndex.value];
+
+const formatFileSize = (size: any) => {
+    const bytes = Number(size) || 0;
+    if (!bytes) return '';
+    if (bytes < 1024) return `${bytes}B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)}KB`;
+    return `${(bytes / 1024 / 1024).toFixed(1)}MB`;
+};
+
+const setPickedFile = (file: any) => {
+    const path = file?.path || file?.tempFilePath;
+    if (!path) {
+        uni.showToast({ title: '无法读取文件路径', icon: 'none' });
+        return;
+    }
+    const name = file?.name || path.split('/').pop() || 'schedule.xlsx';
+    if (!/\.(xlsx|xls)$/i.test(name)) {
+        uni.showToast({ title: '请选择 .xlsx 或 .xls 文件', icon: 'none' });
+        return;
+    }
+    importFile.value = {
+        name,
+        size: file?.size,
+        sizeText: formatFileSize(file?.size),
+        path
+    };
+};
+
+const chooseFile = () => {
+    const chooseFileApi = (uni as any).chooseFile;
+    const chooseMessageFileApi = (uni as any).chooseMessageFile;
+    const onSuccess = (res: any) => {
+        const file = (res.tempFiles && res.tempFiles[0]) || {
+            path: res.tempFilePaths && res.tempFilePaths[0],
+            name: res.tempFilePaths && String(res.tempFilePaths[0]).split('/').pop()
+        };
+        setPickedFile(file);
+    };
+
+    if (typeof chooseFileApi === 'function') {
+        chooseFileApi({
+            count: 1,
+            type: 'file',
+            extension: ['.xlsx', '.xls', 'xlsx', 'xls'],
+            success: onSuccess
+        });
+        return;
+    }
+
+    if (typeof chooseMessageFileApi === 'function') {
+        chooseMessageFileApi({
+            count: 1,
+            type: 'file',
+            extension: ['xlsx', 'xls'],
+            success: onSuccess
+        });
+        return;
+    }
+
+    uni.showToast({ title: '当前平台不支持选择文件', icon: 'none' });
+};
+
+const previewTemplate = async () => {
+    try {
+        uni.showLoading({ title: '下载中...' });
+        await downloadScheduleTemplate();
+        uni.hideLoading();
+        uni.showToast({ title: '模板下载已开始', icon: 'success' });
+    } catch (err: any) {
+        uni.hideLoading();
+        uni.showToast({ title: err?.data?.message || '模板下载失败', icon: 'none' });
+    }
+};
+
+const downloadDemo = async () => {
+    try {
+        uni.showLoading({ title: '下载中...' });
+        await downloadScheduleDemoExcel();
+        uni.hideLoading();
+        uni.showToast({ title: '示例下载已开始', icon: 'success' });
+    } catch (err: any) {
+        uni.hideLoading();
+        uni.showToast({ title: err?.data?.message || '示例下载失败', icon: 'none' });
+    }
+};
+
+const importSchedule = async () => {
+    if (!importFile.value) {
+        uni.showToast({ title: "请先选择文件", icon: "none" });
+        return;
+    }
+    const semester = selectedImportSemester();
+    if (!semester?.id) {
+        uni.showToast({ title: "请先选择学期", icon: "none" });
+        return;
+    }
+
+    showProgressModal.value = true;
+    importProgress.value = 20;
+    progressStatus.value = "上传并解析Excel...";
+    try {
+        const batch: any = await importScheduleExcel({
+            semesterId: semester.id,
+            filePath: importFile.value.path,
+            fileName: importFile.value.name
+        });
+        importProgress.value = 100;
+        progressStatus.value = "完成导入...";
+        const successCount = Number(batch?.successCount) || 0;
+        const success = successCount > 0 && batch?.status !== 'failed';
+        setTimeout(() => {
+            showProgressModal.value = false;
+            showImportResult(success, batch);
+        }, 400);
+    } catch (err: any) {
+        showProgressModal.value = false;
+        showImportResult(false, { errorDetail: err?.data?.message || "导入失败" });
+    }
+};
+
+const showImportResult = (success, batch) => {
+    const successCount = Number(batch?.successCount) || 0;
+    const failureCount = Number(batch?.failureCount) || 0;
+    let message = "";
+    let errDetails = "";
+    if (success) {
+        message = batch?.message || `课表导入成功，共导入 ${successCount} 行`;
+        if (failureCount > 0) {
+            errDetails = batch?.errorDetails || "部分行导入失败，请检查Excel文件。";
+        }
+    } else {
+        message = batch?.message || "课表导入失败";
+        errDetails = batch?.errorDetail || batch?.errorDetails || "导入失败，请检查Excel文件格式是否正确，并确保所有必填字段已填写。";
+    }
+    showResultModal.value = true;
+    importSuccess.value = success;
+    resultMessage.value = message;
+    errorDetails.value = errDetails;
+};
 const hideResultModal = () => { showResultModal.value = false; if (importSuccess.value) { importFile.value = null; } };
-const exportSchedule = () => { let optionsText = []; if (exportOptions.includeRooms) { optionsText.push("教室信息"); } if (exportOptions.includeTeachers) { optionsText.push("教师信息"); } if (exportOptions.includeStudents) { optionsText.push("学生名单"); } const formatText = exportFormat.value === "excel" ? "Excel格式" : "PDF格式"; const optionsString = optionsText.length > 0 ? "，包含" + optionsText.join("、") : ""; uni.showModal({ title: "确认导出", content: "您将导出" + semesters.value[exportSemesterIndex.value] + "的课表，" + formatText + optionsString + "。确定继续吗？", confirmColor: "#3a7bd5", success: async (res) => { if (res.confirm) { uni.showLoading({ title: "导出中..." }); try { const semester = semesterList.value[exportSemesterIndex.value]; await createExportTask({ semesterId: semester?.id, exportFormat: exportFormat.value, includeRooms: exportOptions.includeRooms, includeTeachers: exportOptions.includeTeachers, includeStudents: exportOptions.includeStudents }); uni.hideLoading(); uni.showToast({ title: "导出成功", icon: "success" }); } catch (err) { uni.hideLoading(); uni.showToast({ title: err?.data?.message || "加载失败", icon: "none" }); } } } }); };
+
+const exportSchedule = () => {
+    const semester = selectedExportSemester();
+    if (!semester?.id) {
+        uni.showToast({ title: "请先选择学期", icon: "none" });
+        return;
+    }
+    let optionsText: string[] = [];
+    if (exportOptions.includeRooms) optionsText.push("教室信息");
+    if (exportOptions.includeTeachers) optionsText.push("教师信息");
+    if (exportOptions.includeStudents) optionsText.push("学生人数");
+    const optionsString = optionsText.length > 0 ? "，包含" + optionsText.join("、") : "";
+    uni.showModal({
+        title: "确认导出",
+        content: "您将导出" + (semester.semesterName || semesters.value[exportSemesterIndex.value]) + "的课表，Excel格式" + optionsString + "。确定继续吗？",
+        confirmColor: "#3a7bd5",
+        success: async (res) => {
+            if (!res.confirm) return;
+            uni.showLoading({ title: "导出中..." });
+            try {
+                await downloadScheduleExcel({
+                    semesterId: semester.id,
+                    includeRooms: exportOptions.includeRooms,
+                    includeTeachers: exportOptions.includeTeachers,
+                    includeStudents: exportOptions.includeStudents,
+                    fileName: `${semester.semesterName || '课表'}课表.xlsx`
+                });
+                uni.hideLoading();
+                uni.showToast({ title: "下载已开始", icon: "success" });
+            } catch (err: any) {
+                uni.hideLoading();
+                uni.showToast({ title: err?.data?.message || "导出失败", icon: "none" });
+            }
+        }
+    });
+};
 </script>
 <style lang="less">
 @import './admin-schedule-management.less';

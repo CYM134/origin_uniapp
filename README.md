@@ -24,8 +24,11 @@
 | 后端 | Java 17、Spring Boot 3.3、Spring Web、Spring Security、JWT |
 | 数据库 | MySQL 8 |
 | 缓存与会话 | Redis 7 |
+| 消息队列 | RabbitMQ |
+| 对象存储 | MinIO |
 | 数据访问 | JdbcTemplate、MyBatis |
 | 接口文档 | springdoc-openapi、Swagger UI |
+| 运维监控 | Spring Boot Actuator、Micrometer、Prometheus 指标 |
 | AI | OpenAI 兼容 Chat Completions 适配层，支持接入 DeepSeek 等兼容服务 |
 | 部署 | Docker、Docker Compose、Nginx |
 
@@ -99,6 +102,8 @@ docker compose ps
 ```text
 campus-mysql
 campus-redis
+campus-rabbitmq
+campus-minio
 campus-backend
 campus-nginx
 ```
@@ -113,6 +118,12 @@ campus-nginx
 | OpenAPI JSON | `http://localhost/v3/api-docs` |
 | 服务健康检查 | `http://localhost:8080/api/health` |
 | 数据库健康检查 | `http://localhost:8080/api/health/db` |
+| Actuator 健康检查 | `http://localhost/actuator/health` |
+| Prometheus 指标 | `http://localhost/actuator/prometheus` |
+| MinIO API | `http://localhost:9000` |
+| MinIO Console | `http://localhost:9001` |
+| RabbitMQ AMQP | `localhost:5672` |
+| RabbitMQ Management | `http://localhost:15672` |
 
 如果修改了 `.env` 中的端口，请以实际端口为准。
 
@@ -241,13 +252,92 @@ SPRING_PROFILES_ACTIVE=prod
 | `NGINX_HTML_DIR` | Nginx 托管的前端静态资源目录 |
 | `REDIS_CACHE_ENABLED` | 是否启用 Redis 缓存 |
 | `REDIS_AUTH_SESSION_ENABLED` | 是否启用 Redis JWT 会话校验 |
+| `RABBITMQ_AMQP_PORT` / `RABBITMQ_MANAGEMENT_PORT` | RabbitMQ AMQP 和管理后台端口 |
+| `RABBITMQ_USERNAME` / `RABBITMQ_PASSWORD` | RabbitMQ 账号和密码 |
+| `RABBITMQ_ENABLED` | 是否启用 RabbitMQ 通知队列 |
+| `RABBITMQ_NOTIFICATION_EXCHANGE` | 通知消息 exchange |
+| `RABBITMQ_NOTIFICATION_QUEUE` | 通知消息 queue |
+| `RABBITMQ_NOTIFICATION_ROUTING_KEY` | 通知消息 routing key |
+| `RATE_LIMIT_ENABLED` | 是否启用 Redis 接口限流 |
+| `RATE_LIMIT_LOGIN_PER_MINUTE` | 登录接口每 IP 每分钟允许请求数 |
+| `RATE_LIMIT_REGISTER_PER_FIVE_MINUTES` | 注册接口每 IP 每 5 分钟允许请求数 |
+| `RATE_LIMIT_AI_PER_MINUTE` | AI 问答接口每用户或 IP 每分钟允许请求数 |
+| `UPLOAD_MAX_FILE_SIZE` / `UPLOAD_MAX_REQUEST_SIZE` | 后端文件上传大小限制 |
+| `MINIO_API_PORT` / `MINIO_CONSOLE_PORT` | MinIO API 和控制台端口 |
+| `MINIO_ROOT_USER` / `MINIO_ROOT_PASSWORD` | MinIO 管理员账号和密码 |
+| `MINIO_ENABLED` | 是否启用对象存储 |
+| `MINIO_PUBLIC_ENDPOINT` | MinIO 外部访问地址配置，默认 `http://localhost:9000` |
+| `MINIO_BUCKET` | 文件上传使用的 bucket |
 | `JWT_SECRET` | JWT 签名密钥，部署时必须替换 |
 | `JWT_EXPIRATION_SECONDS` | JWT 有效期 |
 | `OPENAPI_ENABLED` / `SWAGGER_UI_ENABLED` | 是否启用接口文档 |
+| `MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE` | Actuator 暴露端点，默认 `health,info,prometheus` |
+| `MANAGEMENT_HEALTH_SHOW_DETAILS` | Actuator 健康检查详情显示策略，默认 `never` |
 | `AI_ENABLED` | 是否启用真实大模型调用 |
 | `AI_API_URL` / `AI_API_KEY` / `AI_MODEL` | OpenAI 兼容模型服务配置 |
 
 生产或公开环境中请务必修改默认数据库密码和 `JWT_SECRET`。
+
+## 消息队列
+
+项目已接入 RabbitMQ，用于异步处理站内通知。预约提交、教师审核、管理员终审等业务调用 `NotificationService.send` 后，会在事务提交后发布通知消息，消费者再写入 `notifications` 表。
+
+Docker Compose 启动后可访问 RabbitMQ 管理后台：
+
+```text
+http://localhost:15672
+```
+
+默认账号密码来自 `.env`：
+
+```text
+RABBITMQ_USERNAME=campus
+RABBITMQ_PASSWORD=campus_mq_pwd
+```
+
+当前通知队列配置：
+
+```text
+exchange:    campus.notification.exchange
+queue:       campus.notification.queue
+routing key: campus.notification.created
+```
+
+如果 RabbitMQ 临时不可用，后端会降级为直接写入通知表，避免影响预约和审核主流程。
+
+## 对象存储
+
+项目已接入 MinIO，用于承载头像、资讯封面、通知附件、实验室图片等文件资源。Docker Compose 启动后可访问：
+
+```text
+MinIO API:     http://localhost:9000
+MinIO Console: http://localhost:9001
+```
+
+默认账号密码来自 `.env`：
+
+```text
+MINIO_ROOT_USER=minioadmin
+MINIO_ROOT_PASSWORD=minioadmin123
+```
+
+后端上传接口：
+
+```text
+POST /api/storage/files
+```
+
+示例：
+
+```powershell
+curl.exe -H "Authorization: Bearer <accessToken>" -F "file=@README.md" http://localhost/api/storage/files
+```
+
+上传成功后会返回 `objectKey` 和 `url`，读取接口为：
+
+```text
+GET /api/storage/files/{objectKey}
+```
 
 ## 数据库初始化
 
@@ -260,6 +350,7 @@ backend/docs/sql/V2__notice_news.sql
 backend/docs/sql/V3__calendar_ai.sql
 backend/docs/sql/V4__init_portal_data.sql
 backend/docs/sql/V5__fix_portal_seed_encoding.sql
+backend/docs/sql/V6__repair_service.sql
 ```
 
 如果修改了初始化 SQL，但数据库数据卷已经存在，MySQL 不会自动重复执行初始化脚本。需要清空数据卷后重新启动：
@@ -279,11 +370,18 @@ docker compose up -d --build
 | --- | --- |
 | 管理员工作台缓存 | 缓存工作台摘要数据，减少重复统计查询 |
 | JWT 会话控制 | 登录写入 token 会话，退出登录、改密、禁用账号后可令旧 token 失效 |
+| 接口限流 | 对登录、注册、AI 问答等接口做 Redis 计数限流，超过阈值返回 429 |
 
 如需临时关闭 JWT 会话校验，可在 `.env` 中设置：
 
 ```text
 REDIS_AUTH_SESSION_ENABLED=false
+```
+
+如需临时关闭接口限流，可设置：
+
+```text
+RATE_LIMIT_ENABLED=false
 ```
 
 ## AI 问答
@@ -329,6 +427,17 @@ docker compose up -d --force-recreate backend
 | `NewsMapper` | 校园资讯分类、列表和详情查询 |
 
 写操作仍主要保留在现有服务中，避免一次性大迁移带来不必要风险。
+
+## 运维监控
+
+后端已接入 Spring Boot Actuator 和 Micrometer Prometheus 指标，默认通过 Nginx 暴露：
+
+```text
+http://localhost/actuator/health
+http://localhost/actuator/prometheus
+```
+
+`/actuator/health` 用于标准健康检查，`/actuator/prometheus` 可被 Prometheus 或兼容监控系统抓取。默认只暴露 `health`、`info`、`prometheus`，避免把过多内部端点直接开放。
 
 ## 常用命令
 

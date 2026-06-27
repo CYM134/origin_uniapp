@@ -1,6 +1,10 @@
 <template>
     <view class="page">
         <view class="hd">
+            <view class="hd-back" @tap="goBack">
+                <text class="hd-back-ico">‹</text>
+                <text class="hd-back-txt">返回</text>
+            </view>
             <text class="hd-title">AI 校园助手</text>
             <text class="hd-sub">智能问答 · 服务导航</text>
         </view>
@@ -78,6 +82,8 @@ import { ref, computed, nextTick } from 'vue';
 import { onLoad } from '@dcloudio/uni-app';
 import { aiChat } from '@/api/portal';
 import { getStoredRole } from '@/api/storage';
+
+const goBack = () => uni.navigateBack({ delta: 1 });
 
 interface ChatMsg {
     role: 'user' | 'assistant';

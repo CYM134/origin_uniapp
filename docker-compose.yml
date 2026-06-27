@@ -23,6 +23,7 @@ services:
       - ./backend/docs/sql/V3__calendar_ai.sql:/docker-entrypoint-initdb.d/03_calendar_ai.sql:ro
       - ./backend/docs/sql/V4__init_portal_data.sql:/docker-entrypoint-initdb.d/04_init_portal_data.sql:ro
       - ./backend/docs/sql/V5__fix_portal_seed_encoding.sql:/docker-entrypoint-initdb.d/05_fix_portal_seed_encoding.sql:ro
+      - ./backend/docs/sql/V6__repair_service.sql:/docker-entrypoint-initdb.d/06_repair_service.sql:ro
     healthcheck:
       test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p${MYSQL_ROOT_PASSWORD:-root_pwd} --silent"]
       interval: 10s
@@ -45,6 +46,41 @@ services:
       timeout: 5s
       retries: 10
 
+  minio:
+    image: minio/minio:latest
+    container_name: campus-minio
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minioadmin123}
+      TZ: Asia/Shanghai
+    ports:
+      - "${MINIO_API_PORT:-9000}:9000"
+      - "${MINIO_CONSOLE_PORT:-9001}:9001"
+    volumes:
+      - minio-data:/data
+
+  rabbitmq:
+    image: rabbitmq:3.13-management
+    container_name: campus-rabbitmq
+    restart: unless-stopped
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USERNAME:-campus}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:-campus_mq_pwd}
+      TZ: Asia/Shanghai
+    ports:
+      - "${RABBITMQ_AMQP_PORT:-5672}:5672"
+      - "${RABBITMQ_MANAGEMENT_PORT:-15672}:15672"
+    volumes:
+      - rabbitmq-data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
   backend:
     build:
       context: .
@@ -62,8 +98,31 @@ services:
       REDIS_CACHE_ENABLED: ${REDIS_CACHE_ENABLED:-true}
       REDIS_DASHBOARD_TTL_SECONDS: ${REDIS_DASHBOARD_TTL_SECONDS:-30}
       REDIS_AUTH_SESSION_ENABLED: ${REDIS_AUTH_SESSION_ENABLED:-true}
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USERNAME: ${RABBITMQ_USERNAME:-campus}
+      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD:-campus_mq_pwd}
+      RABBITMQ_VIRTUAL_HOST: ${RABBITMQ_VIRTUAL_HOST:-/}
+      RABBITMQ_ENABLED: ${RABBITMQ_ENABLED:-true}
+      RABBITMQ_NOTIFICATION_EXCHANGE: ${RABBITMQ_NOTIFICATION_EXCHANGE:-campus.notification.exchange}
+      RABBITMQ_NOTIFICATION_QUEUE: ${RABBITMQ_NOTIFICATION_QUEUE:-campus.notification.queue}
+      RABBITMQ_NOTIFICATION_ROUTING_KEY: ${RABBITMQ_NOTIFICATION_ROUTING_KEY:-campus.notification.created}
+      RATE_LIMIT_ENABLED: ${RATE_LIMIT_ENABLED:-true}
+      RATE_LIMIT_LOGIN_PER_MINUTE: ${RATE_LIMIT_LOGIN_PER_MINUTE:-10}
+      RATE_LIMIT_REGISTER_PER_FIVE_MINUTES: ${RATE_LIMIT_REGISTER_PER_FIVE_MINUTES:-5}
+      RATE_LIMIT_AI_PER_MINUTE: ${RATE_LIMIT_AI_PER_MINUTE:-30}
+      UPLOAD_MAX_FILE_SIZE: ${UPLOAD_MAX_FILE_SIZE:-20MB}
+      UPLOAD_MAX_REQUEST_SIZE: ${UPLOAD_MAX_REQUEST_SIZE:-20MB}
+      MINIO_ENABLED: ${MINIO_ENABLED:-true}
+      MINIO_ENDPOINT: http://minio:9000
+      MINIO_PUBLIC_ENDPOINT: ${MINIO_PUBLIC_ENDPOINT:-http://localhost:9000}
+      MINIO_ACCESS_KEY: ${MINIO_ROOT_USER:-minioadmin}
+      MINIO_SECRET_KEY: ${MINIO_ROOT_PASSWORD:-minioadmin123}
+      MINIO_BUCKET: ${MINIO_BUCKET:-campus-files}
       OPENAPI_ENABLED: ${OPENAPI_ENABLED:-true}
       SWAGGER_UI_ENABLED: ${SWAGGER_UI_ENABLED:-true}
+      MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE: ${MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE:-health,info,prometheus}
+      MANAGEMENT_HEALTH_SHOW_DETAILS: ${MANAGEMENT_HEALTH_SHOW_DETAILS:-never}
       JWT_SECRET: ${JWT_SECRET:-please-change-this-jwt-secret-at-least-32-chars}
       JWT_EXPIRATION_SECONDS: ${JWT_EXPIRATION_SECONDS:-86400}
       AI_ENABLED: ${AI_ENABLED:-false}
@@ -79,6 +138,10 @@ services:
       mysql:
         condition: service_healthy
       redis:
+        condition: service_healthy
+      minio:
+        condition: service_started
+      rabbitmq:
         condition: service_healthy
 
   nginx:
@@ -96,3 +159,5 @@ services:
 volumes:
   mysql-data:
   redis-data:
+  minio-data:
+  rabbitmq-data:

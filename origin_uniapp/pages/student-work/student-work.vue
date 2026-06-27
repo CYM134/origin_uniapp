@@ -1,6 +1,7 @@
 <template>
     <view class="page-wrapper">
         <!-- pages/student-work/student-work.wxml -->
+        <navigation-bar title="实验室预约管理" :back="true" color="white" background="#3B82F6"></navigation-bar>
         <view class="container">
             <!-- 欢迎信息 -->
             <view class="welcome-section">
@@ -51,6 +52,15 @@
                     </view>
                     <text class="function-title">预约申请</text>
                     <text class="function-desc">申请实验室使用</text>
+                </view>
+
+                <!-- 报修服务 -->
+                <view class="function-item" @tap="goToRepair">
+                    <view class="function-icon">
+                        <image src="/static/images/icons/warning.svg" mode="aspectFit"></image>
+                    </view>
+                    <text class="function-title">报修服务</text>
+                    <text class="function-desc">提交设备与环境报修</text>
                 </view>
 
                 <!-- 待办流程 -->
@@ -135,7 +145,7 @@ const loadStudentInfo = () => {
                 phone: info.phone || ''
             };
         }
-    } catch (error) {
+    } catch (error: any) {
         console.log('CatchClause', error);
         console.log('CatchClause', error);
         console.error('加载学生信息失败:', error);
@@ -168,7 +178,7 @@ const syncCurrentStudent = async () => {
             role: user.role,
             status: user.status
         };
-    } catch (error) {
+    } catch (error: any) {
         console.error('同步学生信息失败:', error);
     }
 };
@@ -181,7 +191,7 @@ const loadPendingCount = async () => {
         // 获取待办事项数量（待审核状态的申请，且属于当前登录学生）
         const stats: any = await getMyReservationStats();
         pendingCount.value = Number(stats?.todo) || 0;
-    } catch (error) {
+    } catch (error: any) {
         console.error('加载待办事项失败:', error);
         uni.showToast({ title: error?.data?.message || '加载失败', icon: 'none' });
         pendingCount.value = 0;
@@ -196,7 +206,7 @@ const loadNotificationCount = async () => {
         // 获取未读通知数量
         const res: any = await getUnreadCount();
         notificationCount.value = Number(res?.count) || 0;
-    } catch (error) {
+    } catch (error: any) {
         console.error('加载通知数量失败:', error);
         uni.showToast({ title: error?.data?.message || '加载失败', icon: 'none' });
         notificationCount.value = 0;
@@ -270,6 +280,12 @@ const goToSchedulePreview = () => {
 const goToReservation = () => {
     uni.navigateTo({
         url: '/pages/student-reservation-apply/student-reservation-apply'
+    });
+};
+
+const goToRepair = () => {
+    uni.navigateTo({
+        url: '/pages/repair-service/repair-service'
     });
 };
 

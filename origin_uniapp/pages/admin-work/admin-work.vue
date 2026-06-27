@@ -1,6 +1,7 @@
 ﻿<template>
     <view class="page-wrapper">
         <!-- admin-work.wxml -->
+        <navigation-bar title="实验室管理" :back="true" color="white" background="#F5A623"></navigation-bar>
         <view class="container">
             <view class="welcome">
                 <text>欢迎管理员：{{ username }}</text>
@@ -26,17 +27,6 @@
                     <view class="card-content">
                         <text class="card-title">实验室管理</text>
                         <text class="card-desc">添加、删除、修改实验室信息</text>
-                    </view>
-                </view>
-
-                <!-- 课表导入导出 -->
-                <view class="function-card" @tap="navigateToScheduleManagement">
-                    <view class="card-icon">
-                        <image src="/static/images/icons/schedule-icon.png" mode="aspectFit"></image>
-                    </view>
-                    <view class="card-content">
-                        <text class="card-title">课表管理</text>
-                        <text class="card-desc">批量导入课表，导出最终课表</text>
                     </view>
                 </view>
 
@@ -148,15 +138,6 @@ onLoad(() => {
 const navigateToLabManagement = () => {
     uni.navigateTo({
         url: '../admin-lab-management/admin-lab-management',
-        fail: () => {
-            uni.showToast({ title: '功能开发中', icon: 'none', duration: 2000 });
-        }
-    });
-};
-
-const navigateToScheduleManagement = () => {
-    uni.navigateTo({
-        url: '../admin-schedule-management/admin-schedule-management',
         fail: () => {
             uni.showToast({ title: '功能开发中', icon: 'none', duration: 2000 });
         }

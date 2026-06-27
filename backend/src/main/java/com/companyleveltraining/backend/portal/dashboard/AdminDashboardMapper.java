@@ -30,6 +30,9 @@ public interface AdminDashboardMapper {
     @Select("SELECT COUNT(*) FROM teacher_registration_applications WHERE status = 'pending'")
     long countPendingTeacherRegistrations();
 
+    @Select("SELECT COUNT(*) FROM repair_requests WHERE deleted_at IS NULL AND status = 'pending'")
+    long countPendingRepairs();
+
     @Select("""
         SELECT COUNT(*) FROM reservation_applications
         WHERE deleted_at IS NULL AND reserve_date = CURDATE()

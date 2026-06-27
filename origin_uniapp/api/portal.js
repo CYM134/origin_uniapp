@@ -1,4 +1,5 @@
-import { request } from '@/api/request';
+import { request, API_BASE_URL } from '@/api/request';
+import { getAccessToken } from '@/api/storage';
 
 // =====================================================================
 // 校园综合服务平台 - 门户 / 应用中心 / 通知公告 / 校园资讯 / 任务 / 消息 /
@@ -165,6 +166,69 @@ export function updateCalendarEvent(id, payload) {
 
 export function deleteCalendarEvent(id) {
     return request({ url: `/api/portal/calendar/events/${id}`, method: 'DELETE' });
+}
+
+export function downloadCalendarExcel(startDate, endDate, fileName) {
+    return downloadWithAuth(`/api/portal/calendar/export${buildQuery({ startDate, endDate })}`, fileName || '我的日历.xlsx');
+}
+
+function downloadWithAuth(url, fileName) {
+    const token = getAccessToken();
+    const fullUrl = `${API_BASE_URL}${url}`;
+    const headers = token ? { Authorization: `Bearer ${token}` } : {};
+
+    // #ifdef H5
+    return fetch(fullUrl, { headers })
+        .then(async (response) => {
+            if (!response.ok) {
+                const text = await response.text();
+                throw { statusCode: response.status, data: parseMaybeJson(text) || { message: '下载失败' } };
+            }
+            const blob = await response.blob();
+            const objectUrl = window.URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = objectUrl;
+            link.download = fileName;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            setTimeout(() => window.URL.revokeObjectURL(objectUrl), 1000);
+            return true;
+        });
+    // #endif
+
+    // #ifndef H5
+    return new Promise((resolve, reject) => {
+        uni.downloadFile({
+            url: fullUrl,
+            header: headers,
+            success: (response) => {
+                const statusCode = Number(response.statusCode) || 0;
+                if (statusCode < 200 || statusCode >= 300) {
+                    reject({ statusCode, data: { message: '下载失败' } });
+                    return;
+                }
+                uni.openDocument({
+                    filePath: response.tempFilePath,
+                    fileType: 'xlsx',
+                    showMenu: true,
+                    success: () => resolve(true),
+                    fail: (error) => reject({ statusCode: 0, data: { message: '文件打开失败' }, error })
+                });
+            },
+            fail: (error) => reject({ statusCode: 0, data: { message: '服务器连接失败' }, error })
+        });
+    });
+    // #endif
+}
+
+function parseMaybeJson(data) {
+    if (!data) return null;
+    try {
+        return typeof data === 'string' ? JSON.parse(data) : data;
+    } catch (e) {
+        return { message: String(data) };
+    }
 }
 
 // ============ AI 校园助手 ============

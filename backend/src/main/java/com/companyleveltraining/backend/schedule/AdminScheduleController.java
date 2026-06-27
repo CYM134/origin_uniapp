@@ -1,25 +1,34 @@
 package com.companyleveltraining.backend.schedule;
 
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
 
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
 import com.companyleveltraining.backend.audit.AuditLogService;
 import com.companyleveltraining.backend.common.SecurityUtils;
 
 /**
  * 管理员课表管理接口，对应 admin-schedule-management 的导入批次与导出任务。
- * 导入/导出为模拟实现（不解析真实 Excel）。
  */
 @RestController
 @RequestMapping("/api/admin/schedule")
 public class AdminScheduleController {
+
+    private static final MediaType EXCEL_MEDIA_TYPE = MediaType.parseMediaType(
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
 
     private final ScheduleService service;
     private final AuditLogService auditLogService;
@@ -47,6 +56,17 @@ public class AdminScheduleController {
         return batch;
     }
 
+    @PostMapping(value = "/import-excel", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public Map<String, Object> importExcel(@RequestParam Long semesterId,
+                                           @RequestParam(required = false) String fileName,
+                                           @RequestParam MultipartFile file) {
+        SecurityUtils.requireRole("admin");
+        Map<String, Object> batch = service.importExcel(semesterId, file, fileName, SecurityUtils.currentUserId());
+        auditLogService.record(SecurityUtils.currentUserId(), "admin", "schedule", "import",
+            "schedule_import_batches", toLong(batch.get("id")), null);
+        return batch;
+    }
+
     @GetMapping("/import-batches/{id}")
     public Map<String, Object> getImport(@PathVariable Long id) {
         SecurityUtils.requireRole("admin");
@@ -66,6 +86,32 @@ public class AdminScheduleController {
         auditLogService.record(SecurityUtils.currentUserId(), "admin", "schedule", "export",
             "schedule_export_tasks", toLong(task.get("id")), null);
         return task;
+    }
+
+    @GetMapping("/template")
+    public ResponseEntity<byte[]> downloadTemplate() {
+        SecurityUtils.requireRole("admin");
+        return excelResponse("课表导入模板.xlsx", service.buildImportTemplate());
+    }
+
+    @GetMapping("/demo-excel")
+    public ResponseEntity<byte[]> downloadDemoExcel() {
+        SecurityUtils.requireRole("admin");
+        return excelResponse("课表示例数据.xlsx", service.buildDemoScheduleExcel());
+    }
+
+    @GetMapping("/export-excel")
+    public ResponseEntity<byte[]> exportExcel(@RequestParam Long semesterId,
+                                              @RequestParam(defaultValue = "true") boolean includeRooms,
+                                              @RequestParam(defaultValue = "true") boolean includeTeachers,
+                                              @RequestParam(defaultValue = "false") boolean includeStudents) {
+        SecurityUtils.requireRole("admin");
+        Map<String, Object> task = service.createExportTask(semesterId, "excel", includeRooms, includeTeachers,
+            includeStudents, SecurityUtils.currentUserId());
+        auditLogService.record(SecurityUtils.currentUserId(), "admin", "schedule", "export",
+            "schedule_export_tasks", toLong(task.get("id")), null);
+        return excelResponse(service.buildExportFileName(semesterId), service.exportExcel(semesterId, includeRooms,
+            includeTeachers, includeStudents));
     }
 
     @GetMapping("/export-tasks/{id}")
@@ -96,5 +142,13 @@ public class AdminScheduleController {
             return b;
         }
         return Boolean.parseBoolean(String.valueOf(value));
+    }
+
+    private ResponseEntity<byte[]> excelResponse(String fileName, byte[] content) {
+        String encoded = URLEncoder.encode(fileName, StandardCharsets.UTF_8).replace("+", "%20");
+        return ResponseEntity.ok()
+            .contentType(EXCEL_MEDIA_TYPE)
+            .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename*=UTF-8''" + encoded)
+            .body(content);
     }
 }

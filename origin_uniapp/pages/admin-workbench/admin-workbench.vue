@@ -183,6 +183,7 @@ const statCells = computed(() => {
   return [
     { label: '待办预约', value: Number(s.pendingReservations) || 0 },
     { label: '待教师初审', value: Number(s.pendingTeacherReviews) || 0 },
+    { label: '待审报修', value: Number(s.pendingRepairs) || 0 },
     { label: '今日预约', value: Number(s.todayReservations) || 0 },
     { label: '本周预约', value: Number(s.weekReservations) || 0 },
     { label: '实验室', value: Number(s.totalLabs) || 0 },
@@ -213,6 +214,7 @@ const entries = computed(() => {
   const pendingTeacherReviews = Number(s.pendingTeacherReviews) || 0;
   const pendingReservationApprovals = pendingReservations + pendingTeacherReviews;
   const pendingTeacherRegistrations = Number(s.pendingTeacherRegistrations) || 0;
+  const pendingRepairs = Number(s.pendingRepairs) || 0;
   return [
     { emoji: '📱', text: '应用管理', url: '/pages/admin-app-manage/admin-app-manage' },
     { emoji: '📢', text: '通知管理', url: '/pages/admin-notice-manage/admin-notice-manage' },
@@ -223,6 +225,14 @@ const entries = computed(() => {
       url: '/pages/admin-work/admin-work',
       badge: pendingReservationApprovals,
       alert: pendingReservationApprovals > 0
+    },
+    { emoji: '📅', text: '课表管理', url: '/pages/admin-schedule-management/admin-schedule-management' },
+    {
+      emoji: '🛠',
+      text: '报修审核',
+      url: '/pages/admin-repair-review/admin-repair-review',
+      badge: pendingRepairs,
+      alert: pendingRepairs > 0
     },
     {
       emoji: '👨‍🏫',
