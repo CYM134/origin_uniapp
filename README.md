@@ -18,6 +18,10 @@
 
 ## 技术架构
 
+![系统总体架构图](deploy/docs/architecture.png)
+
+系统整体分为四层：客户端（浏览器 / 微信小程序 / App）经 Nginx 接入，Nginx 托管前端 H5 静态资源并将 `/api`、`/actuator`、`/swagger` 反向代理到 Spring Boot 后端，后端再连接 MySQL、Redis、RabbitMQ、MinIO 等数据与中间件组件。
+
 | 层次 | 技术 |
 | --- | --- |
 | 前端 | uni-app、Vue、JavaScript、Less |

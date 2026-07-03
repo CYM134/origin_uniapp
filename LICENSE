@@ -1,0 +1,36 @@
+MIT License
+
+Copyright (c) 2026 校园综合服务平台项目组 (Campus Service Platform Team)
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+--------------------------------------------------------------------------------
+
+说明 / Note:
+
+本项目为高校「人工智能专业综合实践」课程的实训作业，由本项目组独立开发，
+以 MIT 协议开源，欢迎学习与参考。
+
+This project is a coursework deliverable for the "AI Major Comprehensive
+Practice" training course, independently developed by our team and released
+under the MIT License for learning and reference.
+
+严禁将本仓库直接下载后作为你自己的课程作业提交；如需引用，请注明来源。
+You may NOT submit this repository directly as your own coursework. If you
+reference any part of it, please cite the source.
