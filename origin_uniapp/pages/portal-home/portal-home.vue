@@ -1,18 +1,20 @@
 <template>
   <view class="page">
-    <!-- 顶部 accent 渐变 header -->
-    <view class="hd">
-      <view class="hd-left">
-        <text class="hd-title">校园综合服务平台</text>
-        <text class="hd-sub">欢迎，{{ userName }}（{{ roleName }}）</text>
+    <!-- 顶部问候（白底，深色文字，避开状态栏与右上角胶囊）-->
+    <view class="top" :style="{ paddingTop: statusBarH + 'px' }">
+      <view class="top-nav">
+        <text class="greet">{{ greeting }}，<text class="greet-name">{{ userName }}</text></text>
       </view>
-      <view class="hd-actions">
-        <view class="hd-msg" @tap="goMessages">
-          <text class="hd-msg-icon">消息</text>
-          <view v-if="unreadMessages > 0" class="hd-badge">{{ unreadMessages > 99 ? '99+' : unreadMessages }}</view>
-        </view>
-        <view class="hd-logout" @tap="logout">
-          <text class="hd-logout-text">退出</text>
+      <view class="top-sub">
+        <text class="sub-meta">{{ todayLabel }} · {{ roleName }}</text>
+        <view class="sub-acts">
+          <view class="chip" hover-class="tap" @tap="goMessages">
+            <text class="chip-t">消息</text>
+            <view v-if="unreadMessages > 0" class="chip-dot">{{ unreadMessages > 99 ? '99+' : unreadMessages }}</view>
+          </view>
+          <view class="chip" hover-class="tap" @tap="logout">
+            <text class="chip-t">退出</text>
+          </view>
         </view>
       </view>
     </view>
@@ -24,25 +26,28 @@
       <block v-else>
         <!-- 快捷入口行 -->
         <view class="quick-row">
-          <view class="quick-item" @tap="goReservation">
-            <text class="quick-emoji">🔬</text>
-            <text class="quick-text">实验室预约管理</text>
+          <view class="quick-item q-lab" hover-class="tap-press" @tap="goReservation">
+            <view class="quick-disc"><text class="quick-emoji">🔬</text></view>
+            <text class="quick-text">实验室预约</text>
           </view>
-          <view class="quick-item" @tap="goAppCenter">
-            <text class="quick-emoji">📱</text>
+          <view class="quick-item q-app" hover-class="tap-press" @tap="goAppCenter">
+            <view class="quick-disc"><text class="quick-emoji">📱</text></view>
             <text class="quick-text">应用中心</text>
           </view>
-          <view class="quick-item" @tap="goNotices">
-            <text class="quick-emoji">📢</text>
+          <view class="quick-item q-notice" hover-class="tap-press" @tap="goNotices">
+            <view class="quick-disc"><text class="quick-emoji">📢</text></view>
             <text class="quick-text">通知公告</text>
           </view>
-          <view class="quick-item" @tap="goCalendar">
-            <text class="quick-emoji">📅</text>
+          <view class="quick-item q-cal" hover-class="tap-press" @tap="goCalendar">
+            <view class="quick-disc"><text class="quick-emoji">📅</text></view>
             <text class="quick-text">我的日历</text>
           </view>
-          <view v-if="showTaskEntry" class="quick-item" @tap="goTasks">
-            <text class="quick-emoji">✅</text>
-            <text class="quick-text">任务中心({{ pendingTaskCount }})</text>
+          <view v-if="showTaskEntry" class="quick-item q-task" hover-class="tap-press" @tap="goTasks">
+            <view class="quick-disc">
+              <text class="quick-emoji">✅</text>
+              <view v-if="pendingTaskCount > 0" class="quick-badge">{{ pendingTaskCount > 99 ? '99+' : pendingTaskCount }}</view>
+            </view>
+            <text class="quick-text">任务中心</text>
           </view>
         </view>
 
@@ -52,7 +57,7 @@
             <text class="section-title">我的应用</text>
           </view>
           <view v-if="(myApps?.length || 0) > 0" class="app-grid">
-            <view class="app-cell" v-for="app in myApps" :key="app.id" @tap="openApp(app)">
+            <view class="app-cell" hover-class="tap-press" v-for="app in myApps" :key="app.id" @tap="openApp(app)">
               <view class="app-icon">{{ appGlyph(app) }}</view>
               <text class="app-name">{{ app.appName }}</text>
             </view>
@@ -69,7 +74,7 @@
             <text class="section-title">最新应用</text>
           </view>
           <view class="app-grid">
-            <view class="app-cell" v-for="app in latestApps" :key="app.id" @tap="openApp(app)">
+            <view class="app-cell" hover-class="tap-press" v-for="app in latestApps" :key="app.id" @tap="openApp(app)">
               <view class="app-icon">{{ appGlyph(app) }}</view>
               <text class="app-name">{{ app.appName }}</text>
             </view>
@@ -82,7 +87,7 @@
             <text class="section-title">热门应用</text>
           </view>
           <view class="app-grid">
-            <view class="app-cell" v-for="app in hotApps" :key="app.id" @tap="openApp(app)">
+            <view class="app-cell" hover-class="tap-press" v-for="app in hotApps" :key="app.id" @tap="openApp(app)">
               <view class="app-icon">{{ appGlyph(app) }}</view>
               <text class="app-name">{{ app.appName }}</text>
             </view>
@@ -93,7 +98,7 @@
         <view class="section">
           <view class="section-hd">
             <text class="section-title">通知公告</text>
-            <text class="section-more" @tap="goNotices">更多</text>
+            <text class="section-more" hover-class="tap" @tap="goNotices">更多</text>
           </view>
           <view v-if="(topNotices?.length || 0) > 0" class="list">
             <view class="notice-item" v-for="n in topNotices" :key="n.id" @tap="openNotice(n)">
@@ -112,7 +117,7 @@
         <view class="section">
           <view class="section-hd">
             <text class="section-title">校园资讯</text>
-            <text class="section-more" @tap="goNews">更多</text>
+            <text class="section-more" hover-class="tap" @tap="goNews">更多</text>
           </view>
           <view v-if="(topNews?.length || 0) > 0" class="list">
             <view class="news-item" v-for="item in topNews" :key="item.id" @tap="openNews(item)">
@@ -142,7 +147,7 @@
     </view>
 
     <!-- AI 悬浮按钮 -->
-    <view class="fab-ai" @tap="goAi"><text class="fab-ai-text">AI</text></view>
+    <view class="fab-ai" hover-class="tap" @tap="goAi"><text class="fab-ai-text">AI</text></view>
   </view>
 </template>
 
@@ -164,10 +169,37 @@ const unreadMessages = ref<number>(0);
 const upcomingEvents = ref<any[]>([]);
 const pendingTaskCount = ref<number>(0);
 
+// 自定义导航（navigationStyle: custom）：用状态栏高度把内容压到状态栏之下，
+// 导航行 padding-right 给右上角胶囊留白，不与之重叠。
+const statusBarH = ref<number>(20);
+try {
+  statusBarH.value = uni.getSystemInfoSync().statusBarHeight || 20;
+} catch (e) { /* ignore */ }
+
 const ROLE_TEXT: Record<string, string> = { student: '学生', teacher: '教师', admin: '管理员' };
 
 const userName = computed(() => user.value?.name || user.value?.realName || '同学');
 const roleName = computed(() => ROLE_TEXT[user.value?.role || getStoredRole() || ''] || '用户');
+
+// ====== 顶部「今日概览」面板数据 ======
+const isStaff = computed(() => {
+  const r = user.value?.role || getStoredRole();
+  return r === 'teacher' || r === 'admin';
+});
+const eventCount = computed(() => (upcomingEvents.value || []).length);
+const greeting = computed(() => {
+  const h = new Date().getHours();
+  if (h < 6) return '夜深了';
+  if (h < 11) return '上午好';
+  if (h < 13) return '中午好';
+  if (h < 18) return '下午好';
+  return '晚上好';
+});
+const WEEK = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
+const todayLabel = computed(() => {
+  const d = new Date();
+  return `${d.getMonth() + 1}月${d.getDate()}日 ${WEEK[d.getDay()]}`;
+});
 
 const topNotices = computed(() => (notices.value || []).slice(0, 5));
 const topNews = computed(() => (news.value || []).slice(0, 5));
@@ -177,8 +209,13 @@ const showTaskEntry = computed(() => {
 });
 
 const appGlyph = (app: any): string => {
-  if (app?.icon) return app.icon;
-  const name = app?.appName || '';
+  const icon = (app?.icon || '').trim();
+  const chars = [...icon];
+  // 仅当 icon 是单个字符或纯 emoji（无英文字母）时直接展示；
+  // 形如 "calendar"、"news"、"ai" 等图标名或 URL 一律回退到应用名首字，避免撑破图标框
+  const isGlyph = chars.length === 1 || (chars.length <= 2 && !/[a-zA-Z]/.test(icon));
+  if (icon && isGlyph) return icon;
+  const name = (app?.appName || '').trim();
   return name ? name.charAt(0) : '应';
 };
 
@@ -328,8 +365,14 @@ onShow(() => {
 });
 
 onPullDownRefresh(async () => {
-  await loadHome();
-  uni.stopPullDownRefresh();
+  // 兜底：无论 loadHome 成功、失败还是卡住，最多 3 秒后一定收回刷新，避免卡死
+  const timer = setTimeout(() => uni.stopPullDownRefresh(), 3000);
+  try {
+    await loadHome();
+  } finally {
+    clearTimeout(timer);
+    uni.stopPullDownRefresh();
+  }
 });
 </script>
 

@@ -1,8 +1,12 @@
 // portal-home.less —— 师生门户首页
-// 角色主色：student #3B82F6 / teacher #10B981 / admin #F5A623。
-// 首页面向全角色，统一采用学生主色 #3B82F6 作为门户 accent。
-@accent: #3B82F6;
-@accent-2: #2563EB;
+// 设计方向：以门户蓝为锚（较原 #3B82F6 加深为更具机构感的靛蓝），
+// 引入角色体系里已有的暖金 #F5A623 作为「注意力」点缀，串联三角色配色。
+// 签名元素：顶部「今日概览」面板（问候 + 角色徽章 + 真实数据状态条）。
+
+@accent:   #2D5BE3;   // 门户主蓝（加深）
+@accent-2: #1B3FB8;   // 渐变深端
+@spark:    #F5A623;   // 暖金点缀
+@spark-2:  #E8890B;
 
 @text: #1F2937;
 @text-2: #6B7280;
@@ -11,82 +15,84 @@
 @border: #EEF0F4;
 @soft: #F8F9FC;
 
-@pending: #D97706;
-@pending-bg: #FEF3C7;
-@success: #059669;
-@success-bg: #D1FAE5;
 @error: #DC2626;
 @error-bg: #FEE2E2;
-@info: #1D6FDB;
-@info-bg: #DBEAFE;
 
 .page {
   min-height: 100vh;
   position: relative;
+  background: @soft;
 }
 
-/* ====== 顶部 header ====== */
-.hd {
-  background: linear-gradient(135deg, @accent 0%, @accent-2 100%);
-  padding: 60rpx 32rpx 32rpx;
+/* ====== 顶部问候区（白底，无蓝色页眉）====== */
+.top {
+  /* padding-top 由内联 statusBarH 提供，内容落到状态栏之下 */
+  padding: 0 32rpx 6rpx;
+}
+
+/* 导航行：与右上角胶囊同高，问候左对齐；右侧留白避让胶囊 */
+.top-nav {
+  min-height: 72rpx;
   display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
+  align-items: center;
+  padding-right: 200rpx;
 }
 
-.hd-left {
-  display: flex;
-  flex-direction: column;
-  flex: 1;
-  min-width: 0;
-}
-
-.hd-title {
-  color: #fff;
+.greet {
+  color: @text;
   font-size: 40rpx;
   font-weight: 700;
-  line-height: 1.3;
+  line-height: 1.25;
 }
 
-.hd-sub {
-  color: rgba(255, 255, 255, 0.88);
+/* 名字用主色点一下，作为唯一重音 */
+.greet-name {
+  color: @accent;
+}
+
+/* 副行：日期·角色（左），消息 / 退出（右）*/
+.top-sub {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 12rpx;
+}
+
+.sub-meta {
+  color: @text-2;
   font-size: 24rpx;
-  margin-top: 10rpx;
 }
 
-.hd-actions {
+.sub-acts {
   display: flex;
   align-items: center;
   gap: 12rpx;
-  margin-left: 20rpx;
   flex-shrink: 0;
 }
 
-.hd-msg,
-.hd-logout {
+.chip {
   position: relative;
-  padding: 8rpx 20rpx;
-  background: rgba(255, 255, 255, 0.2);
+  padding: 8rpx 24rpx;
+  background: #EEF1F7;
   border-radius: 999rpx;
 }
 
-.hd-msg-icon,
-.hd-logout-text {
-  color: #fff;
+.chip-t {
+  color: @text-2;
   font-size: 24rpx;
 }
 
-.hd-badge {
+.chip-dot {
   position: absolute;
-  top: -10rpx;
-  right: -10rpx;
-  min-width: 32rpx;
-  height: 32rpx;
+  top: -8rpx;
+  right: -8rpx;
+  min-width: 30rpx;
+  height: 30rpx;
   padding: 0 8rpx;
   background: @error;
   color: #fff;
-  font-size: 20rpx;
-  line-height: 32rpx;
+  font-size: 18rpx;
+  line-height: 30rpx;
   text-align: center;
   border-radius: 999rpx;
   box-sizing: border-box;
@@ -111,14 +117,14 @@
   padding: 40rpx 0;
 }
 
-/* ====== 快捷入口 ====== */
+/* ====== 快捷入口（彩色圆盘 + 语义配色）====== */
 .quick-row {
   display: flex;
   flex-wrap: wrap;
   background: @card;
-  border-radius: 16rpx;
-  padding: 24rpx 12rpx;
-  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.04);
+  border-radius: 20rpx;
+  padding: 28rpx 8rpx 18rpx;
+  box-shadow: 0 6rpx 20rpx rgba(29, 63, 184, 0.05);
   margin-bottom: 20rpx;
 }
 
@@ -127,28 +133,62 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 12rpx 4rpx;
+  padding: 10rpx 4rpx;
   box-sizing: border-box;
 }
 
+.quick-disc {
+  position: relative;
+  width: 96rpx;
+  height: 96rpx;
+  border-radius: 28rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #E8F1FF;
+}
+
 .quick-emoji {
-  font-size: 48rpx;
-  line-height: 1.1;
+  font-size: 46rpx;
+  line-height: 1;
+}
+
+/* 语义配色：每个服务一个可辨识的身份 */
+.q-lab    .quick-disc { background: #E8F1FF; }
+.q-app    .quick-disc { background: #F0EBFE; }
+.q-notice .quick-disc { background: #FEF3DC; }
+.q-cal    .quick-disc { background: #E1F7F1; }
+.q-task   .quick-disc { background: #FDE7E9; }
+
+.quick-badge {
+  position: absolute;
+  top: -8rpx;
+  right: -8rpx;
+  min-width: 30rpx;
+  height: 30rpx;
+  padding: 0 8rpx;
+  background: @spark;
+  color: #fff;
+  font-size: 18rpx;
+  line-height: 30rpx;
+  text-align: center;
+  border-radius: 999rpx;
+  box-sizing: border-box;
 }
 
 .quick-text {
   font-size: 22rpx;
   color: @text;
-  margin-top: 10rpx;
+  margin-top: 14rpx;
   text-align: center;
 }
 
 /* ====== 通用区块 ====== */
 .section {
   background: @card;
-  border-radius: 16rpx;
-  padding: 24rpx;
-  box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.04);
+  border-radius: 20rpx;
+  padding: 26rpx 24rpx;
+  box-shadow: 0 6rpx 20rpx rgba(29, 63, 184, 0.05);
   margin-bottom: 20rpx;
 }
 
@@ -156,26 +196,27 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 16rpx;
+  margin-bottom: 18rpx;
 }
 
 .section-title {
   font-size: 30rpx;
   font-weight: 700;
   color: @text;
+  letter-spacing: 0.5rpx;
   position: relative;
-  padding-left: 18rpx;
+  padding-left: 20rpx;
 }
 
 .section-title::before {
   content: '';
   position: absolute;
   left: 0;
-  top: 6rpx;
-  bottom: 6rpx;
-  width: 6rpx;
+  top: 4rpx;
+  bottom: 4rpx;
+  width: 8rpx;
   border-radius: 4rpx;
-  background: @accent;
+  background: linear-gradient(180deg, @accent 0%, @accent-2 100%);
 }
 
 .section-more {
@@ -183,7 +224,7 @@
   color: @accent;
 }
 
-/* ====== 应用宫格 ====== */
+/* ====== 应用宫格（圆角方 + 渐变微光字母章）====== */
 .app-grid {
   display: flex;
   flex-wrap: wrap;
@@ -199,22 +240,39 @@
 }
 
 .app-icon {
-  width: 88rpx;
-  height: 88rpx;
-  border-radius: 20rpx;
-  background: @info-bg;
-  color: @accent;
-  font-size: 38rpx;
+  width: 92rpx;
+  height: 92rpx;
+  border-radius: 26rpx;
+  font-size: 40rpx;
   font-weight: 700;
+  line-height: 1;
   display: flex;
   align-items: center;
   justify-content: center;
+  overflow: hidden;
+  /* 默认蓝色调，下面按列位轮换四色 */
+  background: linear-gradient(135deg, #EAF1FF 0%, #DCE8FF 100%);
+  color: @accent;
+}
+
+/* 四色轮换：给字母章一点生气，又保持低饱和的克制 */
+.app-cell:nth-child(4n + 2) .app-icon {
+  background: linear-gradient(135deg, #F0EBFE 0%, #E7DEFD 100%);
+  color: #7C3AED;
+}
+.app-cell:nth-child(4n + 3) .app-icon {
+  background: linear-gradient(135deg, #E1F7F1 0%, #D2F1E7 100%);
+  color: #0F9488;
+}
+.app-cell:nth-child(4n + 4) .app-icon {
+  background: linear-gradient(135deg, #FEF3DC 0%, #FCE9C2 100%);
+  color: #C87A0A;
 }
 
 .app-name {
   font-size: 22rpx;
   color: @text;
-  margin-top: 12rpx;
+  margin-top: 14rpx;
   text-align: center;
   width: 100%;
   overflow: hidden;
@@ -227,7 +285,7 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 24rpx 0 8rpx;
+  padding: 28rpx 0 12rpx;
 }
 
 .empty-fav-tip {
@@ -239,7 +297,7 @@
 .empty-fav-btn {
   font-size: 26rpx;
   color: #fff;
-  background: @accent;
+  background: linear-gradient(135deg, @accent 0%, @accent-2 100%);
   padding: 16rpx 36rpx;
   border-radius: 999rpx;
 }
@@ -267,8 +325,8 @@
 
 .tag-top {
   font-size: 20rpx;
-  color: @error;
-  background: @error-bg;
+  color: @spark-2;
+  background: #FEF3DC;
   padding: 2rpx 10rpx;
   border-radius: 6rpx;
   margin-right: 12rpx;
@@ -339,12 +397,24 @@
   margin-top: 8rpx;
 }
 
-/* 日程 */
+/* 日程：左侧一道竖线，像日历里的时间块 */
 .event-item {
   display: flex;
   flex-direction: column;
-  padding: 18rpx 0;
+  padding: 16rpx 0 16rpx 22rpx;
   border-bottom: 2rpx solid @border;
+  position: relative;
+}
+
+.event-item::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 18rpx;
+  bottom: 18rpx;
+  width: 6rpx;
+  border-radius: 4rpx;
+  background: @accent;
 }
 
 .event-item:last-child {
@@ -381,8 +451,20 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 8rpx 24rpx rgba(59, 130, 246, 0.45);
+  box-shadow: 0 10rpx 26rpx rgba(29, 63, 184, 0.42);
   z-index: 99;
+}
+
+/* 金色描边一圈，让 AI 入口与状态条的点缀色呼应 */
+.fab-ai::after {
+  content: '';
+  position: absolute;
+  left: 6rpx;
+  right: 6rpx;
+  top: 6rpx;
+  bottom: 6rpx;
+  border-radius: 50%;
+  border: 2rpx solid rgba(245, 166, 35, 0.55);
 }
 
 .fab-ai-text {
@@ -390,4 +472,14 @@
   font-size: 34rpx;
   font-weight: 700;
   letter-spacing: 2rpx;
+}
+
+/* ====== 按压反馈（uni-app hover-class）====== */
+.tap {
+  opacity: 0.7;
+}
+
+.tap-press {
+  transform: scale(0.94);
+  opacity: 0.88;
 }

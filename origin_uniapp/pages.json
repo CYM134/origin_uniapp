@@ -146,7 +146,7 @@
 			"path": "pages/portal-home/portal-home",
 			"style": {
 				"navigationStyle": "custom",
-				"enablePullDownRefresh": true
+				"enablePullDownRefresh": false
 			}
 		},
 		{
