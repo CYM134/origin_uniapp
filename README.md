@@ -199,7 +199,7 @@ origin_uniapp/api/request.js
 3. 发行成功后，产物会生成在：
 
    ```text
-   origin_uniapp/origin_uniapp/unpackage/dist/build/h5
+   origin_uniapp/origin_uniapp/unpackage/dist/build/web
    ```
 
    > 注意工程是**两层 `origin_uniapp/origin_uniapp`** 目录结构，产物在内层。
@@ -216,7 +216,7 @@ NGINX_HTML_DIR=./deploy/html
 改为指向上一步的产物目录：
 
 ```text
-NGINX_HTML_DIR=./origin_uniapp/origin_uniapp/unpackage/dist/build/h5
+NGINX_HTML_DIR=./origin_uniapp/origin_uniapp/unpackage/dist/build/web
 ```
 
 重启 Nginx 使其重新挂载：
@@ -244,7 +244,7 @@ Nginx 已配置单页应用回退（`try_files $uri $uri/ /index.html`）与 `/a
 #### 常见问题
 
 - **页面空白 / 资源 404**：多为 `NGINX_HTML_DIR` 指向了错误层级（少写一层
-  `origin_uniapp`），或发行产物目录为空。确认内层 `unpackage/dist/build/h5/index.html` 存在。
+  `origin_uniapp`），或发行产物目录为空。确认内层 `unpackage/dist/build/web/index.html` 存在。
 - **接口请求跨域或连不上**：确认后端容器在运行、Nginx 的反向代理段生效；
   直接用 HBuilderX「运行到浏览器」调试时，请求的是 `http://localhost:8080`，需后端已启动。
 - **改了代码 H5 没更新**：H5 是发行时快照，改完前端需**重新发行**并刷新（必要时强制刷新清缓存）。

@@ -1,0 +1,1 @@
+import{h as a}from"./index-D91SKzw1.js";import{r as t,s,c as r}from"./request.BaFAMU92.js";function e(a){return t({url:"/api/auth/login",method:"POST",data:a,auth:!1,skipAuthRedirect:!0})}async function n(){const r=await t({url:"/api/auth/me",method:"GET"}),e=a("accessToken")||"";return e&&s(e,r),r}function o(){r()}export{o as a,n as f,e as l};

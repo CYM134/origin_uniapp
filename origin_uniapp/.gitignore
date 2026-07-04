@@ -3,3 +3,13 @@ unpackage/
 dist/
 .DS_Store
 *.log
+
+# 保留 H5 发行产物（供交付/部署，别人无需装 HBuilderX 即可用 Nginx 托管）
+!unpackage/
+unpackage/*
+!unpackage/dist/
+unpackage/dist/*
+!unpackage/dist/build/
+unpackage/dist/build/*
+!unpackage/dist/build/web/
+!unpackage/dist/build/web/**
