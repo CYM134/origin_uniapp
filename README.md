@@ -1,8 +1,8 @@
-# 基于 APP/H5/小程序融合架构的实验室空间预约与协同管理系统
+# 基于 H5/小程序的实验室空间预约与协同管理系统
 
-本项目是一套基于 APP/H5/小程序融合架构的实验室空间预约与协同管理系统，采用 uni-app 一套代码多端发布，面向学生、教师和管理员提供统一登录、实验室空间预约、通知公告、校园资讯、日程待办、AI 问答、协同服务工作台等功能。
+本项目是一套基于 H5/小程序的实验室空间预约与协同管理系统，前端采用 uni-app 一套代码多端开发，本期以 H5 与微信小程序为交付端（架构可拓展至 App 端），面向学生、教师和管理员提供统一登录、实验室空间预约、通知公告、校园资讯、日程待办、AI 问答、协同服务工作台等功能。
 
-项目包含 uni-app 前端（H5 / 微信小程序 / Android / iOS / 平板）、Spring Boot 后端、MySQL 数据库、Redis 缓存与会话控制、Nginx 静态资源托管与反向代理，并提供 Docker Compose 一键启动环境。
+项目包含 uni-app 前端（H5 / 微信小程序，架构可拓展至 App）、Spring Boot 后端、MySQL 数据库、Redis 缓存与会话控制、Nginx 静态资源托管与反向代理，并提供 Docker Compose 一键启动环境。
 
 ## 功能模块
 
@@ -20,7 +20,7 @@
 
 ![系统总体架构图](deploy/docs/architecture.png)
 
-系统整体分为四层：客户端（浏览器 / 微信小程序 / App）经 Nginx 接入，Nginx 托管前端 H5 静态资源并将 `/api`、`/actuator`、`/swagger` 反向代理到 Spring Boot 后端，后端再连接 MySQL、Redis、RabbitMQ、MinIO 等数据与中间件组件。
+系统整体分为四层：客户端（浏览器 / 微信小程序）经 Nginx 接入，Nginx 托管前端 H5 静态资源并将 `/api`、`/actuator`、`/swagger` 反向代理到 Spring Boot 后端，后端再连接 MySQL、Redis、RabbitMQ、MinIO 等数据与中间件组件。
 
 | 层次 | 技术 |
 | --- | --- |
