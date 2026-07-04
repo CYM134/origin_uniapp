@@ -178,37 +178,76 @@ http://localhost:8080
 origin_uniapp/api/request.js
 ```
 
-### Nginx 托管正式 H5
+### 发行并用 Nginx 托管正式 H5
 
-HBuilderX 中执行“发行 -> 网站 H5”后，通常会生成：
+本工程是 uni-app 多端工程，H5 是其中一端。上面「运行到浏览器」只是开发预览，
+下面的步骤生成**正式可部署的 H5 静态站点**并交给 Nginx 托管。
 
-```text
-origin_uniapp/unpackage/dist/build/h5
-```
+> 说明：本工程为 HBuilderX 工程（无 `node_modules`、无命令行 build 脚本），
+> 因此 H5 的发行**必须在 HBuilderX 中操作**，无法用 `npm run build` 之类命令完成。
 
-将 `.env` 中的：
+#### 前置条件
+
+- 已安装 HBuilderX，并已导入前端工程目录 `origin_uniapp/origin_uniapp`。
+- 后端与依赖中间件已启动（见「快速启动」一节的 `docker compose up -d`），
+  确保 H5 页面能访问到 `http://localhost:8080` 的接口。
+
+#### 第 1 步：在 HBuilderX 中发行 H5
+
+1. 打开工程，顶部菜单选择 **发行 → 网站-PC Web 或手机 H5**。
+2. 弹窗中网站标题可填「实验室空间预约与协同管理系统」，其余保持默认，点击「发行」。
+3. 发行成功后，产物会生成在：
+
+   ```text
+   origin_uniapp/origin_uniapp/unpackage/dist/build/h5
+   ```
+
+   > 注意工程是**两层 `origin_uniapp/origin_uniapp`** 目录结构，产物在内层。
+   > 该目录里应包含 `index.html`、`static/`、`assets/` 等文件。
+
+#### 第 2 步：让 Nginx 托管发行产物
+
+将根目录 `.env` 中的：
 
 ```text
 NGINX_HTML_DIR=./deploy/html
 ```
 
-改为：
+改为指向上一步的产物目录：
 
 ```text
-NGINX_HTML_DIR=./origin_uniapp/unpackage/dist/build/h5
+NGINX_HTML_DIR=./origin_uniapp/origin_uniapp/unpackage/dist/build/h5
 ```
 
-重启 Nginx：
+重启 Nginx 使其重新挂载：
 
-```powershell
+```bash
 docker compose up -d --force-recreate nginx
 ```
 
-之后访问：
+#### 第 3 步：访问
 
 ```text
 http://localhost
 ```
+
+Nginx 已配置单页应用回退（`try_files $uri $uri/ /index.html`）与 `/api`、`/actuator`、
+`/swagger` 反向代理，前端刷新子路由不会 404，接口请求也会自动转发到后端。
+
+#### 接口地址说明
+
+前端默认请求 `http://localhost:8080`（见 `origin_uniapp/api/request.js` 中的
+`API_BASE_URL`）。经 Nginx 托管访问时，同源的 `/api` 会被反代到后端，通常无需改动；
+若部署到其他域名或端口，可在运行时通过 `uni.setStorageSync('apiBaseUrl', '你的后端地址')`
+覆盖，无需重新发行。
+
+#### 常见问题
+
+- **页面空白 / 资源 404**：多为 `NGINX_HTML_DIR` 指向了错误层级（少写一层
+  `origin_uniapp`），或发行产物目录为空。确认内层 `unpackage/dist/build/h5/index.html` 存在。
+- **接口请求跨域或连不上**：确认后端容器在运行、Nginx 的反向代理段生效；
+  直接用 HBuilderX「运行到浏览器」调试时，请求的是 `http://localhost:8080`，需后端已启动。
+- **改了代码 H5 没更新**：H5 是发行时快照，改完前端需**重新发行**并刷新（必要时强制刷新清缓存）。
 
 ## 后端本地开发
 
