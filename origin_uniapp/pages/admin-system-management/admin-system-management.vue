@@ -358,7 +358,7 @@
         </view>
 
         <view class="footer">
-            <text>© SCNU IBC实验室预约管理系统</text>
+            <text>�© SCNU IBC 实验室空间预约与协同管理系统</text>
         </view>
 
         <view class="modal" v-if="showDeleteUserConfirmModal">
@@ -404,7 +404,7 @@ const activeTab = ref<number>(0);
 
 // 0: 系统设置, 1: 数据备份, 2: 用户管理
 const settings = ref<any>({
-    systemName: '实验室预约管理系统',
+    systemName: '实验室空间预约与协同管理系统',
     schoolName: 'SCNU',
     logoUrl: '/static/images/天空实验室.png',
     reservationStartTime: '08:30',

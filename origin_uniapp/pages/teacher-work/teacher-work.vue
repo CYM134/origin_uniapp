@@ -103,7 +103,7 @@
             </view>
 
             <view class="footer">
-                <text>© SCNU IBC实验室预约管理系统</text>
+                <text>© SCNU IBC 实验室空间预约与协同管理系统</text>
             </view>
         </view>
     </view>
@@ -342,7 +342,7 @@ const viewNotifications = () => {
     });
 };
 /**
- * 跳转到校园综合服务平台门户首页
+ * 跳转到门户首页
  */
 const goPortal = () => {
     uni.navigateTo({ url: '/pages/portal-home/portal-home' });

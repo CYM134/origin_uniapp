@@ -10,7 +10,7 @@
         <view class="container">
             <view class="logo-container">
                 <image class="logo" src="/static/images/天空实验室.png" mode="aspectFit"></image>
-                <text class="title">实验室预约管理系统</text>
+                <text class="title">实验室空间预约与协同管理系统</text>
                 <text class="subtitle">管理员登录</text>
             </view>
 
@@ -42,7 +42,7 @@
             </view>
 
             <view class="footer">
-                <text>© SCNU IBC实验室预约管理系统</text>
+                <text>© SCNU IBC 实验室空间预约与协同管理系统</text>
             </view>
         </view>
     </view>

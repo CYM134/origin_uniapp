@@ -2,16 +2,16 @@
     <view class="page-wrapper">
         <!-- login-select.wxml -->
         <!-- #ifdef MP-WEIXIN -->
-        <mp-weixin-page-header title="实验室预约系统" :back="false" color="#ffffff" background="#4F46E5" />
+        <mp-weixin-page-header title="实验室空间预约与协同管理系统" :back="false" color="#ffffff" background="#4F46E5" />
         <!-- #endif -->
         <!-- #ifndef MP-WEIXIN -->
-        <app-navigation-bar title="实验室预约系统" :back="false" color="#ffffff" background="#4F46E5"></app-navigation-bar>
+        <app-navigation-bar title="实验室空间预约与协同管理系统" :back="false" color="#ffffff" background="#4F46E5"></app-navigation-bar>
         <!-- #endif -->
         <view class="container">
             <view class="selection-content">
                 <view class="logo-container">
                     <image class="logo" src="/static/images/天空实验室.png" mode="aspectFit"></image>
-                    <text class="title">实验室预约管理系统</text>
+                    <text class="title">实验室空间预约与协同管理系统</text>
                     <text class="subtitle">请选择您的身份</text>
                 </view>
 
@@ -34,7 +34,7 @@
             </view>
 
             <view class="footer">
-                <text>© SCNU IBC实验室预约管理系统</text>
+                <text>© SCNU IBC 实验室空间预约与协同管理系统</text>
             </view>
         </view>
     </view>

@@ -1,7 +1,7 @@
 {
 	"name": "lab-reservation-uniapp",
 	"version": "1.0.0",
-	"description": "实验室预约管理系统 - uni-app 多端 (H5 / 微信小程序 / Android / iOS / 平板)",
+	"description": "实验室空间预约与协同管理系统 - 基于 APP/H5/小程序融合架构，uni-app 多端 (H5 / 微信小程序 / Android / iOS / 平板)",
 	"main": "main.js",
 	"scripts": {},
 	"author": "",

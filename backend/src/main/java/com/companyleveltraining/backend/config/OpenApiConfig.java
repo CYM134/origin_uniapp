@@ -16,7 +16,7 @@ public class OpenApiConfig {
     public OpenAPI campusOpenAPI() {
         return new OpenAPI()
             .info(new Info()
-                .title("校园综合服务平台 API")
+                .title("实验室空间预约与协同管理系统 API")
                 .version("1.0.0")
                 .description("实验室预约、门户、通知、日程、AI 助手和管理员工作台接口文档"))
             .addSecurityItem(new SecurityRequirement().addList(BEARER_AUTH))
