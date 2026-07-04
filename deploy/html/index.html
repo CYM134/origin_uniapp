@@ -5,44 +5,255 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>实验室空间预约与协同管理系统</title>
   <style>
+    :root {
+      --bg: #eef2fb;
+      --bg-grad-1: #e0e7ff;
+      --bg-grad-2: #eff6ff;
+      --card: #ffffff;
+      --card-border: rgba(79, 70, 229, 0.12);
+      --fg: #0f172a;
+      --muted: #64748b;
+      --brand: #4f46e5;
+      --brand-2: #7c3aed;
+      --chip-bg: #eef2ff;
+      --chip-fg: #4338ca;
+      --code-bg: #eef2ff;
+      --code-fg: #3730a3;
+      --line: #eef1f6;
+      --ok: #16a34a;
+      --ok-bg: rgba(22, 163, 74, 0.12);
+      --warn: #d97706;
+      --warn-bg: rgba(217, 119, 6, 0.12);
+      --shadow: 0 24px 60px rgba(30, 41, 59, 0.12);
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #0b1020;
+        --bg-grad-1: #131a33;
+        --bg-grad-2: #0d1426;
+        --card: #131a2b;
+        --card-border: rgba(129, 140, 248, 0.18);
+        --fg: #e5e9f5;
+        --muted: #94a3b8;
+        --brand: #818cf8;
+        --brand-2: #a78bfa;
+        --chip-bg: rgba(129, 140, 248, 0.14);
+        --chip-fg: #c7d2fe;
+        --code-bg: rgba(129, 140, 248, 0.14);
+        --code-fg: #c7d2fe;
+        --line: rgba(148, 163, 184, 0.16);
+        --ok: #4ade80;
+        --ok-bg: rgba(74, 222, 128, 0.14);
+        --warn: #fbbf24;
+        --warn-bg: rgba(251, 191, 36, 0.14);
+        --shadow: 0 24px 60px rgba(0, 0, 0, 0.5);
+      }
+    }
+    * { box-sizing: border-box; }
     body {
       margin: 0;
       min-height: 100vh;
       display: grid;
       place-items: center;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      color: #1f2937;
-      background: #f5f7fb;
+      padding: 32px 20px;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+      color: var(--fg);
+      background:
+        radial-gradient(1200px 600px at 15% -10%, var(--bg-grad-1), transparent 60%),
+        radial-gradient(1000px 500px at 110% 10%, var(--bg-grad-2), transparent 55%),
+        var(--bg);
     }
     main {
-      width: min(560px, calc(100vw - 40px));
-      padding: 32px;
-      border: 1px solid #e5e7eb;
-      border-radius: 8px;
-      background: #fff;
-      box-shadow: 0 12px 32px rgba(15, 23, 42, 0.08);
+      width: min(680px, 100%);
+      padding: 40px 40px 32px;
+      border: 1px solid var(--card-border);
+      border-radius: 20px;
+      background: var(--card);
+      box-shadow: var(--shadow);
+    }
+    .brand-row {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 22px;
+    }
+    .logo {
+      flex: none;
+      width: 46px;
+      height: 46px;
+      border-radius: 13px;
+      display: grid;
+      place-items: center;
+      color: #fff;
+      font-size: 24px;
+      background: linear-gradient(135deg, var(--brand), var(--brand-2));
+      box-shadow: 0 8px 20px rgba(79, 70, 229, 0.35);
+    }
+    .brand-row .sub {
+      font-size: 12.5px;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--muted);
     }
     h1 {
-      margin: 0 0 12px;
-      font-size: 24px;
+      margin: 0;
+      font-size: clamp(21px, 3.4vw, 27px);
+      line-height: 1.3;
+      font-weight: 700;
+      letter-spacing: -0.01em;
     }
-    p {
-      margin: 8px 0;
+    .tagline {
+      margin: 10px 0 22px;
+      color: var(--muted);
       line-height: 1.7;
+      font-size: 15px;
     }
+    .chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 26px;
+    }
+    .chip {
+      font-size: 12.5px;
+      font-weight: 600;
+      padding: 5px 11px;
+      border-radius: 999px;
+      background: var(--chip-bg);
+      color: var(--chip-fg);
+    }
+    .status {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 13px 16px;
+      border-radius: 13px;
+      border: 1px solid var(--line);
+      margin-bottom: 22px;
+      font-size: 14px;
+    }
+    .dot {
+      flex: none;
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background: var(--muted);
+    }
+    .status.ok { background: var(--ok-bg); border-color: transparent; }
+    .status.ok .dot { background: var(--ok); box-shadow: 0 0 0 4px var(--ok-bg); }
+    .status.ok .label { color: var(--ok); font-weight: 600; }
+    .status.warn { background: var(--warn-bg); border-color: transparent; }
+    .status.warn .dot { background: var(--warn); box-shadow: 0 0 0 4px var(--warn-bg); }
+    .status.warn .label { color: var(--warn); font-weight: 600; }
+    .status .hint { color: var(--muted); font-size: 13px; }
+    .steps {
+      border-top: 1px solid var(--line);
+      padding-top: 20px;
+    }
+    .steps h2 {
+      margin: 0 0 12px;
+      font-size: 13px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+    p { margin: 9px 0; line-height: 1.75; font-size: 14.5px; }
     code {
-      padding: 2px 6px;
-      border-radius: 4px;
-      background: #eef2ff;
-      color: #3730a3;
+      padding: 2px 7px;
+      border-radius: 6px;
+      background: var(--code-bg);
+      color: var(--code-fg);
+      font-size: 13px;
+      font-family: "SF Mono", ui-monospace, "Cascadia Code", Menlo, Consolas, monospace;
+    }
+    .links {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 22px;
+    }
+    .links a {
+      text-decoration: none;
+      font-size: 13.5px;
+      font-weight: 600;
+      padding: 9px 16px;
+      border-radius: 10px;
+      color: var(--brand);
+      border: 1px solid var(--card-border);
+      transition: background .15s ease, transform .15s ease;
+    }
+    .links a:hover { background: var(--chip-bg); transform: translateY(-1px); }
+    footer {
+      margin-top: 26px;
+      padding-top: 16px;
+      border-top: 1px solid var(--line);
+      color: var(--muted);
+      font-size: 12.5px;
+      text-align: center;
     }
   </style>
 </head>
 <body>
   <main>
-    <h1>实验室空间预约与协同管理系统</h1>
-    <p>Nginx 已启动，后端接口可通过 <code>/api/</code> 反向代理访问。</p>
-    <p>构建 uni-app H5 后，将 <code>.env</code> 中的 <code>NGINX_HTML_DIR</code> 指向 H5 构建目录即可展示正式前端。</p>
+    <div class="brand-row">
+      <div class="logo" aria-hidden="true">🔬</div>
+      <div>
+        <div class="sub">SCNU IBC</div>
+        <h1>实验室空间预约与协同管理系统</h1>
+      </div>
+    </div>
+
+    <p class="tagline">基于 APP / H5 / 小程序融合架构，采用 uni-app 一套代码多端发布，为学生、教师与管理员提供实验室空间预约、审批协同、通知公告、日程待办与 AI 助手等一体化服务。</p>
+
+    <div class="chips">
+      <span class="chip">H5</span>
+      <span class="chip">微信小程序</span>
+      <span class="chip">Android / iOS</span>
+      <span class="chip">平板</span>
+      <span class="chip">Spring Boot 后端</span>
+    </div>
+
+    <div class="status" id="status">
+      <span class="dot"></span>
+      <span class="label" id="status-label">正在检测后端状态…</span>
+      <span class="hint" id="status-hint"></span>
+    </div>
+
+    <div class="steps">
+      <h2>当前为部署占位页</h2>
+      <p>Nginx 已启动，后端接口通过 <code>/api/</code> 反向代理访问。</p>
+      <p>在 HBuilderX 中「发行 → 网站 H5」后，将 <code>.env</code> 的 <code>NGINX_HTML_DIR</code> 指向 H5 产物目录并重启 Nginx，本页即被正式前端替换。详见仓库 <code>README.md</code> 的「发行并用 Nginx 托管正式 H5」。</p>
+    </div>
+
+    <div class="links">
+      <a href="/swagger-ui.html">API 文档 (Swagger)</a>
+      <a href="/actuator/health">健康检查</a>
+    </div>
+
+    <footer>© SCNU IBC 实验室空间预约与协同管理系统</footer>
   </main>
+
+  <script>
+    (function () {
+      var box = document.getElementById('status');
+      var label = document.getElementById('status-label');
+      var hint = document.getElementById('status-hint');
+      function set(state, text, tip) {
+        box.className = 'status ' + state;
+        label.textContent = text;
+        hint.textContent = tip || '';
+      }
+      fetch('/actuator/health', { cache: 'no-store' })
+        .then(function (r) { return r.ok ? r.json().catch(function () { return {}; }) : Promise.reject(r.status); })
+        .then(function (data) {
+          var up = !data.status || data.status === 'UP';
+          if (up) set('ok', '后端服务在线', '接口反向代理正常');
+          else set('warn', '后端状态：' + data.status, '部分依赖未就绪');
+        })
+        .catch(function () {
+          set('warn', '暂未连接到后端', '请确认后端容器已启动');
+        });
+    })();
+  </script>
 </body>
 </html>
